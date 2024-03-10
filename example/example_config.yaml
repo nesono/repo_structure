@@ -1,0 +1,18 @@
+structure_rules:
+  python_package:
+    - r:.*\.py
+    - README.md
+    - data/:
+        - r:.*\.yaml
+    - LICENSE
+    - setup.py
+
+  documentation:
+    - README.md
+    - r:.*\.md
+
+directory_mappings:
+  /:
+    - python_package
+  /doc/:
+    - documentation
