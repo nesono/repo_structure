@@ -1,0 +1,4 @@
+--extra-index-url https://pypi.org/simple/
+
+click==8.1.7
+ruamel.yaml==0.18.6

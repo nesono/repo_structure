@@ -1,18 +1,36 @@
 structure_rules:
+  base_structure:
+    required:
+      - LICENSE
+      - README.md
+    optional:
+      - .*\.md
+
   python_package:
-    - r:.*\.py
-    - README.md
-    - data/:
-        - r:.*\.yaml
-    - LICENSE
-    - setup.py
+    required:
+      - setup.py
+      - src/:
+          - .*\.py
+      - tests/:
+          -  test_.*\.py
+    optional:
+      - docs/:
+          - use_structure: documentation
+    includes:
+      - base_structure
+    file_dependencies:
+      - dependency:
+          base: .*\.py
+          dependent: test_.*\.py
 
   documentation:
-    - README.md
-    - r:.*\.md
+    required:
+      - index.md
+    optional:
+      - .*\.md
 
 directory_mappings:
   /:
-    - python_package
-  /doc/:
-    - documentation
+    - use_structure: python_package
+  /docs/:
+    - use_structure: documentation
