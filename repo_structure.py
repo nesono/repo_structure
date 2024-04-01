@@ -52,9 +52,10 @@ def parse_directory_structure_recursive(result: DirectoryStructure, path: str, c
         if isinstance(item, dict):
             for i in item:
                 if i == "use_structure":
+                    pattern = re.compile(path)
                     assert len(item) == 1, f"{path}{i} mixing 'use_structure' and files/directories is not supported"
-                    assert path not in result.use_structure, f"{path}{i} only a single use_structure is allowed, error adding \"{item[i]}\", already existing: \"{result.use_structure[path]}\""
-                    result.use_structure[path] = item[i]
+                    assert path not in result.use_structure, f"{path}{i} only a single use_structure is allowed, error adding \"{item[i]}\", already existing: \"{result.use_structure[pattern]}\""
+                    result.use_structure[pattern] = item[i]
                 else:
                     assert i.endswith("/"), f"{i} needs to be suffixed with '/' to be identified as a directory"
                     result.directories.append(re.compile(path + i))
@@ -85,4 +86,3 @@ def parse_file_dependencies(file_dependencies: dict) -> Dict[str, FileDependency
                 dependent=re.compile(dep[name]["dependent"]),
             )
     return result
-

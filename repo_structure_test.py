@@ -22,7 +22,7 @@ def test_successful_parse_structure_rules():
     assert re.compile(r"tests/data/") in rules["python_package"].required.directories
 
     assert re.compile(r".*/.*") in rules["python_package"].optional.files
-    assert "documentation" in rules["python_package"].optional.use_structure["docs/"]
+    assert "documentation" in rules["python_package"].optional.use_structure[re.compile("docs/")]
 
     assert "base_structure" in rules["python_package"].includes
 
@@ -48,7 +48,7 @@ def test_successful_parse_directory_structure_wildcard():
     structure = parse_directory_structure(config["structure_rules"]["python_package"]["optional"])
 
     assert re.compile(r".*/.*") in structure.files
-    assert "documentation" in structure.use_structure["docs/"]
+    assert "documentation" in structure.use_structure[re.compile("docs/")]
 
 def test_parse_successful_file_dependencies():
     """Test successful parsing of file dependencies."""
