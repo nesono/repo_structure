@@ -16,14 +16,13 @@ structure_rules:
               - '.*\.(yaml|yml)'
     optional:
       - 'docs/':
-          - use_structure: base_structure # TODO: this must raise an error, since we don't allow use_structure composition
           - use_structure: documentation
       - '.*/':
           - '.*'
     includes:
       - base_structure
     file_dependencies:
-      - dependency:
+      - implementation_test:
           base: '.*\.py'
           dependent: 'test_.*\.py'
   documentation:

@@ -10,6 +10,11 @@ class DirectoryStructure:
     files: List[re.Pattern]
     references: Dict[re.Pattern, str]
 
+@dataclass
+class FileDependency:
+    base: re.Pattern
+    dependent: re.Pattern
+
 
 @dataclass
 class StructureRule:
@@ -17,7 +22,7 @@ class StructureRule:
     required: List[DirectoryStructure]
     optional: List[DirectoryStructure]
     includes: List[DirectoryStructure]
-    file_dependencies: List[DirectoryStructure]
+    file_dependencies: Dict[str, FileDependency]
 
 
 def load_repo_structure_yaml(filename: str) -> dict:
@@ -35,7 +40,7 @@ def parse_structure_rules(structure_rules: dict) -> List[StructureRule]:
             required=structure_rules.get("required", []),
             optional=structure_rules.get("optional", []),
             includes=structure_rules.get("includes", []),
-            file_dependencies=structure_rules.get("file_dependencies", [])
+            file_dependencies=structure_rules.get("file_dependencies", {})
         )
         rules.append(structure)
 
@@ -48,6 +53,7 @@ def parse_directory_structure_recursive(result: DirectoryStructure, path: str, c
             for i in item:
                 if i == "use_structure":
                     assert len(item) == 1, f"{path}{i} mixing 'use_structure' and files/directories is not supported"
+                    assert path not in result.references, f"{path}{i} only a single reference is allowed"
                     result.references[path] = item[i]
                 else:
                     assert i.endswith("/"), f"{i} needs to be suffixed with '/' to be identified as a directory"
