@@ -37,7 +37,7 @@ def parse_structure_rules(structure_rules: dict) -> List[StructureRule]:
     for rule in structure_rules:
         structure = StructureRule(
             name=rule,
-            required=parse_directory_structure(structure_rules[rule].get("required", {})),
+            required=parse_directory_structure(structure_rules[rule].get("required", {})),  # TODO: this is not tested
             optional=parse_directory_structure(structure_rules[rule].get("optional", {})),
             includes=parse_directory_structure(structure_rules[rule].get("includes", {})),
             file_dependencies=structure_rules.get("file_dependencies", {})  # TODO: this is not parsed
@@ -53,7 +53,7 @@ def parse_directory_structure_recursive(result: DirectoryStructure, path: str, c
             for i in item:
                 if i == "use_structure":
                     assert len(item) == 1, f"{path}{i} mixing 'use_structure' and files/directories is not supported"
-                    assert path not in result.references, f"{path}{i} only a single reference is allowed"
+                    assert path not in result.references, f"{path}{i} only a single reference is allowed, error adding \"{item[i]}\""
                     result.references[path] = item[i]
                 else:
                     assert i.endswith("/"), f"{i} needs to be suffixed with '/' to be identified as a directory"
