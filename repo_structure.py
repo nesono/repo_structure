@@ -1,7 +1,13 @@
-import ruamel.yaml as YAML
-from dataclasses import dataclass
-from typing import List, Dict
+# pylint: disable=missing-class-docstring
+# pylint: disable=missing-function-docstring
+# pylint: disable=import-error
+
+"""Library functions for repo structure tool."""
 import re
+from dataclasses import dataclass
+from typing import Dict, List
+
+from ruamel import yaml as YAML
 
 
 @dataclass
@@ -27,7 +33,7 @@ class StructureRule:
 
 
 def load_repo_structure_yaml(filename: str) -> dict:
-    with open(filename, "r") as file:
+    with open(filename, "r", encoding="utf-8") as file:
         yaml = YAML.YAML(typ="safe")
         result = yaml.load(file)
     return result
@@ -40,7 +46,7 @@ def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
             name=rule,
             required=parse_directory_structure(
                 structure_rules[rule].get("required", {})
-            ),  # TODO: this is not tested
+            ),
             optional=parse_directory_structure(
                 structure_rules[rule].get("optional", {})
             ),
@@ -61,14 +67,14 @@ def parse_directory_structure_recursive(
         if isinstance(item, dict):
             for i in item:
                 if i == "use_structure":
-                    pattern = re.compile(path)
+                    pat = re.compile(path)
                     assert (
                         len(item) == 1
                     ), f"{path}{i} mixing 'use_structure' and files/directories is not supported"
                     assert (
                         path not in result.use_structure
-                    ), f'{path}{i} only a single use_structure is allowed, error adding "{item[i]}", already existing: "{result.use_structure[pattern]}"'
-                    result.use_structure[pattern] = item[i]
+                    ), f'{path}{i} error: "{item[i]}" conflicts with "{result.use_structure[pat]}"'
+                    result.use_structure[pat] = item[i]
                 else:
                     assert i.endswith(
                         "/"

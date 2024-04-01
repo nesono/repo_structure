@@ -1,11 +1,16 @@
+# pylint: disable=import-error
+"""Tests for repo_structure library functions."""
+
+import re
+
+import pytest
 from repo_structure import (
     load_repo_structure_yaml,
-    parse_structure_rules,
     parse_directory_structure,
     parse_file_dependencies,
+    parse_structure_rules,
 )
-import re
-import pytest
+
 
 TEST_CONFIG_YAML = "test_config.yaml"
 

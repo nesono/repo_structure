@@ -18,3 +18,16 @@ repos:
     rev: 24.3.0
     hooks:
       - id: black
+  - repo: https://github.com/pylint-dev/pylint
+    rev: "v3.1.0"
+    hooks:
+      - id: pylint
+  - repo: https://github.com/miki725/importanize.git
+    rev: "0.8.0-alpha2"
+    hooks:
+      - id: importanize
+  - repo: https://github.com/codespell-project/codespell
+    rev: "v2.2.6"
+    hooks:
+      - id: codespell
+        exclude: "MODULE.bazel.lock"
