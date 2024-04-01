@@ -59,8 +59,6 @@ def parse_directory_structure_recursive(result: DirectoryStructure, path: str, c
                     assert i.endswith("/"), f"{i} needs to be suffixed with '/' to be identified as a directory"
                     result.directories.append(re.compile(path + i))
                     parse_directory_structure_recursive(result, path + i, item[i])
-        elif item.endswith("/"):
-            raise NotImplementedError("plain directory not implemented")
         else:
             result.files.append(re.compile(path + item))
 
