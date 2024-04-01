@@ -19,9 +19,9 @@ class FileDependency:
 @dataclass
 class StructureRule:
     name: str
-    required: List[DirectoryStructure]
-    optional: List[DirectoryStructure]
-    includes: List[DirectoryStructure]
+    required: DirectoryStructure
+    optional: DirectoryStructure
+    includes: DirectoryStructure
     file_dependencies: Dict[str, FileDependency]
 
 
@@ -37,10 +37,10 @@ def parse_structure_rules(structure_rules: dict) -> List[StructureRule]:
     for rule in structure_rules:
         structure = StructureRule(
             name=rule,
-            required=structure_rules.get("required", []),
-            optional=structure_rules.get("optional", []),
-            includes=structure_rules.get("includes", []),
-            file_dependencies=structure_rules.get("file_dependencies", {})
+            required=parse_directory_structure(structure_rules[rule].get("required", {})),
+            optional=parse_directory_structure(structure_rules[rule].get("optional", {})),
+            includes=parse_directory_structure(structure_rules[rule].get("includes", {})),
+            file_dependencies=structure_rules.get("file_dependencies", {})  # TODO: this is not parsed
         )
         rules.append(structure)
 
