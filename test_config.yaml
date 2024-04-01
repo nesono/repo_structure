@@ -1,24 +1,24 @@
 structure_rules:
   base_structure:
     required:
-      - 'LICENSE'
-      - 'README.md'
+      - "LICENSE"
+      - "README.md"
     optional:
       - '.*\.md'
   python_package:
     required:
-      - 'setup.py'
-      - 'src/':
+      - "setup.py"
+      - "src/":
           - '.*\.py'
-      - 'tests/':
+      - "tests/":
           - 'test_.*\.py'
-          - 'data/':
+          - "data/":
               - '.*\.(yaml|yml)'
     optional:
-      - 'docs/':
+      - "docs/":
           - use_structure: documentation
-      - '.*/':
-          - '.*'
+      - ".*/":
+          - ".*"
     includes:
       - base_structure
     file_dependencies:
@@ -30,7 +30,7 @@ structure_rules:
           dependent: '.*\.swreq\.md'
   documentation:
     required:
-      - 'index.md'
+      - "index.md"
     optional:
       - '.*\.md'
 
