@@ -1,3 +1,3 @@
-# Example Repo Structsure Usages
+# Example Repo Kondo
 
-tba
+This sub folder is a show case for the features of Repo Kondo.

@@ -1,0 +1,39 @@
+structure_rules:
+  base_structure:
+    required:
+      - 'LICENSE'
+      - 'README.md'
+    optional:
+      - '.*\.md'
+  python_package:
+    required:
+      - 'setup.py'
+      - 'src/':
+          - '.*\.py'
+      - 'tests/':
+          - 'test_.*\.py'
+          - 'data/':
+              - '.*\.(yaml|yml)'
+    optional:
+      - 'docs/':
+          - use_structure: base_structure # TODO: this must raise an error, since we don't allow use_structure composition
+          - use_structure: documentation
+      - '.*/':
+          - '.*'
+    includes:
+      - base_structure
+    file_dependencies:
+      - dependency:
+          base: '.*\.py'
+          dependent: 'test_.*\.py'
+  documentation:
+    required:
+      - 'index.md'
+    optional:
+      - '.*\.md'
+
+directory_mappings:
+  /:
+    - use_structure: python_package
+  /docs/:
+    - use_structure: documentation

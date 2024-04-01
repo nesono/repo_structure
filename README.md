@@ -1,52 +1,15 @@
-# Repo Structsure
+# Repo Kondo
 
-A tool to control your repository structure.
+A tool to control your repository structure and keep it clean at all times.
+
 You can control
 
-* What files and directories are allowed
+* What files and directories are allowed (`required` + `optional`)
 * Use regexes for specifications
-* Map directory structure rules to directories
-* Reuse directory structure rules recursively
-* Differentiate between required and optional files
-* Reuse directory structure rules in directory structure rules
+* Map directory structure rules to directories (`directory_mapping`)
+* Reuse directory structure rules recursively (`use_structure` in `structure_rules`)
+* Differentiate between required and optional files (`required` vs `optinonal`)
+* Inherit rules from other rules (`includes`)
 
-The following example show cases all the supported features
-
-```yaml
-structure_rules:
-  base_structure:
-    required:
-      - LICENSE
-      - README.md
-    optional:
-      - .*\.md
-
-  python_package:
-    required:
-      - setup.py
-      - src/:
-          - .*\.py
-      - tests/:
-          -  test_.*\.py
-    optional:
-      - docs/:
-          - use_structure: documentation
-    includes:
-      - base_structure
-    file_dependencies:
-      - dependency:
-          base: .*\.py
-          dependent: test_.*\.py
-
-  documentation:
-    required:
-      - index.md
-    optional:
-      - .*\.md
-
-directory_mappings:
-  /:
-    - use_structure: python_package
-  /docs/:
-    - use_structure: documentation
-    ```
+The example file show cases all the supported features:
+[example yaml](test_config.yaml)

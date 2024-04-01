@@ -1,7 +1,9 @@
 module(
-    name = "repo_struct_sure",
+    name = "repo_structure",
     version = "0.1",
 )
+
+PYTHON_VERSION = "3.11"
 
 bazel_dep(name = "rules_python", version = "0.31.0")
 
@@ -9,9 +11,7 @@ bazel_dep(name = "rules_python", version = "0.31.0")
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     configure_coverage_tool = True,
-    # Only set when you have mulitple toolchain versions.
-    is_default = True,
-    python_version = "3.11",
+    python_version = PYTHON_VERSION,
 )
 
 # This extension allows a user to create modifications to how rules_python
@@ -30,8 +30,8 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 # Alternatively, `python_interpreter_target` can be used to directly specify
 # the Python interpreter to run to resolve dependencies.
 pip.parse(
-    hub_name = "pip",
-    python_version = "3.11",
+    hub_name = "pypi",
+    python_version = PYTHON_VERSION,
     requirements_lock = "//:requirements_lock.txt",
 )
-use_repo(pip, "pip")
+use_repo(pip, "pypi")
