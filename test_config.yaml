@@ -22,9 +22,12 @@ structure_rules:
     includes:
       - base_structure
     file_dependencies:
-      - implementation_test:
+      - implementation_and_test:
           base: '.*\.py'
           dependent: 'test_.*\.py'
+      - techspec_and_requirements:
+          base: '.*\.techspec\.md'
+          dependent: '.*\.swreq\.md'
   documentation:
     required:
       - 'index.md'

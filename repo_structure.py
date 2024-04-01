@@ -21,7 +21,7 @@ class StructureRule:
     name: str
     required: DirectoryStructure
     optional: DirectoryStructure
-    includes: DirectoryStructure
+    includes: List[str]
     file_dependencies: Dict[str, FileDependency]
 
 
@@ -32,17 +32,17 @@ def load_repo_structure_yaml(filename: str) -> dict:
     return result
 
 
-def parse_structure_rules(structure_rules: dict) -> List[StructureRule]:
-    rules = []
+def parse_structure_rules(structure_rules: dict) -> Dict[str,StructureRule]:
+    rules = {}
     for rule in structure_rules:
         structure = StructureRule(
             name=rule,
             required=parse_directory_structure(structure_rules[rule].get("required", {})),  # TODO: this is not tested
             optional=parse_directory_structure(structure_rules[rule].get("optional", {})),
-            includes=parse_directory_structure(structure_rules[rule].get("includes", {})),
-            file_dependencies=structure_rules.get("file_dependencies", {})  # TODO: this is not parsed
+            includes=structure_rules[rule].get("includes", []),
+            file_dependencies=parse_file_dependencies(structure_rules[rule].get("file_dependencies", {})),
         )
-        rules.append(structure)
+        rules[rule] = structure
 
     return rules
 
@@ -72,3 +72,17 @@ def parse_directory_structure(directory_structure: dict) -> DirectoryStructure:
 
     parse_directory_structure_recursive(result, "", directory_structure)
     return result
+
+def parse_file_dependencies(file_dependencies: dict) -> Dict[str, FileDependency]:
+    result:Dict[str, FileDependency] = {}
+    for dep in file_dependencies:
+        for name in dep:
+            assert len(dep[name]) == 2, f"{name} can only have one base spec"
+            assert "base" in dep[name], f"{name} needs to contain \"base\" field"
+            assert "dependent" in dep[name], f"{name} needs to contain \"dependent\" field"
+            result[name] = FileDependency(
+                base=dep[name]["base"],
+                dependent=dep[name]["dependent"],
+            )
+    return result
+

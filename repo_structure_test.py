@@ -1,11 +1,7 @@
-from repo_structure import load_repo_structure_yaml, parse_structure_rules, parse_directory_structure
+from repo_structure import load_repo_structure_yaml, parse_structure_rules, parse_directory_structure, parse_file_dependencies
 import re
 import pytest
 
-TEST_CONFIG_YAML = 'test_config.yaml'
-
-
-# Constant for yaml file name
 TEST_CONFIG_YAML = 'test_config.yaml'
 
 def test_successful_load_yaml():
@@ -18,8 +14,12 @@ def test_successful_parse_structure_rules():
     """Test successful parsing of the structure rules."""
     config = load_repo_structure_yaml(TEST_CONFIG_YAML)
     rules = parse_structure_rules(config["structure_rules"])
-    assert rules[0].name == "base_structure"
-    assert rules[1].name == "python_package"
+
+    assert "base_structure" in rules
+    assert "python_package" in rules
+
+    assert re.compile(r"setup.py") in rules["python_package"].required.files
+    assert re.compile(r"tests/data/") in rules["python_package"].required.directories
 
 
 def test_successful_parse_directory_structure():
@@ -40,8 +40,15 @@ def test_successful_parse_directory_structure_wildcard():
     structure = parse_directory_structure(config["structure_rules"]["python_package"]["optional"])
 
     assert re.compile(r".*/.*") in structure.files
-
     assert "documentation" in structure.references["docs/"]
+
+def test_parse_successful_file_dependencies():
+    """Test successful parsing of file dependencies."""
+    config = load_repo_structure_yaml(TEST_CONFIG_YAML)
+    dependencies = parse_file_dependencies(config["structure_rules"]["python_package"]["file_dependencies"])
+    assert "implementation_and_test" in dependencies
+    assert "techspec_and_requirements" in dependencies
+
 
 if __name__ == '__main__':
     pytest.main(['-s', '-v', 'repo_structure_test.py'])
