@@ -8,7 +8,7 @@ import re
 class DirectoryStructure:
     directories: List[re.Pattern]
     files: List[re.Pattern]
-    references: Dict[re.Pattern, str]
+    use_structure: Dict[re.Pattern, str]
 
 @dataclass
 class FileDependency:
@@ -53,8 +53,8 @@ def parse_directory_structure_recursive(result: DirectoryStructure, path: str, c
             for i in item:
                 if i == "use_structure":
                     assert len(item) == 1, f"{path}{i} mixing 'use_structure' and files/directories is not supported"
-                    assert path not in result.references, f"{path}{i} only a single reference is allowed, error adding \"{item[i]}\""
-                    result.references[path] = item[i]
+                    assert path not in result.use_structure, f"{path}{i} only a single use_structure is allowed, error adding \"{item[i]}\", already existing: \"{result.use_structure[path]}\""
+                    result.use_structure[path] = item[i]
                 else:
                     assert i.endswith("/"), f"{i} needs to be suffixed with '/' to be identified as a directory"
                     result.directories.append(re.compile(path + i))
@@ -67,7 +67,7 @@ def parse_directory_structure(directory_structure: dict) -> DirectoryStructure:
     result = DirectoryStructure(
         directories=[],
         files=[],
-        references={},
+        use_structure={},
     )
 
     parse_directory_structure_recursive(result, "", directory_structure)
@@ -81,8 +81,8 @@ def parse_file_dependencies(file_dependencies: dict) -> Dict[str, FileDependency
             assert "base" in dep[name], f"{name} needs to contain \"base\" field"
             assert "dependent" in dep[name], f"{name} needs to contain \"dependent\" field"
             result[name] = FileDependency(
-                base=dep[name]["base"],
-                dependent=dep[name]["dependent"],
+                base=re.compile(dep[name]["base"]),
+                dependent=re.compile(dep[name]["dependent"]),
             )
     return result
 
