@@ -30,6 +30,7 @@ repos:
     rev: "v2.2.6"
     hooks:
       - id: codespell
+        args: [-w]
         exclude: "MODULE.bazel.lock"
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: "v0.39.0"

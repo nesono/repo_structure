@@ -1,4 +1,3 @@
-# pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 # pylint: disable=import-error
 
@@ -12,6 +11,13 @@ from ruamel import yaml as YAML
 
 @dataclass
 class DirectoryStructure:
+    """Storing directory structure rules.
+
+    Storing directories and files separately helps for parsing.
+    All directories and files are stored expanded and not in a
+    tree to facilitate parsing.
+    """
+
     directories: List[re.Pattern]
     files: List[re.Pattern]
     use_structure: Dict[re.Pattern, str]
@@ -19,12 +25,23 @@ class DirectoryStructure:
 
 @dataclass
 class FileDependency:
+    """Storing file dependency specifications.
+
+    File dependencies are dependencies where two files share a
+    certain portion of the filename together, e.g. test and
+    implementation files"""
+
     base: re.Pattern
     dependent: re.Pattern
 
 
 @dataclass
 class StructureRule:
+    """Storing structure rule.
+
+    Compound instance for structure rules, e.g. cpp_source,
+    python_package, etc."""
+
     name: str
     required: DirectoryStructure
     optional: DirectoryStructure
@@ -39,6 +56,12 @@ def load_repo_structure_yaml(filename: str) -> dict:
     return result
 
 
+def load_repo_structure_yamls(yaml_string: str) -> dict:
+    yaml = YAML.YAML(typ="safe")
+    result = yaml.load(yaml_string)
+    return result
+
+
 def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     rules = {}
     for rule in structure_rules:
@@ -50,7 +73,7 @@ def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
             optional=parse_directory_structure(
                 structure_rules[rule].get("optional", {})
             ),
-            includes=structure_rules[rule].get("includes", []),
+            includes=parse_includes(structure_rules[rule].get("includes", [])),
             file_dependencies=parse_file_dependencies(
                 structure_rules[rule].get("file_dependencies", {})
             ),
@@ -94,6 +117,13 @@ def parse_directory_structure(directory_structure: dict) -> DirectoryStructure:
 
     parse_directory_structure_recursive(result, "", directory_structure)
     return result
+
+
+def parse_includes(includes: dict) -> List[str]:
+    assert isinstance(
+        includes, List
+    ), f"includes must be a list, not a {type(includes)}"
+    return includes
 
 
 def parse_file_dependencies(file_dependencies: dict) -> Dict[str, FileDependency]:

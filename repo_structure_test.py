@@ -6,8 +6,10 @@ import re
 import pytest
 from repo_structure import (
     load_repo_structure_yaml,
+    load_repo_structure_yamls,
     parse_directory_structure,
     parse_file_dependencies,
+    parse_includes,
     parse_structure_rules,
 )
 
@@ -18,6 +20,25 @@ TEST_CONFIG_YAML = "test_config.yaml"
 def test_successful_load_yaml():
     """Test successful loading of the yaml configuration using ruamel.yaml."""
     config = load_repo_structure_yaml(TEST_CONFIG_YAML)
+    assert isinstance(config, dict)
+    assert isinstance(config["structure_rules"], dict)
+
+
+def test_successful_load_yamls():
+    """Test loading from string."""
+    test_yaml = r"""
+structure_rules:
+  base_structure:
+    required:
+      - "LICENSE"
+      - "README.md"
+    optional:
+      - '.*\.md'
+  directory_mappings:
+  /:
+    - use_structure: base_structure
+"""
+    config = load_repo_structure_yamls(test_yaml)
     assert isinstance(config, dict)
     assert isinstance(config["structure_rules"], dict)
 
@@ -50,6 +71,13 @@ def test_successful_parse_structure_rules():
     )
 
 
+def test_invalid_parse_structure_rule_empty():
+    """Test loading from empty yaml."""
+    config = load_repo_structure_yamls("")
+    with pytest.raises(Exception):
+        parse_structure_rules(config["structure_rules"])
+
+
 def test_successful_parse_directory_structure():
     """Test successful parsing of directory structure."""
     config = load_repo_structure_yaml(TEST_CONFIG_YAML)
@@ -73,6 +101,13 @@ def test_successful_parse_directory_structure_wildcard():
 
     assert re.compile(r".*/.*") in structure.files
     assert "documentation" in structure.use_structure[re.compile("docs/")]
+
+
+def test_successful_parse_includes():
+    """Test successful parsing of includes."""
+    config = load_repo_structure_yaml(TEST_CONFIG_YAML)
+    includes = parse_includes(config["structure_rules"]["python_package"]["includes"])
+    assert "base_structure" in includes
 
 
 def test_parse_successful_file_dependencies():
