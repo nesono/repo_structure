@@ -26,6 +26,9 @@ def test_successful_load_yaml():
 
 def test_successful_load_yamls():
     """Test loading from string."""
+    config = load_repo_structure_yamls("")
+    assert config is None
+
     test_yaml = r"""
 structure_rules:
   base_structure:
@@ -45,6 +48,9 @@ structure_rules:
 
 def test_successful_parse_structure_rules():
     """Test successful parsing of the structure rules."""
+    rules = parse_structure_rules({})
+    assert len(rules) == 0
+
     config = load_repo_structure_yaml(TEST_CONFIG_YAML)
     rules = parse_structure_rules(config["structure_rules"])
 
@@ -71,15 +77,13 @@ def test_successful_parse_structure_rules():
     )
 
 
-def test_invalid_parse_structure_rule_empty():
-    """Test loading from empty yaml."""
-    config = load_repo_structure_yamls("")
-    with pytest.raises(Exception):
-        parse_structure_rules(config["structure_rules"])
-
-
 def test_successful_parse_directory_structure():
     """Test successful parsing of directory structure."""
+    structure = parse_directory_structure({})
+    assert len(structure.directories) == 0
+    assert len(structure.files) == 0
+    assert len(structure.use_structure) == 0
+
     config = load_repo_structure_yaml(TEST_CONFIG_YAML)
     structure = parse_directory_structure(
         config["structure_rules"]["python_package"]["required"]
@@ -103,8 +107,48 @@ def test_successful_parse_directory_structure_wildcard():
     assert "documentation" in structure.use_structure[re.compile("docs/")]
 
 
+def test_fail_directory_structure_mixing_use_structure_and_files():
+    """Test failing parsing of directory when use_stucture and files are mixed."""
+    test_config = """
+structure_rules:
+  base_structure:
+    optional:
+      - "docs/":
+          - use_structure: documentation
+          - ".*/":
+              - ".*"
+"""
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        parse_directory_structure(
+            config["structure_rules"]["base_structure"]["optional"]
+        )
+
+
+def test_fail_directory_structure_double_use_structure():
+    """Test failing parsing of dirctory_structure when use_structure is used more than once."""
+    test_config = """
+structure_rules:
+  base_structure:
+    optional:
+      - "docs/":
+          - use_structure: documentation
+          - use_structure: python_package
+"""
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        print(
+            parse_directory_structure(
+                config["structure_rules"]["base_structure"]["optional"]
+            )
+        )
+
+
 def test_successful_parse_includes():
     """Test successful parsing of includes."""
+    includes = parse_includes([])
+    assert len(includes) == 0
+
     config = load_repo_structure_yaml(TEST_CONFIG_YAML)
     includes = parse_includes(config["structure_rules"]["python_package"]["includes"])
     assert "base_structure" in includes
@@ -112,6 +156,9 @@ def test_successful_parse_includes():
 
 def test_parse_successful_file_dependencies():
     """Test successful parsing of file dependencies."""
+    dependencies = parse_file_dependencies({})
+    assert len(dependencies) == 0
+
     config = load_repo_structure_yaml(TEST_CONFIG_YAML)
     dependencies = parse_file_dependencies(
         config["structure_rules"]["python_package"]["file_dependencies"]

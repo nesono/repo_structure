@@ -63,7 +63,10 @@ def load_repo_structure_yamls(yaml_string: str) -> dict:
 
 
 def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
-    rules = {}
+    rules: Dict[str, StructureRule] = {}
+    if not structure_rules:
+        return rules
+
     for rule in structure_rules:
         structure = StructureRule(
             name=rule,
@@ -84,26 +87,30 @@ def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
 
 
 def parse_directory_structure_recursive(
-    result: DirectoryStructure, path: str, cfg: dict
+    result: DirectoryStructure, path: str, cfg: dict, parent_len: int = 0
 ) -> None:
     for item in cfg:
         if isinstance(item, dict):
             for i in item:
                 if i == "use_structure":
                     pat = re.compile(path)
-                    assert (
-                        len(item) == 1
-                    ), f"{path}{i} mixing 'use_structure' and files/directories is not supported"
-                    assert (
-                        path not in result.use_structure
-                    ), f'{path}{i} error: "{item[i]}" conflicts with "{result.use_structure[pat]}"'
+                    if parent_len != 1:
+                        raise ValueError(
+                            f"{path}{i} mixing 'use_structure' and files/directories not supported"
+                        )
+                    if pat in result.use_structure:
+                        raise ValueError(
+                            f'{path}{i}: "{item[i]}" conflicts with "{result.use_structure[pat]}"'
+                        )
                     result.use_structure[pat] = item[i]
                 else:
                     assert i.endswith(
                         "/"
                     ), f"{i} needs to be suffixed with '/' to be identified as a directory"
                     result.directories.append(re.compile(path + i))
-                    parse_directory_structure_recursive(result, path + i, item[i])
+                    parse_directory_structure_recursive(
+                        result, path + i, item[i], len(item[i])
+                    )
         else:
             result.files.append(re.compile(path + item))
 
