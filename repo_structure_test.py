@@ -30,20 +30,19 @@ def test_successful_load_yamls():
     assert config is None
 
     test_yaml = r"""
-structure_rules:
-  base_structure:
-    required:
-      - "LICENSE"
-      - "README.md"
-    optional:
-      - '.*\.md'
-  directory_mappings:
-  /:
-    - use_structure: base_structure
+base_structure:
+  required:
+    - "LICENSE"
+    - "README.md"
+  optional:
+    - '.*\.md'
+directory_mappings:
+/:
+  - use_structure: base_structure
 """
     config = load_repo_structure_yamls(test_yaml)
     assert isinstance(config, dict)
-    assert isinstance(config["structure_rules"], dict)
+    assert isinstance(config, dict)
 
 
 def test_successful_parse_structure_rules():
@@ -110,38 +109,26 @@ def test_successful_parse_directory_structure_wildcard():
 def test_fail_directory_structure_mixing_use_structure_and_files():
     """Test failing parsing of directory when use_stucture and files are mixed."""
     test_config = """
-structure_rules:
-  base_structure:
-    optional:
-      - "docs/":
-          - use_structure: documentation
-          - ".*/":
-              - ".*"
+- "docs/":
+    - use_structure: documentation
+    - ".*/":
+        - ".*"
 """
     config = load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):
-        parse_directory_structure(
-            config["structure_rules"]["base_structure"]["optional"]
-        )
+        parse_directory_structure(config)
 
 
 def test_fail_directory_structure_double_use_structure():
     """Test failing parsing of dirctory_structure when use_structure is used more than once."""
     test_config = """
-structure_rules:
-  base_structure:
-    optional:
-      - "docs/":
-          - use_structure: documentation
-          - use_structure: python_package
+- "docs/":
+  - use_structure: documentation
+  - use_structure: python_package
 """
     config = load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):
-        print(
-            parse_directory_structure(
-                config["structure_rules"]["base_structure"]["optional"]
-            )
-        )
+        print(parse_directory_structure(config))
 
 
 def test_successful_parse_includes():
@@ -154,7 +141,7 @@ def test_successful_parse_includes():
     assert "base_structure" in includes
 
 
-def test_parse_successful_file_dependencies():
+def test_successful_parse_file_dependencies():
     """Test successful parsing of file dependencies."""
     dependencies = parse_file_dependencies({})
     assert len(dependencies) == 0
