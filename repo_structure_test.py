@@ -141,6 +141,12 @@ def test_successful_parse_includes():
     assert "base_structure" in includes
 
 
+def test_fail_parse_includes_no_list():
+    """Test successful parsing of includes."""
+    with pytest.raises(TypeError):
+        parse_includes({})
+
+
 def test_successful_parse_file_dependencies():
     """Test successful parsing of file dependencies."""
     dependencies = parse_file_dependencies({})

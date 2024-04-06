@@ -126,10 +126,9 @@ def parse_directory_structure(directory_structure: dict) -> DirectoryStructure:
     return result
 
 
-def parse_includes(includes: dict) -> List[str]:
-    assert isinstance(
-        includes, List
-    ), f"includes must be a list, not a {type(includes)}"
+def parse_includes(includes: List[str]) -> List[str]:
+    if not isinstance(includes, List):
+        raise TypeError(f"includes must be a list, not a {type(includes)}")
     return includes
 
 
