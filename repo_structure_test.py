@@ -131,6 +131,18 @@ def test_fail_directory_structure_double_use_structure():
         print(parse_directory_structure(config))
 
 
+def test_fail_directory_structure_missing_trailing_slash():
+    """Test failing parsing of dirctory_structure when use_structure is used more than once."""
+    test_config = """
+- "docs":
+  - use_structure: documentation
+  - use_structure: python_package
+"""
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        print(parse_directory_structure(config))
+
+
 def test_successful_parse_includes():
     """Test successful parsing of includes."""
     includes = parse_includes([])

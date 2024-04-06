@@ -104,9 +104,10 @@ def parse_directory_structure_recursive(
                         )
                     result.use_structure[pat] = item[i]
                 else:
-                    assert i.endswith(
-                        "/"
-                    ), f"{i} needs to be suffixed with '/' to be identified as a directory"
+                    if not i.endswith("/"):
+                        raise ValueError(
+                            f"{i} needs to be suffixed with '/' to be identified as a directory"
+                        )
                     result.directories.append(re.compile(path + i))
                     parse_directory_structure_recursive(
                         result, path + i, item[i], len(item[i])
