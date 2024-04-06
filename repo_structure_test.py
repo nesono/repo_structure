@@ -154,5 +154,42 @@ def test_successful_parse_file_dependencies():
     assert "techspec_and_requirements" in dependencies
 
 
+def test_fail_parse_file_dependencies_too_many_entries():
+    """ "Test failing parsing of file dependencies using multiple base spec."""
+    test_config = r"""
+- implementation_and_test:
+    base: '.*\.py'
+    bad_entry: '.*\.py'
+    dependent: 'test_.*\.py'
+    """
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        parse_file_dependencies(config)
+
+
+def test_fail_parse_file_dependencies_missing_base():
+    """ "Test failing parsing of file dependencies using multiple base spec."""
+    test_config = r"""
+- implementation_and_test:
+    bad_entry: '.*\.py'
+    dependent: 'test_.*\.py'
+    """
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        parse_file_dependencies(config)
+
+
+def test_fail_parse_file_dependencies_missing_dependent():
+    """ "Test failing parsing of file dependencies using multiple base spec."""
+    test_config = r"""
+- implementation_and_test:
+    base: '.*\.py'
+    bad_entry: '.*\.py'
+    """
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        parse_file_dependencies(config)
+
+
 if __name__ == "__main__":
     pytest.main(["-s", "-v", "repo_structure_test.py"])

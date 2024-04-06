@@ -137,11 +137,13 @@ def parse_file_dependencies(file_dependencies: dict) -> Dict[str, FileDependency
     result: Dict[str, FileDependency] = {}
     for dep in file_dependencies:
         for name in dep:
-            assert len(dep[name]) == 2, f"{name} can only have one base spec"
-            assert "base" in dep[name], f'{name} needs to contain "base" field'
-            assert (
-                "dependent" in dep[name]
-            ), f'{name} needs to contain "dependent" field'
+            if len(dep[name]) != 2:
+                raise ValueError(f"'{name}' must have two elements")
+            if "base" not in dep[name]:
+                raise ValueError(f"'{name}' must contain a base")
+            if "dependent" not in dep[name]:
+                raise ValueError(f"'{name}' must contain a dependent")
+
             result[name] = FileDependency(
                 base=re.compile(dep[name]["base"]),
                 dependent=re.compile(dep[name]["dependent"]),
