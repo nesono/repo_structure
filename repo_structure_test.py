@@ -38,7 +38,7 @@ base_structure:
     - '.*\.md'
 directory_mappings:
 /:
-  - use_structure: base_structure
+  - use_rule: base_structure
 """
     config = load_repo_structure_yamls(test_yaml)
     assert isinstance(config, dict)
@@ -60,12 +60,11 @@ def test_successful_parse_structure_rules():
     assert re.compile(r"tests/data/") in rules["python_package"].required.directories
 
     assert (
-        "python_package"
-        in rules["python_package"].optional.use_structure[re.compile(".*/")]
+        "python_package" in rules["python_package"].optional.use_rule[re.compile(".*/")]
     )
     assert (
         "documentation"
-        in rules["python_package"].optional.use_structure[re.compile("docs/")]
+        in rules["python_package"].optional.use_rule[re.compile("docs/")]
     )
 
     assert "base_structure" in rules["python_package"].includes
@@ -82,27 +81,23 @@ def test_successful_parse_structure_rules():
 def test_fail_parse_structure_rules_dangling_include():
     """Test failing parsing of the structure rules with dangling includes."""
     test_yaml = r"""
-base_structure:
-  required:
-    - "LICENSE"
-    - "README.md"
-  optional:
-    - '.*\.md'
 python_package:
-  required:
-    - "setup.py"
-    - "src/":
-        - '.*\.py'
-    - "tests/":
-        - 'test_.*\.py'
-        - "data/":
-            - '.*\.(yaml|yml)'
-  optional:
-    - "docs/":
-        - use_structure: documentation
   includes:
     - dangling_structure
 """
+    config = load_repo_structure_yamls(test_yaml)
+    with pytest.raises(ValueError):
+        parse_structure_rules(config)
+
+
+def test_fail_parse_structure_rules_dangling_use_rule():
+    """Test failing parsing of the structure rules with dangling use_rule."""
+    test_yaml = r"""
+    python_package:
+      optional:
+        - "docs/":
+            - use_rule: documentation
+    """
     config = load_repo_structure_yamls(test_yaml)
     with pytest.raises(ValueError):
         parse_structure_rules(config)
@@ -113,7 +108,7 @@ def test_successful_parse_directory_structure():
     structure = parse_directory_structure({})
     assert len(structure.directories) == 0
     assert len(structure.files) == 0
-    assert len(structure.use_structure) == 0
+    assert len(structure.use_rule) == 0
 
     config = load_repo_structure_yaml(TEST_CONFIG_YAML)
     structure = parse_directory_structure(
@@ -133,14 +128,14 @@ def test_successful_parse_directory_structure_wildcard():
     structure = parse_directory_structure(
         config["structure_rules"]["python_package"]["optional"]
     )
-    assert "python_package" in structure.use_structure[re.compile(".*/")]
+    assert "python_package" in structure.use_rule[re.compile(".*/")]
 
 
-def test_fail_directory_structure_mixing_use_structure_and_files():
+def test_fail_directory_structure_mixing_use_rule_and_files():
     """Test failing parsing of directory when use_stucture and files are mixed."""
     test_config = """
 - "docs/":
-    - use_structure: documentation
+    - use_rule: documentation
     - ".*/":
         - ".*"
 """
@@ -149,12 +144,12 @@ def test_fail_directory_structure_mixing_use_structure_and_files():
         parse_directory_structure(config)
 
 
-def test_fail_directory_structure_double_use_structure():
-    """Test failing parsing of dirctory_structure when use_structure is used more than once."""
+def test_fail_directory_structure_double_use_rule():
+    """Test failing parsing of dirctory_structure when use_rule is used more than once."""
     test_config = """
 - "docs/":
-  - use_structure: documentation
-  - use_structure: python_package
+  - use_rule: documentation
+  - use_rule: python_package
 """
     config = load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):
@@ -162,11 +157,11 @@ def test_fail_directory_structure_double_use_structure():
 
 
 def test_fail_directory_structure_missing_trailing_slash():
-    """Test failing parsing of dirctory_structure when use_structure is used more than once."""
+    """Test failing parsing of dirctory_structure when use_rule is used more than once."""
     test_config = """
 - "docs":
-  - use_structure: documentation
-  - use_structure: python_package
+  - use_rule: documentation
+  - use_rule: python_package
 """
     config = load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):

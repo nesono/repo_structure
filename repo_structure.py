@@ -20,7 +20,7 @@ class DirectoryStructure:
 
     directories: List[re.Pattern]
     files: List[re.Pattern]
-    use_structure: Dict[re.Pattern, str]
+    use_rule: Dict[re.Pattern, str]
 
 
 @dataclass
@@ -62,12 +62,13 @@ def load_repo_structure_yamls(yaml_string: str) -> dict:
     return result
 
 
-def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
+def _build_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     rules: Dict[str, StructureRule] = {}
     if not structure_rules:
         return rules
 
     for rule in structure_rules:
+        print(rule)
         structure = StructureRule(
             name=rule,
             required=parse_directory_structure(
@@ -82,34 +83,75 @@ def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
             ),
         )
         rules[rule] = structure
+    return rules
+
+
+def _validate_includes(rules: Dict[str, StructureRule]):
+    all_includes = []
+    for includes in [r.includes for r in rules.values()]:
+        if includes:
+            all_includes.extend(includes)
+
+    for include in all_includes:
+        if include not in rules.keys():
+            raise ValueError(f"Include rule {include} not found in 'structure_rules'")
 
     return rules
 
 
-def parse_directory_structure_recursive(
+def _validate_use_rule(rules: Dict[str, StructureRule]):
+    all_use_rule: List[str] = []
+    for use_rule_list in [r.required.use_rule.values() for r in rules.values()]:
+        if use_rule_list:
+            all_use_rule.extend(use_rule_list)
+
+    for use_rule_list in [r.optional.use_rule.values() for r in rules.values()]:
+        if use_rule_list:
+            all_use_rule.extend(use_rule_list)
+
+    for use_rule in all_use_rule:
+        if use_rule not in rules.keys():
+            raise ValueError(f"use_rule rule {use_rule} not found in 'structure_rules'")
+
+
+def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
+    """
+    This function parses the input rules and returns a dictionary,
+    where keys are rule names and values are StructureRule instances.
+    It validates that all included rules are valid.
+    """
+    rules = _build_rules(structure_rules)
+    _validate_includes(rules)
+    _validate_use_rule(rules)
+    # validate that the file_dependencies match any of the
+    # allowed files (both required and optional)
+    return rules
+
+
+def _parse_directory_structure_recursive(
     result: DirectoryStructure, path: str, cfg: dict, parent_len: int = 0
 ) -> None:
     for item in cfg:
         if isinstance(item, dict):
             for i in item:
-                if i == "use_structure":
+                if i == "use_rule":
                     pat = re.compile(path)
                     if parent_len != 1:
                         raise ValueError(
-                            f"{path}{i} mixing 'use_structure' and files/directories not supported"
+                            f"{path}{i} mixing 'use_rule' and files/directories not supported"
                         )
-                    if pat in result.use_structure:
+                    if pat in result.use_rule:
                         raise ValueError(
-                            f'{path}{i}: "{item[i]}" conflicts with "{result.use_structure[pat]}"'
+                            f'{path}{i}: "{item[i]}" conflicts with "{result.use_rule[pat]}"'
                         )
-                    result.use_structure[pat] = item[i]
+                    result.use_rule[pat] = item[i]
                 else:
                     if not i.endswith("/"):
                         raise ValueError(
                             f"{i} needs to be suffixed with '/' to be identified as a directory"
                         )
                     result.directories.append(re.compile(path + i))
-                    parse_directory_structure_recursive(
+                    _parse_directory_structure_recursive(
                         result, path + i, item[i], len(item[i])
                     )
         else:
@@ -120,10 +162,10 @@ def parse_directory_structure(directory_structure: dict) -> DirectoryStructure:
     result = DirectoryStructure(
         directories=[],
         files=[],
-        use_structure={},
+        use_rule={},
     )
 
-    parse_directory_structure_recursive(result, "", directory_structure)
+    _parse_directory_structure_recursive(result, "", directory_structure)
     return result
 
 

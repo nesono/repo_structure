@@ -15,7 +15,7 @@ structure_rules:
           - test_.*\.py
     optional:
       - docs/:
-          - use_structure: documentation
+          - use_rule: documentation
     includes:
       - base_structure
     file_dependencies:
@@ -31,6 +31,6 @@ structure_rules:
 
 directory_mappings:
   /:
-    - use_structure: python_package
+    - use_rule: python_package
   /docs/:
-    - use_structure: documentation
+    - use_rule: documentation

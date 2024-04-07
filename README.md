@@ -7,7 +7,7 @@ You can control
 - What files and directories are allowed (`required` + `optional`)
 - Use regexes for specifications
 - Map directory structure rules to directories (`directory_mapping`)
-- Reuse directory structure rules recursively (`use_structure` in `structure_rules`)
+- Reuse directory structure rules recursively (`use_rule` in `structure_rules`)
 - Differentiate between required and optional files (`required` vs `optinonal`)
 - Inherit rules from other rules (`includes`)
 

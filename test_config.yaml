@@ -16,9 +16,9 @@ structure_rules:
               - '.*\.(yaml|yml)'
     optional:
       - "docs/":
-          - use_structure: documentation
+          - use_rule: documentation
       - ".*/":
-          - use_structure: python_package
+          - use_rule: python_package
     includes:
       - base_structure
     file_dependencies:
@@ -36,6 +36,6 @@ structure_rules:
 
 directory_mappings:
   /:
-    - use_structure: python_package
+    - use_rule: python_package
   /docs/:
-    - use_structure: documentation
+    - use_rule: documentation
