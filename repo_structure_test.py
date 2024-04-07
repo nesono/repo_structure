@@ -59,7 +59,10 @@ def test_successful_parse_structure_rules():
     assert re.compile(r"setup.py") in rules["python_package"].required.files
     assert re.compile(r"tests/data/") in rules["python_package"].required.directories
 
-    assert re.compile(r".*/.*") in rules["python_package"].optional.files
+    assert (
+        "python_package"
+        in rules["python_package"].optional.use_structure[re.compile(".*/")]
+    )
     assert (
         "documentation"
         in rules["python_package"].optional.use_structure[re.compile("docs/")]
@@ -74,6 +77,35 @@ def test_successful_parse_structure_rules():
         .file_dependencies["implementation_and_test"]
         .dependent
     )
+
+
+def test_fail_parse_structure_rules_dangling_include():
+    """Test failing parsing of the structure rules with dangling includes."""
+    test_yaml = r"""
+base_structure:
+  required:
+    - "LICENSE"
+    - "README.md"
+  optional:
+    - '.*\.md'
+python_package:
+  required:
+    - "setup.py"
+    - "src/":
+        - '.*\.py'
+    - "tests/":
+        - 'test_.*\.py'
+        - "data/":
+            - '.*\.(yaml|yml)'
+  optional:
+    - "docs/":
+        - use_structure: documentation
+  includes:
+    - dangling_structure
+"""
+    config = load_repo_structure_yamls(test_yaml)
+    with pytest.raises(ValueError):
+        parse_structure_rules(config)
 
 
 def test_successful_parse_directory_structure():
@@ -101,9 +133,7 @@ def test_successful_parse_directory_structure_wildcard():
     structure = parse_directory_structure(
         config["structure_rules"]["python_package"]["optional"]
     )
-
-    assert re.compile(r".*/.*") in structure.files
-    assert "documentation" in structure.use_structure[re.compile("docs/")]
+    assert "python_package" in structure.use_structure[re.compile(".*/")]
 
 
 def test_fail_directory_structure_mixing_use_structure_and_files():
