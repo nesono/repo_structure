@@ -9,7 +9,6 @@ from repo_structure import (
     load_repo_structure_yamls,
     parse_directory_structure,
     parse_file_dependencies,
-    parse_includes,
     parse_structure_rules,
 )
 
@@ -67,8 +66,6 @@ def test_successful_parse_structure_rules():
         in rules["python_package"].optional.use_rule[re.compile("docs/")]
     )
 
-    assert "base_structure" in rules["python_package"].includes
-
     assert "implementation_and_test" in rules["python_package"].file_dependencies
     assert (
         re.compile(r"test_.*\.py")
@@ -76,18 +73,6 @@ def test_successful_parse_structure_rules():
         .file_dependencies["implementation_and_test"]
         .dependent
     )
-
-
-def test_fail_parse_structure_rules_dangling_include():
-    """Test failing parsing of the structure rules with dangling includes."""
-    test_yaml = r"""
-python_package:
-  includes:
-    - dangling_structure
-"""
-    config = load_repo_structure_yamls(test_yaml)
-    with pytest.raises(ValueError):
-        parse_structure_rules(config)
 
 
 def test_fail_parse_structure_rules_dangling_use_rule():
@@ -166,22 +151,6 @@ def test_fail_directory_structure_missing_trailing_slash():
     config = load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):
         print(parse_directory_structure(config))
-
-
-def test_successful_parse_includes():
-    """Test successful parsing of includes."""
-    includes = parse_includes([])
-    assert len(includes) == 0
-
-    config = load_repo_structure_yaml(TEST_CONFIG_YAML)
-    includes = parse_includes(config["structure_rules"]["python_package"]["includes"])
-    assert "base_structure" in includes
-
-
-def test_fail_parse_includes_no_list():
-    """Test successful parsing of includes."""
-    with pytest.raises(TypeError):
-        parse_includes({})
 
 
 def test_successful_parse_file_dependencies():

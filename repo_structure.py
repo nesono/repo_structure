@@ -45,7 +45,6 @@ class StructureRule:
     name: str
     required: DirectoryStructure
     optional: DirectoryStructure
-    includes: List[str]
     file_dependencies: Dict[str, FileDependency]
 
 
@@ -77,25 +76,11 @@ def _build_rules(structure_rules: dict) -> Dict[str, StructureRule]:
             optional=parse_directory_structure(
                 structure_rules[rule].get("optional", {})
             ),
-            includes=parse_includes(structure_rules[rule].get("includes", [])),
             file_dependencies=parse_file_dependencies(
                 structure_rules[rule].get("file_dependencies", {})
             ),
         )
         rules[rule] = structure
-    return rules
-
-
-def _validate_includes(rules: Dict[str, StructureRule]):
-    all_includes = []
-    for includes in [r.includes for r in rules.values()]:
-        if includes:
-            all_includes.extend(includes)
-
-    for include in all_includes:
-        if include not in rules.keys():
-            raise ValueError(f"Include rule {include} not found in 'structure_rules'")
-
     return rules
 
 
@@ -121,7 +106,6 @@ def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     It validates that all included rules are valid.
     """
     rules = _build_rules(structure_rules)
-    _validate_includes(rules)
     _validate_use_rule(rules)
     # validate that the file_dependencies match any of the
     # allowed files (both required and optional)
@@ -167,12 +151,6 @@ def parse_directory_structure(directory_structure: dict) -> DirectoryStructure:
 
     _parse_directory_structure_recursive(result, "", directory_structure)
     return result
-
-
-def parse_includes(includes: List[str]) -> List[str]:
-    if not isinstance(includes, List):
-        raise TypeError(f"includes must be a list, not a {type(includes)}")
-    return includes
 
 
 def parse_file_dependencies(file_dependencies: dict) -> Dict[str, FileDependency]:

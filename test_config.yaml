@@ -19,8 +19,6 @@ structure_rules:
           - use_rule: documentation
       - ".*/":
           - use_rule: python_package
-    includes:
-      - base_structure
     file_dependencies:
       - implementation_and_test:
           base: '.*\.py'
