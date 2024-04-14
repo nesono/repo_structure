@@ -131,57 +131,20 @@ documentation:
         parse_structure_rules(config)
 
 
-# def test_fail_directory_structure_double_use_rule():
-#     """Test failing parsing of dirctory_structure when use_rule is used more than once."""
-#     test_config = """
-# dirs:
-#     - "docs": optional
-#       use_rule: documentation
-#       use_rule: python_package
-# """
-#     config = load_repo_structure_yamls(test_config)
-#     with pytest.raises(ValueError):
-#         print(parse_directory_structure(config))
-#
-#
-# def test_successful_parse_file_dependencies():
-#     """Test successful parsing of file dependencies."""
-#     dependencies = parse_file_dependencies({})
-#     assert len(dependencies) == 0
-#
-#     config = load_repo_structure_yaml(TEST_CONFIG_YAML)
-#     dependencies = parse_file_dependencies(
-#         config["structure_rules"]["python_package"]["file_dependencies"]
-#     )
-#     assert "implementation_and_test" in dependencies
-#     assert "techspec_and_requirements" in dependencies
-#
-#
-# def test_fail_parse_file_dependencies_too_many_entries():
-#     """ "Test failing parsing of file dependencies using multiple base spec."""
-#     test_config = r"""
-# - implementation_and_test:
-#     base: '.*\.py'
-#     bad_entry: '.*\.py'
-#     dependent: 'test_.*\.py'
-#     """
-#     config = load_repo_structure_yamls(test_config)
-#     with pytest.raises(ValueError):
-#         parse_file_dependencies(config)
-#
-#
-# def test_fail_parse_file_dependencies_missing_base():
-#     """ "Test failing parsing of file dependencies using multiple base spec."""
-#     test_config = r"""
-# - implementation_and_test:
-#     bad_entry: '.*\.py'
-#     dependent: 'test_.*\.py'
-#     """
-#     config = load_repo_structure_yamls(test_config)
-#     with pytest.raises(ValueError):
-#         parse_file_dependencies(config)
-#
-#
+def test_fail_parse_file_dependencies_missing_base():
+    """ "Test failing parsing of file dependencies using multiple base spec."""
+    test_config = r"""
+files:
+    - name: "README.md"
+      dep_bad: '.*\.py'
+      depends_path: 'test_.*\.py'
+    """
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        structure = StructureRule()
+        parse_directory_structure(config, structure)
+
+
 # def test_fail_parse_file_dependencies_missing_dependent():
 #     """ "Test failing parsing of file dependencies using multiple base spec."""
 #     test_config = r"""

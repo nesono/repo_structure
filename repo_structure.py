@@ -156,6 +156,8 @@ def _parse_file_or_directory(
             depends=re.compile(depends)
         )
         # TODO(iss) check for dangling depends_path
+    elif "depends_path" in entry:
+        raise ValueError("depends_path without depends spec in {entry}")
 
     if "use_rule" in entry:
         add_to.use_rule[re.compile(local_path)] = entry["use_rule"]
@@ -171,36 +173,6 @@ def _parse_directory_structure_recursive(
         _parse_directory_structure_recursive(local_path, d, structure_rule)
     for f in cfg.get("files", []):
         _parse_file_or_directory(f, False, path, structure_rule)
-
-    # for f in cfg.get("files", []):
-    # print(f)
-
-    # # parse files
-    # for item in cfg:
-    #     if isinstance(item, dict):
-    #         for i in item:
-    #             if i == "use_rule":
-    #                 pat = re.compile(path)
-    #                 if parent_len != 1:
-    #                     raise ValueError(
-    #                         f"{path}{i} mixing 'use_rule' and files/directories not supported"
-    #                     )
-    #                 if pat in result.use_rule:
-    #                     raise ValueError(
-    #                         f'{path}{i}: "{item[i]}" conflicts with "{result.use_rule[pat]}"'
-    #                     )
-    #                 result.use_rule[pat] = item[i]
-    #             else:
-    #                 if not i.endswith("/"):
-    #                     raise ValueError(
-    #                         f"{i} needs to be suffixed with '/' to be identified as a directory"
-    #                     )
-    #                 result.directories.append(re.compile(path + i))
-    #                 _parse_directory_structure_recursive(
-    #                     result, path + i, item[i], len(item[i])
-    #                 )
-    #     else:
-    #         result.files.append(re.compile(path + item))
 
 
 def parse_directory_structure(
