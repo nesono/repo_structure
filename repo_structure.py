@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Final, List
 
 import os
+from io import TextIOWrapper
 from ruamel import yaml as YAML
 
 
@@ -61,12 +62,10 @@ class StructureRule:
 
 def load_repo_structure_yaml(filename: str) -> dict:
     with open(filename, "r", encoding="utf-8") as file:
-        yaml = YAML.YAML(typ="safe")
-        result = yaml.load(file)
-    return result
+        return load_repo_structure_yamls(file)
 
 
-def load_repo_structure_yamls(yaml_string: str) -> dict:
+def load_repo_structure_yamls(yaml_string: str | TextIOWrapper) -> dict:
     yaml = YAML.YAML(typ="safe")
     result = yaml.load(yaml_string)
     return result
