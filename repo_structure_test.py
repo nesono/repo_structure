@@ -132,11 +132,10 @@ documentation:
 
 
 def test_fail_parse_file_dependencies_missing_base():
-    """ "Test failing parsing of file dependencies using multiple base spec."""
+    """Test failing parsing of file dependencies using bad key."""
     test_config = r"""
 files:
     - name: "README.md"
-      dep_bad: '.*\.py'
       depends_path: 'test_.*\.py'
     """
     config = load_repo_structure_yamls(test_config)
@@ -145,16 +144,17 @@ files:
         parse_directory_structure(config, structure)
 
 
-# def test_fail_parse_file_dependencies_missing_dependent():
-#     """ "Test failing parsing of file dependencies using multiple base spec."""
-#     test_config = r"""
-# - implementation_and_test:
-#     base: '.*\.py'
-#     bad_entry: '.*\.py'
-#     """
-#     config = load_repo_structure_yamls(test_config)
-#     with pytest.raises(ValueError):
-#         parse_file_dependencies(config)
+def test_fail_parse_bad_key():
+    """Test failing parsing of file dependencies using bad key."""
+    test_config = r"""
+files:
+    - name: "README.md"
+      foo: '.*\.py'
+    """
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        structure = StructureRule()
+        parse_directory_structure(config, structure)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,17 @@ import os
 from ruamel import yaml as YAML
 
 
+ALLOWED_ENTRY_KEYS = [
+    "name",
+    "mode",
+    "depends",
+    "depends_path",
+    "use_rule",
+    "files",
+    "dirs",
+]
+
+
 @dataclass
 class DirectoryStructure:
     """Storing directory structure rules.
@@ -123,6 +134,9 @@ def _validate_path_entry(entry: dict) -> None:
         raise ValueError(
             f"mode must be either 'required' or 'optional' but is '{entry['mode']}'"
         )
+    for k in entry.keys():
+        if k not in ALLOWED_ENTRY_KEYS:
+            raise ValueError(f"Unsupported key '{k}' in entry {entry}")
 
 
 def _get_required_or_optional(entry: dict) -> str:
@@ -157,7 +171,7 @@ def _parse_file_or_directory(
         )
         # TODO(iss) check for dangling depends_path
     elif "depends_path" in entry:
-        raise ValueError("depends_path without depends spec in {entry}")
+        raise ValueError(f"depends_path without depends spec in {entry}")
 
     if "use_rule" in entry:
         add_to.use_rule[re.compile(local_path)] = entry["use_rule"]
