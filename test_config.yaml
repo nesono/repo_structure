@@ -1,36 +1,42 @@
 structure_rules:
   base_structure:
-    required:
-      - "LICENSE"
-      - "README.md"
-    optional:
-      - '.*\.md'
+    files:
+      - name: "LICENSE"
+        mode: required
+      - name: "README.md"
+      - name: '.*\.md'
+        mode: optional
   python_package:
-    required:
-      - "setup.py"
-      - "src/":
-          - '.*\.py'
-      - "tests/":
-          - 'test_.*\.py'
-          - "data/":
-              - '.*\.(yaml|yml)'
-    optional:
-      - "docs/":
-          - use_rule: documentation
-      - ".*/":
-          - use_rule: python_package
-    file_dependencies:
-      - implementation_and_test:
-          base: '.*\.py'
-          dependent: 'test_.*\.py'
-      - techspec_and_requirements:
-          base: '.*\.techspec\.md'
-          dependent: '.*\.swreq\.md'
+    dirs:
+      - name: "src"
+        files:
+          - name: '.*\.py'
+            mode: optional
+            depends: 'test_.*\.py'
+            depends_path: "../test/"
+      - name: "test"
+        dirs:
+          - name: "data"
+            files:
+              - name: '.*\.(yaml|yml)'
+        files:
+          - name: 'test_.*\.py'
+      - name: "docs"
+        mode: optional
+        use_rule: documentation
+      - name: ".*"
+        mode: optional
+        use_rule: python_package
+    files:
+      - name: "setup.py"
+        mode: required
   documentation:
-    required:
-      - "index.md"
-    optional:
-      - '.*\.md'
+    files:
+      - name: "index.md"
+        mode: required
+      - name: '.*\.techspec\.md'
+        mode: required
+        depends: '.*\.swreq\.md'
 
 directory_mappings:
   /:

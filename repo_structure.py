@@ -3,9 +3,10 @@
 
 """Library functions for repo structure tool."""
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List
 
+import os
 from ruamel import yaml as YAML
 
 
@@ -18,9 +19,9 @@ class DirectoryStructure:
     tree to facilitate parsing.
     """
 
-    directories: List[re.Pattern]
-    files: List[re.Pattern]
-    use_rule: Dict[re.Pattern, str]
+    directories: List[re.Pattern] = field(default_factory=list)
+    files: List[re.Pattern] = field(default_factory=list)
+    use_rule: Dict[re.Pattern, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -31,8 +32,7 @@ class FileDependency:
     certain portion of the filename together, e.g. test and
     implementation files"""
 
-    base: re.Pattern
-    dependent: re.Pattern
+    depends: re.Pattern
 
 
 @dataclass
@@ -42,10 +42,10 @@ class StructureRule:
     Compound instance for structure rules, e.g. cpp_source,
     python_package, etc."""
 
-    name: str
-    required: DirectoryStructure
-    optional: DirectoryStructure
-    file_dependencies: Dict[str, FileDependency]
+    name: str = field(default_factory=str)
+    required: DirectoryStructure = field(default_factory=DirectoryStructure)
+    optional: DirectoryStructure = field(default_factory=DirectoryStructure)
+    dependencies: Dict[re.Pattern, FileDependency] = field(default_factory=dict)
 
 
 def load_repo_structure_yaml(filename: str) -> dict:
@@ -67,19 +67,8 @@ def _build_rules(structure_rules: dict) -> Dict[str, StructureRule]:
         return rules
 
     for rule in structure_rules:
-        print(rule)
-        structure = StructureRule(
-            name=rule,
-            required=parse_directory_structure(
-                structure_rules[rule].get("required", {})
-            ),
-            optional=parse_directory_structure(
-                structure_rules[rule].get("optional", {})
-            ),
-            file_dependencies=parse_file_dependencies(
-                structure_rules[rule].get("file_dependencies", {})
-            ),
-        )
+        structure = StructureRule()
+        parse_directory_structure(structure_rules[rule], structure)
         rules[rule] = structure
     return rules
 
@@ -112,60 +101,94 @@ def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     return rules
 
 
-def _parse_directory_structure_recursive(
-    result: DirectoryStructure, path: str, cfg: dict, parent_len: int = 0
-) -> None:
-    for item in cfg:
-        if isinstance(item, dict):
-            for i in item:
-                if i == "use_rule":
-                    pat = re.compile(path)
-                    if parent_len != 1:
-                        raise ValueError(
-                            f"{path}{i} mixing 'use_rule' and files/directories not supported"
-                        )
-                    if pat in result.use_rule:
-                        raise ValueError(
-                            f'{path}{i}: "{item[i]}" conflicts with "{result.use_rule[pat]}"'
-                        )
-                    result.use_rule[pat] = item[i]
-                else:
-                    if not i.endswith("/"):
-                        raise ValueError(
-                            f"{i} needs to be suffixed with '/' to be identified as a directory"
-                        )
-                    result.directories.append(re.compile(path + i))
-                    _parse_directory_structure_recursive(
-                        result, path + i, item[i], len(item[i])
-                    )
+def _validate_path_entry(entry: dict) -> None:
+    if "name" not in entry:
+        raise ValueError(f"name not defined in entry with key '{entry}'")
+    if "mode" in entry and entry["mode"] not in ["required", "optional"]:
+        raise ValueError(
+            f"mode must be either 'required' or 'optional' but is '{entry['mode']}'"
+        )
+
+
+def _get_required_or_optional(entry: dict) -> str:
+    if "mode" in entry:
+        return entry["mode"]
+    return "required"
+
+
+def _parse_file_or_directory(
+    entry: dict, is_dir: bool, path: str, structure_rule: StructureRule
+):
+    _validate_path_entry(entry)
+
+    local_path = os.path.join(path, entry["name"])
+
+    mode = _get_required_or_optional(entry)
+    add_to = structure_rule.required if mode == "required" else structure_rule.optional
+
+    if is_dir:
+        add_to.directories.append(re.compile(local_path))
+    else:
+        add_to.files.append(re.compile(local_path))
+
+    if "depends" in entry:
+        if "depends_path" in entry:
+            depends = os.path.join(entry["depends_path"], entry["depends"])
         else:
-            result.files.append(re.compile(path + item))
+            depends = entry["depends"]
+
+        structure_rule.dependencies[re.compile(local_path)] = FileDependency(
+            depends=re.compile(depends)
+        )
+        # TODO(iss) check for dangling depends_path
+
+    if "use_rule" in entry:
+        add_to.use_rule[re.compile(local_path)] = entry["use_rule"]
+
+    return local_path
 
 
-def parse_directory_structure(directory_structure: dict) -> DirectoryStructure:
-    result = DirectoryStructure(
-        directories=[],
-        files=[],
-        use_rule={},
-    )
+def _parse_directory_structure_recursive(
+    path: str, cfg: dict, structure_rule: StructureRule
+) -> None:
+    for d in cfg.get("dirs", []):
+        local_path = _parse_file_or_directory(d, True, path, structure_rule)
+        _parse_directory_structure_recursive(local_path, d, structure_rule)
+    for f in cfg.get("files", []):
+        _parse_file_or_directory(f, False, path, structure_rule)
 
-    _parse_directory_structure_recursive(result, "", directory_structure)
-    return result
+    # for f in cfg.get("files", []):
+    # print(f)
+
+    # # parse files
+    # for item in cfg:
+    #     if isinstance(item, dict):
+    #         for i in item:
+    #             if i == "use_rule":
+    #                 pat = re.compile(path)
+    #                 if parent_len != 1:
+    #                     raise ValueError(
+    #                         f"{path}{i} mixing 'use_rule' and files/directories not supported"
+    #                     )
+    #                 if pat in result.use_rule:
+    #                     raise ValueError(
+    #                         f'{path}{i}: "{item[i]}" conflicts with "{result.use_rule[pat]}"'
+    #                     )
+    #                 result.use_rule[pat] = item[i]
+    #             else:
+    #                 if not i.endswith("/"):
+    #                     raise ValueError(
+    #                         f"{i} needs to be suffixed with '/' to be identified as a directory"
+    #                     )
+    #                 result.directories.append(re.compile(path + i))
+    #                 _parse_directory_structure_recursive(
+    #                     result, path + i, item[i], len(item[i])
+    #                 )
+    #     else:
+    #         result.files.append(re.compile(path + item))
 
 
-def parse_file_dependencies(file_dependencies: dict) -> Dict[str, FileDependency]:
-    result: Dict[str, FileDependency] = {}
-    for dep in file_dependencies:
-        for name in dep:
-            if len(dep[name]) != 2:
-                raise ValueError(f"'{name}' must have two elements")
-            if "base" not in dep[name]:
-                raise ValueError(f"'{name}' must contain a base")
-            if "dependent" not in dep[name]:
-                raise ValueError(f"'{name}' must contain a dependent")
-
-            result[name] = FileDependency(
-                base=re.compile(dep[name]["base"]),
-                dependent=re.compile(dep[name]["dependent"]),
-            )
-    return result
+def parse_directory_structure(
+    directory_structure: dict, structure_rule: StructureRule
+) -> None:
+    _parse_directory_structure_recursive("", directory_structure, structure_rule)
