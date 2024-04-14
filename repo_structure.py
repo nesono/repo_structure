@@ -4,13 +4,13 @@
 """Library functions for repo structure tool."""
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, Final, List
 
 import os
 from ruamel import yaml as YAML
 
 
-ALLOWED_ENTRY_KEYS = [
+ALLOWED_ENTRY_KEYS: Final = [
     "name",
     "mode",
     "depends",
