@@ -73,7 +73,7 @@ def _build_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     return rules
 
 
-def _validate_use_rule(rules: Dict[str, StructureRule]):
+def _validate_use_rule_not_dangling(rules: Dict[str, StructureRule]) -> None:
     all_use_rule: List[str] = []
     for use_rule_list in [r.required.use_rule.values() for r in rules.values()]:
         if use_rule_list:
@@ -88,6 +88,20 @@ def _validate_use_rule(rules: Dict[str, StructureRule]):
             raise ValueError(f"use_rule rule {use_rule} not found in 'structure_rules'")
 
 
+def _validate_use_rule_not_mixed(rules: Dict[str, StructureRule]) -> None:
+    for rule in rules.values():
+        for k in rule.required.use_rule.keys():
+            if (
+                k in rule.required.files
+                or k in rule.required.directories
+                or rule.optional.files
+                or rule.optional.directories
+            ):
+                raise ValueError(
+                    f"do not mix use_rule with files or directories. Violating key: {k}"
+                )
+
+
 def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     """
     This function parses the input rules and returns a dictionary,
@@ -95,7 +109,8 @@ def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     It validates that all included rules are valid.
     """
     rules = _build_rules(structure_rules)
-    _validate_use_rule(rules)
+    _validate_use_rule_not_dangling(rules)
+    _validate_use_rule_not_mixed(rules)
     # validate that the file_dependencies match any of the
     # allowed files (both required and optional)
     return rules

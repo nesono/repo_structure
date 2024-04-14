@@ -102,31 +102,35 @@ def test_successful_parse_directory_structure():
     assert re.compile(r"test/data") in structure.required.directories
 
 
-# def test_successful_parse_directory_structure_wildcard():
-#     """Test successful parsing of directory structure."""
-#     config = load_repo_structure_yaml(TEST_CONFIG_YAML)
-#     structure = parse_directory_structure(
-#         config["structure_rules"]["python_package"]["optional"]
-#     )
-#     assert "python_package" in structure.use_rule[re.compile(".*/")]
-#
-#
-# def test_fail_directory_structure_mixing_use_rule_and_files():
-#     """Test failing parsing of directory when use_stucture and files are mixed."""
-#     test_config = """
-# dirs:
-#     - "docs": optional
-#         use_rule: documentation
-#         dirs:
-#             - ".*/": optional
-#             files:
-#                 - ".*": optional
-# """
-#     config = load_repo_structure_yamls(test_config)
-#     with pytest.raises(ValueError):
-#         parse_directory_structure(config)
-#
-#
+def test_successful_parse_directory_structure_wildcard():
+    """Test successful parsing of directory structure."""
+    config = load_repo_structure_yaml(TEST_CONFIG_YAML)
+    structure = StructureRule()
+    parse_directory_structure(config["structure_rules"]["python_package"], structure)
+    assert re.compile(r".*") in structure.optional.directories
+
+
+def test_fail_directory_structure_mixing_use_rule_and_files():
+    """Test failing parsing of directory when use_rule and files are mixed."""
+    test_config = """
+package:
+    dirs:
+        - name: "docs"
+          mode: optional
+          use_rule: documentation
+          dirs:
+            - ".*/": optional
+              files:
+                - ".*": optional
+documentation:
+    files:
+        - name: "README.md"
+"""
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        parse_structure_rules(config)
+
+
 # def test_fail_directory_structure_double_use_rule():
 #     """Test failing parsing of dirctory_structure when use_rule is used more than once."""
 #     test_config = """
