@@ -10,6 +10,7 @@ from repo_structure import (
     load_repo_structure_yamls,
     parse_directory_structure,
     parse_structure_rules,
+    parse_directory_mappings,
 )
 
 
@@ -159,6 +160,14 @@ files:
         parse_directory_structure(config, structure)
         pprint.pprint(structure)
 
+def test_successful_parse_directory_mappings():
+    """"Test successful parsing of directory mappings."""
+    mappings = parse_directory_mappings({})
+    assert len(mappings.map) == 0
+
+    # config = load_repo_structure_yaml(TEST_CONFIG_YAML)
+    # rules = parse_structure_rules(config["structure_rules"])
+
 
 if __name__ == "__main__":
-    pytest.main(["-s", "-v", "repo_structure_test.py"])
+    pytest.main(["-s", "-v", __file__])

@@ -61,6 +61,12 @@ class StructureRule:
     dependencies: Dict[re.Pattern, FileDependency] = field(default_factory=dict)
 
 
+@dataclass
+class DirectoryMapping:
+    """Stores mapping of directory names to Structure Rule names."""
+    map: Dict[re.Pattern, str] = field(default_factory=dict)
+
+
 def load_repo_structure_yaml(filename: str) -> dict:
     with open(filename, "r", encoding="utf-8") as file:
         return load_repo_structure_yamls(file)
@@ -103,16 +109,14 @@ def _validate_use_rule_not_mixed(rules: Dict[str, StructureRule]) -> None:
     for rule in rules.values():
         for k in rule.required.use_rule.keys():
             if (
-                k in rule.required.files
-                or k in rule.required.directories
-                or rule.optional.files
-                or rule.optional.directories
+                    k in rule.required.files
+                    or k in rule.required.directories
+                    or rule.optional.files
+                    or rule.optional.directories
             ):
                 raise ValueError(
                     f"do not mix use_rule with files or directories. Violating key: {k}"
                 )
-
-
 
 
 def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
@@ -151,7 +155,7 @@ def _get_required_or_optional(entry: dict) -> str:
 
 
 def _parse_file_or_directory(
-    entry: dict, is_dir: bool, path: str, structure_rule: StructureRule
+        entry: dict, is_dir: bool, path: str, structure_rule: StructureRule
 ):
     _validate_path_entry(entry)
 
@@ -184,7 +188,7 @@ def _parse_file_or_directory(
 
 
 def _parse_directory_structure_recursive(
-    path: str, cfg: dict, structure_rule: StructureRule
+        path: str, cfg: dict, structure_rule: StructureRule
 ) -> None:
     for d in cfg.get("dirs", []):
         local_path = _parse_file_or_directory(d, True, path, structure_rule)
@@ -194,7 +198,14 @@ def _parse_directory_structure_recursive(
 
 
 def parse_directory_structure(
-    directory_structure: dict, structure_rule: StructureRule
+        directory_structure: dict, structure_rule: StructureRule
 ) -> None:
     """"Parse a full directory structure (recursively)."""
     _parse_directory_structure_recursive("", directory_structure, structure_rule)
+
+
+def parse_directory_mappings(directory_mappings: dict) -> DirectoryMapping:
+    mapping = DirectoryMapping()
+    for pattern, rule_name in directory_mappings.items():
+        mapping.map[re.compile(pattern)] = rule_name
+    return mapping
