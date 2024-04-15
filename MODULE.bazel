@@ -3,7 +3,7 @@ module(
     version = "0.1",
 )
 
-PYTHON_VERSION = "3.11"
+PYTHON_VERSION = "3.12"
 
 bazel_dep(name = "rules_python", version = "0.31.0")
 

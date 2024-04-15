@@ -8,9 +8,9 @@ from repo_structure import (
     StructureRule,
     load_repo_structure_yaml,
     load_repo_structure_yamls,
+    parse_directory_mappings,
     parse_directory_structure,
     parse_structure_rules,
-    parse_directory_mappings,
 )
 
 
@@ -160,8 +160,9 @@ files:
         parse_directory_structure(config, structure)
         pprint.pprint(structure)
 
+
 def test_successful_parse_directory_mappings():
-    """"Test successful parsing of directory mappings."""
+    """Test successful parsing of directory mappings."""
     mappings = parse_directory_mappings({})
     assert len(mappings.map) == 0
 
@@ -173,7 +174,9 @@ def test_successful_parse_directory_mappings():
     assert mappings.map[re.compile(r"/")] == "python_package"
     assert mappings.map[re.compile(r"/docs/")] == "documentation"
 
+
 def test_fail_directory_mappings_bad_key():
+    """Test failing parsing of file mappings using bad key."""
     test_config = """
 /:
     - use_rule: python_package
@@ -185,7 +188,9 @@ def test_fail_directory_mappings_bad_key():
         mappings = parse_directory_mappings(config)
         pprint.pprint(mappings)
 
+
 def test_fail_directory_mappings_bad_list():
+    """Test failing parsing of file mappings using bad listk"""
     test_config = """
 /:
     - use_rule: python_package
@@ -195,6 +200,7 @@ def test_fail_directory_mappings_bad_list():
     with pytest.raises(ValueError):
         mappings = parse_directory_mappings(config)
         pprint.pprint(mappings)
+
 
 if __name__ == "__main__":
     pytest.main(["-s", "-v", __file__])

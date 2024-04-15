@@ -1,7 +1,7 @@
 on:
   pull_request:
     branches:
-    - main
+      - main
   push:
     branches:
       - main
@@ -9,9 +9,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-    - uses: bazel-contrib/setup-bazel@6e5145c6a9643e34f144694c51e461695fa3b591
-    - name: Bazel test
-      run: |
-        bazel test //...
-          
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: bazel-contrib/setup-bazel@6e5145c6a9643e34f144694c51e461695fa3b591
+      - name: Bazel test
+        run: |
+          bazel test //...

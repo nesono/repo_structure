@@ -2,13 +2,14 @@
 # pylint: disable=import-error
 
 """Library functions for repo structure tool."""
+import os
 import re
 from dataclasses import dataclass, field
+from io import TextIOWrapper
 from typing import Dict, Final, List
 
-import os
-from io import TextIOWrapper
 from ruamel import yaml as YAML
+
 
 # An entry here is an entry for files / directories.
 # The allowed keys matches the supported dict keys for parsing.
@@ -64,6 +65,7 @@ class StructureRule:
 @dataclass
 class DirectoryMapping:
     """Stores mapping of directory names to Structure Rule names."""
+
     map: Dict[re.Pattern, str] = field(default_factory=dict)
 
 
@@ -109,10 +111,10 @@ def _validate_use_rule_not_mixed(rules: Dict[str, StructureRule]) -> None:
     for rule in rules.values():
         for k in rule.required.use_rule.keys():
             if (
-                    k in rule.required.files
-                    or k in rule.required.directories
-                    or rule.optional.files
-                    or rule.optional.directories
+                k in rule.required.files
+                or k in rule.required.directories
+                or rule.optional.files
+                or rule.optional.directories
             ):
                 raise ValueError(
                     f"do not mix use_rule with files or directories. Violating key: {k}"
@@ -155,7 +157,7 @@ def _get_required_or_optional(entry: dict) -> str:
 
 
 def _parse_file_or_directory(
-        entry: dict, is_dir: bool, path: str, structure_rule: StructureRule
+    entry: dict, is_dir: bool, path: str, structure_rule: StructureRule
 ):
     _validate_path_entry(entry)
 
@@ -188,7 +190,7 @@ def _parse_file_or_directory(
 
 
 def _parse_directory_structure_recursive(
-        path: str, cfg: dict, structure_rule: StructureRule
+    path: str, cfg: dict, structure_rule: StructureRule
 ) -> None:
     for d in cfg.get("dirs", []):
         local_path = _parse_file_or_directory(d, True, path, structure_rule)
@@ -198,9 +200,9 @@ def _parse_directory_structure_recursive(
 
 
 def parse_directory_structure(
-        directory_structure: dict, structure_rule: StructureRule
+    directory_structure: dict, structure_rule: StructureRule
 ) -> None:
-    """"Parse a full directory structure (recursively)."""
+    """ "Parse a full directory structure (recursively)."""
     _parse_directory_structure_recursive("", directory_structure, structure_rule)
 
 
@@ -208,12 +210,16 @@ def parse_directory_mappings(directory_mappings: dict) -> DirectoryMapping:
     mapping = DirectoryMapping()
     for pattern, rule in directory_mappings.items():
         if len(rule) != 1:
-            raise ValueError("directory mapping needs to be list of 1") # maybe a future feature
+            raise ValueError(
+                "directory mapping needs to be list of 1"
+            )  # maybe a future feature
         if len(rule[0].keys()) != 1:
-            raise ValueError(f"A single 'use_rule' is allowed in directory mappings")
+            raise ValueError("A single 'use_rule' is allowed in directory mappings")
         rule = rule[0]
         if "use_rule" not in rule:
-            raise ValueError(f"'use_rule' is required in directory mappings, but is '{rule.keys()}'")
+            raise ValueError(
+                f"'use_rule' is required in directory mappings, but is '{rule.keys()}'"
+            )
 
         mapping.map[re.compile(pattern)] = rule["use_rule"]
     return mapping
