@@ -165,9 +165,36 @@ def test_successful_parse_directory_mappings():
     mappings = parse_directory_mappings({})
     assert len(mappings.map) == 0
 
-    # config = load_repo_structure_yaml(TEST_CONFIG_YAML)
-    # rules = parse_structure_rules(config["structure_rules"])
+    config = load_repo_structure_yaml(TEST_CONFIG_YAML)
+    mappings = parse_directory_mappings(config["directory_mappings"])
+    assert len(mappings.map) == 2
+    assert re.compile(r"/") in mappings.map
+    assert re.compile(r"/docs/") in mappings.map
+    assert mappings.map[re.compile(r"/")] == "python_package"
+    assert mappings.map[re.compile(r"/docs/")] == "documentation"
 
+def test_fail_directory_mappings_bad_key():
+    test_config = """
+/:
+    - use_rule: python_package
+/docs/:
+    - foo: documentation
+    """
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        mappings = parse_directory_mappings(config)
+        pprint.pprint(mappings)
+
+def test_fail_directory_mappings_bad_list():
+    test_config = """
+/:
+    - use_rule: python_package
+    - foo: documentation
+    """
+    config = load_repo_structure_yamls(test_config)
+    with pytest.raises(ValueError):
+        mappings = parse_directory_mappings(config)
+        pprint.pprint(mappings)
 
 if __name__ == "__main__":
     pytest.main(["-s", "-v", __file__])

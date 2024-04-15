@@ -206,6 +206,14 @@ def parse_directory_structure(
 
 def parse_directory_mappings(directory_mappings: dict) -> DirectoryMapping:
     mapping = DirectoryMapping()
-    for pattern, rule_name in directory_mappings.items():
-        mapping.map[re.compile(pattern)] = rule_name
+    for pattern, rule in directory_mappings.items():
+        if len(rule) != 1:
+            raise ValueError("directory mapping needs to be list of 1") # maybe a future feature
+        if len(rule[0].keys()) != 1:
+            raise ValueError(f"A single 'use_rule' is allowed in directory mappings")
+        rule = rule[0]
+        if "use_rule" not in rule:
+            raise ValueError(f"'use_rule' is required in directory mappings, but is '{rule.keys()}'")
+
+        mapping.map[re.compile(pattern)] = rule["use_rule"]
     return mapping
