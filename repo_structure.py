@@ -10,7 +10,8 @@ import os
 from io import TextIOWrapper
 from ruamel import yaml as YAML
 
-
+# An entry here is an entry for files / directories.
+# The allowed keys matches the supported dict keys for parsing.
 ALLOWED_ENTRY_KEYS: Final = [
     "name",
     "mode",
@@ -112,6 +113,8 @@ def _validate_use_rule_not_mixed(rules: Dict[str, StructureRule]) -> None:
                 )
 
 
+
+
 def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     """
     This function parses the input rules and returns a dictionary,
@@ -121,8 +124,11 @@ def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     rules = _build_rules(structure_rules)
     _validate_use_rule_not_dangling(rules)
     _validate_use_rule_not_mixed(rules)
-    # validate that the file_dependencies match any of the
-    # allowed files (both required and optional)
+
+    # We do not validate dependencies towards being allowed, since that
+    # would require us to check if the 'depends' pattern is fully enclosed
+    # in any file name pattern
+
     return rules
 
 
@@ -168,7 +174,6 @@ def _parse_file_or_directory(
         structure_rule.dependencies[re.compile(local_path)] = FileDependency(
             depends=re.compile(depends)
         )
-        # TODO(iss) check for dangling depends_path
     elif "depends_path" in entry:
         raise ValueError(f"depends_path without depends spec in {entry}")
 
@@ -191,4 +196,5 @@ def _parse_directory_structure_recursive(
 def parse_directory_structure(
     directory_structure: dict, structure_rule: StructureRule
 ) -> None:
+    """"Parse a full directory structure (recursively)."""
     _parse_directory_structure_recursive("", directory_structure, structure_rule)

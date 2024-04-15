@@ -1,6 +1,6 @@
 # pylint: disable=import-error
 """Tests for repo_structure library functions."""
-
+import pprint
 import re
 
 import pytest
@@ -128,7 +128,8 @@ documentation:
 """
     config = load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):
-        parse_structure_rules(config)
+        structure = parse_structure_rules(config)
+        pprint.pprint(structure)
 
 
 def test_fail_parse_file_dependencies_missing_base():
@@ -142,6 +143,7 @@ files:
     with pytest.raises(ValueError):
         structure = StructureRule()
         parse_directory_structure(config, structure)
+        pprint.pprint(structure)
 
 
 def test_fail_parse_bad_key():
@@ -155,6 +157,7 @@ files:
     with pytest.raises(ValueError):
         structure = StructureRule()
         parse_directory_structure(config, structure)
+        pprint.pprint(structure)
 
 
 if __name__ == "__main__":
