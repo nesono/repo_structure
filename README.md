@@ -10,5 +10,5 @@ You can control
 - Map directory structure rules to directories (`directory_mapping`)
 - Reuse directory structure rules recursively (`use_rule` in `structure_rules`)
 
-The example file show cases all the supported features:
+The example file showcases all the supported features:
 [example yaml](test_config.yaml)
