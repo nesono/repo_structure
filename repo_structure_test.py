@@ -5,6 +5,7 @@ import re
 
 import pytest
 from repo_structure import (
+    Configuration,
     StructureRule,
     load_repo_structure_yaml,
     load_repo_structure_yamls,
@@ -200,6 +201,14 @@ def test_fail_directory_mappings_bad_list():
     with pytest.raises(ValueError):
         mappings = parse_directory_mappings(config)
         pprint.pprint(mappings)
+
+
+def test_successful_full_example_parse():
+    """Test parsing of the full example file."""
+    config = Configuration(TEST_CONFIG_YAML)
+    assert config is not None
+    assert config.directory_mappings is not None
+    assert config.structure_rules is not None
 
 
 if __name__ == "__main__":

@@ -2,12 +2,12 @@
 # pylint: disable=import-error
 
 """Library functions for repo structure tool."""
-import os
 import re
 from dataclasses import dataclass, field
-from io import TextIOWrapper
 from typing import Dict, Final, List
 
+import os
+from io import TextIOWrapper
 from ruamel import yaml as YAML
 
 
@@ -67,6 +67,41 @@ class DirectoryMapping:
     """Stores mapping of directory names to Structure Rule names."""
 
     map: Dict[re.Pattern, str] = field(default_factory=dict)
+
+
+@dataclass
+class ConfigurationData:
+    """Stores configuration data."""
+
+    structure_rules: Dict[str, StructureRule] = field(default_factory=dict)
+    directory_mappings: Dict[re.Pattern, str] = field(default_factory=dict)
+
+
+class Configuration:
+    """Repo Structure configuration."""
+
+    def __init__(self, config_file: str):
+        self.config_file = config_file
+        self.config = self._load()
+
+    def _load(self) -> ConfigurationData:
+        yaml_dict = load_repo_structure_yaml(self.config_file)
+        return ConfigurationData(
+            structure_rules=parse_structure_rules(yaml_dict.get("structure_rules", {})),
+            directory_mappings=parse_directory_mappings(
+                yaml_dict.get("directory_mappings", {})
+            ).map,
+        )
+
+    @property
+    def structure_rules(self) -> Dict[str, StructureRule]:
+        """Property for structure rules."""
+        return self.config.structure_rules
+
+    @property
+    def directory_mappings(self) -> Dict[re.Pattern, str]:
+        """Property for directory mappings."""
+        return self.config.directory_mappings
 
 
 def load_repo_structure_yaml(filename: str) -> dict:
