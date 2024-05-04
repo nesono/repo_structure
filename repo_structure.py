@@ -39,17 +39,6 @@ class DirectoryStructure:
 
 
 @dataclass
-class FileDependency:
-    """Storing file dependency specifications.
-
-    File dependencies are dependencies where two files share a
-    certain portion of the filename together, e.g. test and
-    implementation files"""
-
-    depends: re.Pattern
-
-
-@dataclass
 class StructureRule:
     """Storing structure rule.
 
@@ -59,7 +48,7 @@ class StructureRule:
     name: str = field(default_factory=str)
     required: DirectoryStructure = field(default_factory=DirectoryStructure)
     optional: DirectoryStructure = field(default_factory=DirectoryStructure)
-    dependencies: Dict[re.Pattern, FileDependency] = field(default_factory=dict)
+    dependencies: Dict[re.Pattern, re.Pattern] = field(default_factory=dict)
 
 
 @dataclass
@@ -85,10 +74,12 @@ class Configuration:
         self.config = self._load()
 
     def _load(self) -> ConfigurationData:
-        yaml_dict = load_repo_structure_yaml(self.config_file)
+        yaml_dict = _load_repo_structure_yaml(self.config_file)
         return ConfigurationData(
-            structure_rules=parse_structure_rules(yaml_dict.get("structure_rules", {})),
-            directory_mappings=parse_directory_mappings(
+            structure_rules=_parse_structure_rules(
+                yaml_dict.get("structure_rules", {})
+            ),
+            directory_mappings=_parse_directory_mappings(
                 yaml_dict.get("directory_mappings", {})
             ).map,
         )
@@ -104,12 +95,12 @@ class Configuration:
         return self.config.directory_mappings
 
 
-def load_repo_structure_yaml(filename: str) -> dict:
+def _load_repo_structure_yaml(filename: str) -> dict:
     with open(filename, "r", encoding="utf-8") as file:
-        return load_repo_structure_yamls(file)
+        return _load_repo_structure_yamls(file)
 
 
-def load_repo_structure_yamls(yaml_string: str | TextIOWrapper) -> dict:
+def _load_repo_structure_yamls(yaml_string: str | TextIOWrapper) -> dict:
     yaml = YAML.YAML(typ="safe")
     result = yaml.load(yaml_string)
     return result
@@ -122,7 +113,8 @@ def _build_rules(structure_rules: dict) -> Dict[str, StructureRule]:
 
     for rule in structure_rules:
         structure = StructureRule()
-        parse_directory_structure(structure_rules[rule], structure)
+        structure.name = rule
+        _parse_directory_structure(structure_rules[rule], structure)
         rules[rule] = structure
     return rules
 
@@ -156,19 +148,15 @@ def _validate_use_rule_not_mixed(rules: Dict[str, StructureRule]) -> None:
                 )
 
 
-def parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
-    """
-    This function parses the input rules and returns a dictionary,
-    where keys are rule names and values are StructureRule instances.
-    It validates that all included rules are valid.
-    """
+def _parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     rules = _build_rules(structure_rules)
     _validate_use_rule_not_dangling(rules)
     _validate_use_rule_not_mixed(rules)
 
     # We do not validate dependencies towards being allowed, since that
     # would require us to check if the 'depends' pattern is fully enclosed
-    # in any file name pattern
+    # in any file name pattern, which is non-trivial and seems not worth
+    # the hassle.
 
     return rules
 
@@ -212,9 +200,7 @@ def _parse_file_or_directory(
         else:
             depends = entry["depends"]
 
-        structure_rule.dependencies[re.compile(local_path)] = FileDependency(
-            depends=re.compile(depends)
-        )
+        structure_rule.dependencies[re.compile(local_path)] = re.compile(depends)
     elif "depends_path" in entry:
         raise ValueError(f"depends_path without depends spec in {entry}")
 
@@ -234,14 +220,14 @@ def _parse_directory_structure_recursive(
         _parse_file_or_directory(f, False, path, structure_rule)
 
 
-def parse_directory_structure(
+def _parse_directory_structure(
     directory_structure: dict, structure_rule: StructureRule
 ) -> None:
     """ "Parse a full directory structure (recursively)."""
     _parse_directory_structure_recursive("", directory_structure, structure_rule)
 
 
-def parse_directory_mappings(directory_mappings: dict) -> DirectoryMapping:
+def _parse_directory_mappings(directory_mappings: dict) -> DirectoryMapping:
     mapping = DirectoryMapping()
     for pattern, rule in directory_mappings.items():
         if len(rule) != 1:
@@ -249,7 +235,7 @@ def parse_directory_mappings(directory_mappings: dict) -> DirectoryMapping:
                 "directory mapping needs to be list of 1"
             )  # maybe a future feature
         if len(rule[0].keys()) != 1:
-            raise ValueError("A single 'use_rule' is allowed in directory mappings")
+            raise ValueError("Only a 'use_rule' is allowed in directory mappings")
         rule = rule[0]
         if "use_rule" not in rule:
             raise ValueError(
