@@ -10,23 +10,27 @@ compile_pip_requirements(
 )
 
 py_library(
-    name = "repo_structure",
-    srcs = ["repo_structure.py"],
+    name = "repo_structure_config",
+    srcs = ["repo_structure_config.py"],
     deps = [
         "@pypi//ruamel_yaml",
     ],
 )
 
 py_test(
-    name = "repo_structure_test",
+    name = "repo_structure_config_test",
     srcs = [
-        "repo_structure_test.py",
+        "repo_structure_config_test.py",
     ],
     data = [
         "test_config.yaml",
     ],
     deps = [
         ":repo_structure",
+        ":repo_structure_config",
+        "@pypi//pytest",
+    ],
+)
         "@pypi//pytest",
     ],
 )
@@ -38,8 +42,7 @@ py_binary(
         "test_config.yaml",
     ],
     deps = [
-        "//:repo_structure",
+        "//:repo_structure_config",
         "@pypi//click",
-        "@pypi//ruamel_yaml",
     ],
 )

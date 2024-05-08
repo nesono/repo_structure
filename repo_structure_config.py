@@ -2,12 +2,12 @@
 # pylint: disable=import-error
 
 """Library functions for repo structure tool."""
+import os
 import re
 from dataclasses import dataclass, field
+from io import TextIOWrapper
 from typing import Dict, Final, List
 
-import os
-from io import TextIOWrapper
 from ruamel import yaml as YAML
 
 
@@ -52,18 +52,11 @@ class StructureRule:
 
 
 @dataclass
-class DirectoryMapping:
-    """Stores mapping of directory names to Structure Rule names."""
-
-    map: Dict[re.Pattern, str] = field(default_factory=dict)
-
-
-@dataclass
 class ConfigurationData:
     """Stores configuration data."""
 
     structure_rules: Dict[str, StructureRule] = field(default_factory=dict)
-    directory_mappings: Dict[re.Pattern, str] = field(default_factory=dict)
+    directory_mappings: Dict[str, List[str]] = field(default_factory=dict)
 
 
 class Configuration:
@@ -81,7 +74,7 @@ class Configuration:
             ),
             directory_mappings=_parse_directory_mappings(
                 yaml_dict.get("directory_mappings", {})
-            ).map,
+            ),
         )
 
     @property
@@ -90,7 +83,7 @@ class Configuration:
         return self.config.structure_rules
 
     @property
-    def directory_mappings(self) -> Dict[re.Pattern, str]:
+    def directory_mappings(self) -> Dict[str, List[str]]:
         """Property for directory mappings."""
         return self.config.directory_mappings
 
@@ -227,20 +220,16 @@ def _parse_directory_structure(
     _parse_directory_structure_recursive("", directory_structure, structure_rule)
 
 
-def _parse_directory_mappings(directory_mappings: dict) -> DirectoryMapping:
-    mapping = DirectoryMapping()
-    for pattern, rule in directory_mappings.items():
-        if len(rule) != 1:
-            raise ValueError(
-                "directory mapping needs to be list of 1"
-            )  # maybe a future feature
-        if len(rule[0].keys()) != 1:
-            raise ValueError("Only a 'use_rule' is allowed in directory mappings")
-        rule = rule[0]
-        if "use_rule" not in rule:
-            raise ValueError(
-                f"'use_rule' is required in directory mappings, but is '{rule.keys()}'"
-            )
+def _parse_directory_mappings(directory_mappings: dict) -> Dict[str, List[str]]:
+    mapping: Dict[str, List[str]] = {}
+    for directory, rules in directory_mappings.items():
+        for r in rules:
+            if r.keys() != {"use_rule"}:
+                raise ValueError(
+                    f"Only a 'use_rule' is allowed in directory mappings, but is '{r.keys()}'"
+                )
+            if mapping.get(directory) is None:
+                mapping[directory] = []
+            mapping[directory].append(r["use_rule"])
 
-        mapping.map[re.compile(pattern)] = rule["use_rule"]
     return mapping

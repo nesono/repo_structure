@@ -4,7 +4,7 @@ import pprint
 import re
 
 import pytest
-from repo_structure import (
+from repo_structure_config import (
     Configuration,
     StructureRule,
     _load_repo_structure_yaml,
@@ -165,15 +165,15 @@ files:
 def test_successful_parse_directory_mappings():
     """Test successful parsing of directory mappings."""
     mappings = _parse_directory_mappings({})
-    assert len(mappings.map) == 0
+    assert len(mappings) == 0
 
     config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
     mappings = _parse_directory_mappings(config["directory_mappings"])
-    assert len(mappings.map) == 2
-    assert re.compile(r"/") in mappings.map
-    assert re.compile(r"/docs/") in mappings.map
-    assert mappings.map[re.compile(r"/")] == "python_package"
-    assert mappings.map[re.compile(r"/docs/")] == "documentation"
+    assert len(mappings) == 2
+    assert "/" in mappings
+    assert "/docs/" in mappings
+    assert mappings["/"] == ["base_structure", "python_package"]
+    assert mappings["/docs/"] == ["documentation"]
 
 
 def test_fail_directory_mappings_bad_key():
@@ -208,8 +208,8 @@ def test_successful_full_example_parse():
     config = Configuration(TEST_CONFIG_YAML)
     assert config is not None
     assert config.directory_mappings is not None
-    assert re.compile(r"/docs/") in config.directory_mappings
-    assert re.compile(r"/") in config.directory_mappings
+    assert "/docs/" in config.directory_mappings
+    assert "/" in config.directory_mappings
     assert config.structure_rules is not None
     assert "base_structure" in config.structure_rules
     assert "python_package" in config.structure_rules

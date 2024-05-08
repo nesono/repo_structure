@@ -4,6 +4,7 @@ structure_rules:
       - name: "LICENSE"
         mode: required
       - name: "README.md"
+        # mode: required is default
       - name: '.*\.md'
         mode: optional
   python_package:
@@ -40,6 +41,7 @@ structure_rules:
 
 directory_mappings:
   /:
+    - use_rule: base_structure
     - use_rule: python_package
   /docs/:
     - use_rule: documentation
