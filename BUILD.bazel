@@ -26,11 +26,27 @@ py_test(
         "test_config.yaml",
     ],
     deps = [
-        ":repo_structure",
         ":repo_structure_config",
         "@pypi//pytest",
     ],
 )
+
+py_library(
+    name = "repo_structure_enforcement",
+    srcs = ["repo_structure_enforcement.py"],
+)
+
+py_test(
+    name = "repo_structure_enforcement_test",
+    srcs = [
+        "repo_structure_enforcement_test.py",
+    ],
+    data = [
+        "test_config.yaml",
+    ],
+    deps = [
+        ":repo_structure_config",
+        ":repo_structure_enforcement",
         "@pypi//pytest",
     ],
 )

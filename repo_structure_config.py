@@ -1,7 +1,7 @@
 # pylint: disable=missing-function-docstring
 # pylint: disable=import-error
 
-"""Library functions for repo structure tool."""
+"""Library functions for repo structure config parsing."""
 import os
 import re
 from dataclasses import dataclass, field
