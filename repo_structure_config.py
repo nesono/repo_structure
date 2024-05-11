@@ -59,16 +59,23 @@ class ConfigurationData:
     directory_mappings: Dict[str, List[str]] = field(default_factory=dict)
 
 
+class ConfigurationParseError(Exception):
+    """Thrown when configuration could not be parsed."""
+
+
 class Configuration:
     """Repo Structure configuration."""
 
-    def __init__(self, config_file: str):
-        self.config_file = config_file
-        self.config = self._load()
+    def __init__(self, config_file: str, param1_is_string: bool = False):
+        if param1_is_string:
+            yaml_dict = _load_repo_structure_yamls(config_file)
+        else:
+            yaml_dict = _load_repo_structure_yaml(config_file)
 
-    def _load(self) -> ConfigurationData:
-        yaml_dict = _load_repo_structure_yaml(self.config_file)
-        return ConfigurationData(
+        if not yaml_dict:
+            raise ConfigurationParseError
+
+        self.config = ConfigurationData(
             structure_rules=_parse_structure_rules(
                 yaml_dict.get("structure_rules", {})
             ),

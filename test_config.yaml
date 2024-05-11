@@ -42,6 +42,7 @@ structure_rules:
 directory_mappings:
   /:
     - use_rule: base_structure
+  /python/:
     - use_rule: python_package
   /docs/:
     - use_rule: documentation
