@@ -181,7 +181,7 @@ def _get_required_or_optional(entry: dict) -> str:
 
 def _parse_file_or_directory(
     entry: dict, is_dir: bool, path: str, structure_rule: StructureRule
-):
+) -> str:
     _validate_path_entry(entry)
 
     local_path = os.path.join(path, entry["name"])
@@ -213,6 +213,11 @@ def _parse_file_or_directory(
 def _parse_directory_structure_recursive(
     path: str, cfg: dict, structure_rule: StructureRule
 ) -> None:
+    assert "dirs" in cfg or "files" in cfg or "use_rule" in cfg, (
+        f"Neither 'dirs', nor 'files', nor 'use_rule' found during "
+        f"parsing in structure rule: {structure_rule.name} "
+        f"in path: {path}"
+    )
     for d in cfg.get("dirs", []):
         local_path = _parse_file_or_directory(d, True, path, structure_rule)
         _parse_directory_structure_recursive(local_path, d, structure_rule)
@@ -224,6 +229,9 @@ def _parse_directory_structure(
     directory_structure: dict, structure_rule: StructureRule
 ) -> None:
     """ "Parse a full directory structure (recursively)."""
+    # if directory_structure is empty dict, return
+    if not directory_structure:
+        return
     _parse_directory_structure_recursive("", directory_structure, structure_rule)
 
 

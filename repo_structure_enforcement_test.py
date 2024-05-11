@@ -55,6 +55,50 @@ def test_all_empty():
         Configuration(config_yaml, True)
 
 
+def test_multi_use_rule():
+    """Test missing required file."""
+    specification = """
+README.md
+main.py
+"""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: README.md
+  python_package:
+    files:
+      - name: '.*\.py'
+        mode: required
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    - use_rule: python_package
+    """
+    _create_repo_directory_structure(specification)
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
+def test_matching_regex():
+    """Test missing required file."""
+    specification = """
+README.md
+"""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: '.*\.md'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    _create_repo_directory_structure(specification)
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
 def test_missing_root_mapping():
     """Test missing required file."""
     specification = """
@@ -116,6 +160,8 @@ structure_rules:
       - name: "README.md"
     dirs:
       - name: "python"
+        files:
+            - name: '.*'
 directory_mappings:
   /:
     - use_rule: base_structure
