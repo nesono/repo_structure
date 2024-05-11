@@ -5,6 +5,7 @@ import os
 import pytest
 from repo_structure_config import Configuration, ConfigurationParseError
 from repo_structure_enforcement import (
+    MissingMappingError,
     MissingRequiredEntriesError,
     fail_if_invalid_repo_structure,
 )
@@ -52,6 +53,29 @@ def test_all_empty():
     _create_repo_directory_structure(specification)
     with pytest.raises(ConfigurationParseError):
         Configuration(config_yaml, True)
+
+
+def test_missing_root_mapping():
+    """Test missing required file."""
+    specification = """
+README.md
+"""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: "LICENSE"
+        mode: required
+      - name: "README.md"
+        # mode: required is default
+directory_mappings:
+  /some_dir:
+    - use_rule: base_structure
+    """
+    _create_repo_directory_structure(specification)
+    config = Configuration(config_yaml, True)
+    with pytest.raises(MissingMappingError):
+        _assert_repo_directory_structure(config)
 
 
 def test_missing_required_file():
