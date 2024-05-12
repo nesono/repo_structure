@@ -292,7 +292,6 @@ directory_mappings:
 # Test use_rule recursion
 # Test 'depends' and 'depends_path'
 
-# Fix dirs always needs files below (currently failing for docs folder
 # Limit the usage of inline use_rule to recursion, prefer directory_mappings for everything else.
 
 
