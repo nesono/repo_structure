@@ -108,6 +108,35 @@ directory_mappings:
 @with_repo_structure(
     """
 README.md
+LICENSE
+python/
+python/main.py
+"""
+)
+def test_required_dir():
+    """Test missing required directory."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: "LICENSE"
+        mode: required
+      - name: "README.md"
+    dirs:
+      - name: "python"
+        files:
+            - name: '.*'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+        """
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
+@with_repo_structure(
+    """
+README.md
 """
 )
 def test_missing_root_mapping():
