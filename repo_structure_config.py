@@ -66,8 +66,8 @@ class ConfigurationParseError(Exception):
 class Configuration:
     """Repo Structure configuration."""
 
-    def __init__(self, config_file: str, param1_is_string: bool = False):
-        if param1_is_string:
+    def __init__(self, config_file: str, param1_is_yaml_string: bool = False):
+        if param1_is_yaml_string:
             yaml_dict = _load_repo_structure_yamls(config_file)
         else:
             yaml_dict = _load_repo_structure_yaml(config_file)

@@ -1,6 +1,7 @@
 # pylint: disable=import-error
 """Tests for repo_structure library functions."""
 import os
+import sys
 
 import pytest
 from repo_structure_config import Configuration, ConfigurationParseError
@@ -26,6 +27,23 @@ def chdir_test_tmpdir(func):
     return wrapper
 
 
+def with_repo_structure(specification: str):
+    """Create and remove repo structure based on specification."""
+
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            _create_repo_directory_structure(specification)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                _clear_repo_directory_structure()
+            return result
+
+        return wrapper
+
+    return decorator
+
+
 @chdir_test_tmpdir
 def _create_repo_directory_structure(specification: str) -> None:
     """Creates a directory structure based on a specification file."""
@@ -40,51 +58,40 @@ def _create_repo_directory_structure(specification: str) -> None:
 
 
 @chdir_test_tmpdir
+def _clear_repo_directory_structure() -> None:
+    for root, dirs, files in os.walk(os.environ.get("TEST_TMPDIR", ""), topdown=False):
+        if not root:
+            continue
+        for name in files:
+            os.remove(os.path.join(root, name))
+        for name in dirs:
+            os.rmdir(os.path.join(root, name))
+
+
+@chdir_test_tmpdir
 def _assert_repo_directory_structure(config: Configuration) -> None:
-    fail_if_invalid_repo_structure(os.environ.get("TEST_TMPDIR"), config)
+    try:
+        fail_if_invalid_repo_structure(os.environ.get("TEST_TMPDIR"), config)
+    finally:
+        _clear_repo_directory_structure()
 
 
+@with_repo_structure("")
 def test_all_empty():
     """Test empty directory structure and spec."""
-    specification = """
-"""
     config_yaml = r"""
 """
-    _create_repo_directory_structure(specification)
     with pytest.raises(ConfigurationParseError):
         Configuration(config_yaml, True)
 
 
-def test_multi_use_rule():
-    """Test missing required file."""
-    specification = """
-README.md
-main.py
-"""
-    config_yaml = r"""
-structure_rules:
-  base_structure:
-    files:
-      - name: README.md
-  python_package:
-    files:
-      - name: '.*\.py'
-        mode: required
-directory_mappings:
-  /:
-    - use_rule: base_structure
-    - use_rule: python_package
+@with_repo_structure(
     """
-    _create_repo_directory_structure(specification)
-    config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
-
-
+README.md
+"""
+)
 def test_matching_regex():
     """Test missing required file."""
-    specification = """
-README.md
-"""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -94,16 +101,17 @@ directory_mappings:
   /:
     - use_rule: base_structure
     """
-    _create_repo_directory_structure(specification)
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config)
 
 
-def test_missing_root_mapping():
-    """Test missing required file."""
-    specification = """
+@with_repo_structure(
+    """
 README.md
 """
+)
+def test_missing_root_mapping():
+    """Test missing required file."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -116,17 +124,18 @@ directory_mappings:
   /some_dir:
     - use_rule: base_structure
     """
-    _create_repo_directory_structure(specification)
     config = Configuration(config_yaml, True)
     with pytest.raises(MissingMappingError):
         _assert_repo_directory_structure(config)
 
 
-def test_missing_required_file():
-    """Test missing required file."""
-    specification = """
+@with_repo_structure(
+    """
 README.md
 """
+)
+def test_missing_required_file():
+    """Test missing required file."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -139,18 +148,19 @@ directory_mappings:
   /:
     - use_rule: base_structure
     """
-    _create_repo_directory_structure(specification)
     config = Configuration(config_yaml, True)
     with pytest.raises(MissingRequiredEntriesError):
         _assert_repo_directory_structure(config)
 
 
-def test_missing_required_dir():
-    """Test missing required directory."""
-    specification = """
+@with_repo_structure(
+    """
 README.md
 LICENSE
 """
+)
+def test_missing_required_dir():
+    """Test missing required directory."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -166,11 +176,88 @@ directory_mappings:
   /:
     - use_rule: base_structure
         """
-    _create_repo_directory_structure(specification)
+    config = Configuration(config_yaml, True)
+    with pytest.raises(MissingRequiredEntriesError):
+        _assert_repo_directory_structure(config)
+
+
+@with_repo_structure(
+    """
+README.md
+main.py
+"""
+)
+def test_multi_use_rule():
+    """Test missing required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: README.md
+  python_package:
+    files:
+      - name: '.*\.py'
+        mode: required
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    - use_rule: python_package
+    """
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
+@with_repo_structure(
+    """
+main.py
+"""
+)
+def test_multi_use_rule_missing_readme():
+    """Test missing required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: README.md
+  python_package:
+    files:
+      - name: '.*\.py'
+        mode: required
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    - use_rule: python_package
+    """
+    config = Configuration(config_yaml, True)
+    with pytest.raises(MissingRequiredEntriesError):
+        _assert_repo_directory_structure(config)
+
+
+@with_repo_structure(
+    """
+README.md
+"""
+)
+def test_multi_use_rule_missing_py_file():
+    """Test missing required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: README.md
+  python_package:
+    files:
+      - name: '.*\.py'
+        mode: required
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    - use_rule: python_package
+    """
     config = Configuration(config_yaml, True)
     with pytest.raises(MissingRequiredEntriesError):
         _assert_repo_directory_structure(config)
 
 
 if __name__ == "__main__":
-    pytest.main(["-s", "-v", __file__])
+    sys.exit(pytest.main(["-s", "-v", __file__]))

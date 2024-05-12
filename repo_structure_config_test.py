@@ -2,6 +2,7 @@
 """Tests for repo_structure library functions."""
 import pprint
 import re
+import sys
 
 import pytest
 from repo_structure_config import (
@@ -217,4 +218,4 @@ def test_successful_full_example_parse():
 
 
 if __name__ == "__main__":
-    pytest.main(["-s", "-v", __file__])
+    sys.exit(pytest.main(["-s", "-v", __file__]))

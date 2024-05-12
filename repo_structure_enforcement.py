@@ -90,6 +90,10 @@ def fail_if_invalid_repo_structure(
     """Fail if the repo structure directory is invalid according to the configuration."""
     if dir_to_check is None:
         return
+
+    # this is bonkers - it needs to be rewritten to work like a stack,
+    #  since we might exercise sub dirs and come back to the parent dir
+    #  again and then have to continue there
     for root, dirs, files in os.walk(dir_to_check):
         rel_dir = os.path.relpath(root, dir_to_check)
         if rel_dir == ".":
@@ -100,12 +104,16 @@ def fail_if_invalid_repo_structure(
 
         for f in files:
             file_path = os.path.join(rel_dir, f)
+            print(f"file path: {file_path}")
             token_set.files.required = _remove_if_present(
                 token_set.files.required, file_path
             )
 
         for d in dirs:
             dir_path = os.path.join(rel_dir, d)
-            print(f"dir_path: {dir_path}")
+            print(f"dir path: {dir_path}")
+            token_set.dirs.required = _remove_if_present(
+                token_set.dirs.required, dir_path
+            )
 
         _fail_if_required_entries_missing(token_set)
