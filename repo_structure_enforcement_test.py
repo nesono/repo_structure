@@ -91,7 +91,7 @@ README.md
 """
 )
 def test_matching_regex():
-    """Test missing required file."""
+    """Test with required file."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -114,7 +114,7 @@ python/main.py
 """
 )
 def test_required_dir():
-    """Test missing required directory."""
+    """Test with required directory."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -140,7 +140,7 @@ README.md
 """
 )
 def test_missing_root_mapping():
-    """Test missing required file."""
+    """Test missing root mapping."""
     config_yaml = r"""
 structure_rules:
   base_structure:
