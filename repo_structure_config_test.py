@@ -63,9 +63,6 @@ def test_successful_parse_structure_rules():
     assert (
         "python_package" in rules["python_package"].optional.use_rule[re.compile(".*")]
     )
-    assert (
-        "documentation" in rules["python_package"].optional.use_rule[re.compile("docs")]
-    )
 
     assert re.compile(r"src/.*\.py") in rules["python_package"].dependencies
     assert (

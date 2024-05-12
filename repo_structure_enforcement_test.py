@@ -288,5 +288,13 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
+# Test with different directory mappings, overwriting specific sub dirs only
+# Test use_rule recursion
+# Test 'depends' and 'depends_path'
+
+# Fix dirs always needs files below (currently failing for docs folder
+# Limit the usage of inline use_rule to recursion, prefer directory_mappings for everything else.
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main(["-s", "-v", __file__]))

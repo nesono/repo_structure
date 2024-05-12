@@ -220,7 +220,8 @@ def _parse_directory_structure_recursive(
     )
     for d in cfg.get("dirs", []):
         local_path = _parse_file_or_directory(d, True, path, structure_rule)
-        _parse_directory_structure_recursive(local_path, d, structure_rule)
+        if "dirs" in d or "files" in d or "use_rule" in d:
+            _parse_directory_structure_recursive(local_path, d, structure_rule)
     for f in cfg.get("files", []):
         _parse_file_or_directory(f, False, path, structure_rule)
 

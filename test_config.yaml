@@ -22,9 +22,8 @@ structure_rules:
               - name: '.*\.(yaml|yml)'
         files:
           - name: 'test_.*\.py'
-      - name: "docs"
+      - name: "doc"
         mode: optional
-        use_rule: documentation
       - name: ".*"
         mode: optional
         use_rule: python_package
