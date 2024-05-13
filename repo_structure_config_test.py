@@ -8,6 +8,7 @@ import pytest
 from repo_structure_config import (
     Configuration,
     StructureRule,
+    UseRuleError,
     _load_repo_structure_yaml,
     _load_repo_structure_yamls,
     _parse_directory_mappings,
@@ -74,14 +75,14 @@ def test_successful_parse_structure_rules():
 def test_fail_parse_structure_rules_dangling_use_rule():
     """Test failing parsing of the structure rules with dangling use_rule."""
     test_yaml = r"""
-    python_package:
-      dirs:
-        - name: "docs"
-          mode: optional
-          use_rule: documentation
+python_package:
+  dirs:
+    - name: "docs"
+      mode: optional
+      use_rule: documentation
     """
     config = _load_repo_structure_yamls(test_yaml)
-    with pytest.raises(ValueError):
+    with pytest.raises(UseRuleError):
         _parse_structure_rules(config)
 
 
@@ -93,6 +94,7 @@ def test_successful_parse_directory_structure():
     assert len(structure.dependencies) == 0
 
     config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
+    structure.name = "python_package"
     _parse_directory_structure(config["structure_rules"]["python_package"], structure)
 
     assert re.compile(r"setup.py") in structure.required.files
@@ -106,6 +108,7 @@ def test_successful_parse_directory_structure_wildcard():
     """Test successful parsing of directory structure."""
     config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
     structure = StructureRule()
+    structure.name = "python_package"
     _parse_directory_structure(config["structure_rules"]["python_package"], structure)
     assert re.compile(r".*") in structure.optional.directories
 
@@ -127,7 +130,7 @@ documentation:
         - name: "README.md"
 """
     config = _load_repo_structure_yamls(test_config)
-    with pytest.raises(ValueError):
+    with pytest.raises(UseRuleError):
         structure = _parse_structure_rules(config)
         pprint.pprint(structure)
 
@@ -212,6 +215,26 @@ def test_successful_full_example_parse():
     assert "base_structure" in config.structure_rules
     assert "python_package" in config.structure_rules
     assert "documentation" in config.structure_rules
+
+
+def test_fail_use_rule_not_recursive():
+    """Test missing required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: LICENSE
+  python_package:
+    dirs:
+      - name: '.*'
+        mode: required
+        use_rule: base_structure
+directory_mappings:
+  /:
+    - use_rule: python_package
+    """
+    with pytest.raises(UseRuleError):
+        Configuration(config_yaml, True)
 
 
 if __name__ == "__main__":

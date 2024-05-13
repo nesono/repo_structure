@@ -288,8 +288,8 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
+# Ensure use_rule in structure_rule only for recursion
 # Test with different directory mappings, overwriting specific sub dirs only
-# Test use_rule recursion
 # Test 'depends' and 'depends_path'
 
 # Limit the usage of inline use_rule to recursion, prefer directory_mappings for everything else.

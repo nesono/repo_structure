@@ -134,26 +134,11 @@ def _validate_use_rule_not_dangling(rules: Dict[str, StructureRule]) -> None:
             raise ValueError(f"use_rule rule {use_rule} not found in 'structure_rules'")
 
 
-def _validate_use_rule_not_mixed(rules: Dict[str, StructureRule]) -> None:
-    for rule in rules.values():
-        for k in rule.required.use_rule.keys():
-            if (
-                k in rule.required.files
-                or k in rule.required.directories
-                or rule.optional.files
-                or rule.optional.directories
-            ):
-                raise ValueError(
-                    f"do not mix use_rule with files or directories. Violating key: {k}"
-                )
-
-
 def _parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
     rules = _build_rules(structure_rules)
     _validate_use_rule_not_dangling(rules)
-    _validate_use_rule_not_mixed(rules)
 
-    # We do not validate dependencies towards being allowed, since that
+    # Note: We do not validate dependencies towards being allowed, since that
     # would require us to check if the 'depends' pattern is fully enclosed
     # in any file name pattern, which is non-trivial and seems not worth
     # the hassle.
@@ -177,6 +162,10 @@ def _get_required_or_optional(entry: dict) -> str:
     if "mode" in entry:
         return entry["mode"]
     return "required"
+
+
+class UseRuleError(Exception):
+    """Use_rule related error."""
 
 
 def _parse_file_or_directory(
@@ -206,6 +195,15 @@ def _parse_file_or_directory(
 
     if "use_rule" in entry:
         add_to.use_rule[re.compile(local_path)] = entry["use_rule"]
+        if "dirs" in entry:
+            raise UseRuleError(f"Unsupported dirs next to use_rule in {local_path}")
+        if "files" in entry:
+            raise UseRuleError(f"Unsupported files next to use_rule in {local_path}")
+        if structure_rule.name != entry["use_rule"]:
+            raise UseRuleError(
+                f'Non recursive use_rule for "{structure_rule.name}" '
+                f"-> \"{entry['use_rule']}\" - path {local_path}"
+            )
 
     return local_path
 
