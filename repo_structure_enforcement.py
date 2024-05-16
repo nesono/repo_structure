@@ -97,13 +97,9 @@ def _fail_if_required_entries_missing(token_set: TokenSets) -> None:
 
 
 def _fail_if_invalid_repo_structure_recursive(
-    dir_to_check: str, config: Configuration, token_set: TokenSets
+    repo_root: str, rel_dir: str, config: Configuration, token_set: TokenSets
 ) -> None:
-    for root, dirs, files in os.walk(dir_to_check):
-        rel_dir = os.path.relpath(root, dir_to_check)
-        if rel_dir == ".":
-            rel_dir = ""
-
+    for _, dirs, files in os.walk(os.path.join(repo_root, rel_dir)):
         for f in files:
             file_path = os.path.join(rel_dir, f)
             token_set.files.required = _remove_if_present(
@@ -117,9 +113,14 @@ def _fail_if_invalid_repo_structure_recursive(
             )
             if _rel_to_map_dir(dir_path) in config.directory_mappings:
                 _fail_if_invalid_repo_structure_recursive(
-                    os.path.join(dir_to_check, dir_path),
+                    repo_root,
+                    dir_path,
                     config,
                     _from_dir_to_token_sets(config, _rel_to_map_dir(dir_path)),
+                )
+            else:
+                _fail_if_invalid_repo_structure_recursive(
+                    repo_root, dir_path, config, token_set
                 )
 
     _fail_if_required_entries_missing(token_set)
@@ -136,5 +137,5 @@ def fail_if_invalid_repo_structure(
     map_dir = "/"
 
     _fail_if_invalid_repo_structure_recursive(
-        dir_to_check, config, _from_dir_to_token_sets(config, map_dir)
+        dir_to_check, "", config, _from_dir_to_token_sets(config, map_dir)
     )

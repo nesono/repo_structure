@@ -61,9 +61,7 @@ def test_successful_parse_structure_rules():
     assert re.compile(r"setup.py") in rules["python_package"].required.files
     assert re.compile(r"test/data") in rules["python_package"].required.directories
 
-    assert (
-        "python_package" in rules["python_package"].optional.use_rule[re.compile(".*")]
-    )
+    assert "python_package" in rules["python_package"].use_rule[re.compile(".*")]
 
     assert re.compile(r"src/.*\.py") in rules["python_package"].dependencies
     assert (

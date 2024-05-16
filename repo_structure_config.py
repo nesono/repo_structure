@@ -35,7 +35,6 @@ class DirectoryStructure:
 
     directories: List[re.Pattern] = field(default_factory=list)
     files: List[re.Pattern] = field(default_factory=list)
-    use_rule: Dict[re.Pattern, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -48,6 +47,7 @@ class StructureRule:
     name: str = field(default_factory=str)
     required: DirectoryStructure = field(default_factory=DirectoryStructure)
     optional: DirectoryStructure = field(default_factory=DirectoryStructure)
+    use_rule: Dict[re.Pattern, str] = field(default_factory=dict)
     dependencies: Dict[re.Pattern, re.Pattern] = field(default_factory=dict)
 
 
@@ -120,18 +120,13 @@ def _build_rules(structure_rules: dict) -> Dict[str, StructureRule]:
 
 
 def _validate_use_rule_not_dangling(rules: Dict[str, StructureRule]) -> None:
-    all_use_rule: List[str] = []
-    for use_rule_list in [r.required.use_rule.values() for r in rules.values()]:
+    for use_rule_list in [r.use_rule.values() for r in rules.values()]:
         if use_rule_list:
-            all_use_rule.extend(use_rule_list)
-
-    for use_rule_list in [r.optional.use_rule.values() for r in rules.values()]:
-        if use_rule_list:
-            all_use_rule.extend(use_rule_list)
-
-    for use_rule in all_use_rule:
-        if use_rule not in rules.keys():
-            raise ValueError(f"use_rule rule {use_rule} not found in 'structure_rules'")
+            for use_rule in use_rule_list:
+                if use_rule not in rules.keys():
+                    raise ValueError(
+                        f"use_rule rule {use_rule} not found in 'structure_rules'"
+                    )
 
 
 def _parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
@@ -194,7 +189,7 @@ def _parse_file_or_directory(
         raise ValueError(f"depends_path without depends spec in {entry}")
 
     if "use_rule" in entry:
-        add_to.use_rule[re.compile(local_path)] = entry["use_rule"]
+        structure_rule.use_rule[re.compile(local_path)] = entry["use_rule"]
         if "dirs" in entry:
             raise UseRuleError(f"Unsupported dirs next to use_rule in {local_path}")
         if "files" in entry:
