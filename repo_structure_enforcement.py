@@ -193,7 +193,5 @@ def fail_if_invalid_repo_structure(
 
     for map_dir in config.directory_mappings:
         entry_backlog = _map_dir_to_entry_backlog(config, map_dir[1:])
-
         _fail_if_invalid_repo_structure_recursive(repo_root, "", config, entry_backlog)
-
         _fail_if_required_entries_missing(entry_backlog)
