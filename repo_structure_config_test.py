@@ -163,7 +163,15 @@ def test_successful_parse_directory_structure_wildcard():
     structure = StructureRule()
     structure.name = "python_package"
     _parse_directory_structure(config["structure_rules"]["python_package"], structure)
-    assert re.compile(r".*") in structure.optional.directories
+    assert (
+        DirectoryEntryWrapper(
+            path=re.compile(r".*"),
+            entry_type=EntryType.DIR,
+            content_requirement=ContentRequirement.OPTIONAL,
+            use_rule="python_package",
+        )
+        in structure.entries
+    )
 
 
 def test_fail_directory_structure_mixing_use_rule_and_files():
