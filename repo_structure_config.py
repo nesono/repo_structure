@@ -232,36 +232,6 @@ def _parse_file_or_directory(
         )
     )
 
-    # OLD CODE
-    add_to = structure_rule.required if mode == "required" else structure_rule.optional
-
-    if is_dir:
-        add_to.directories.append(re.compile(local_path))
-    else:
-        add_to.files.append(re.compile(local_path))
-
-    if "depends" in entry:
-        if "depends_path" in entry:
-            depends = os.path.join(entry["depends_path"], entry["depends"])
-        else:
-            depends = entry["depends"]
-
-        structure_rule.dependencies[re.compile(local_path)] = re.compile(depends)
-    elif "depends_path" in entry:
-        raise ValueError(f"depends_path without depends spec in {entry}")
-
-    if "use_rule" in entry:
-        structure_rule.use_rule[re.compile(local_path)] = entry["use_rule"]
-        if "dirs" in entry:
-            raise UseRuleError(f"Unsupported dirs next to use_rule in {local_path}")
-        if "files" in entry:
-            raise UseRuleError(f"Unsupported files next to use_rule in {local_path}")
-        if structure_rule.name != entry["use_rule"]:
-            raise UseRuleError(
-                f'Non recursive use_rule for "{structure_rule.name}" '
-                f"-> \"{entry['use_rule']}\" - path {local_path}"
-            )
-
     return local_path
 
 

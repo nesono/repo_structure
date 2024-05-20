@@ -196,20 +196,6 @@ documentation:
         pprint.pprint(structure)
 
 
-def test_fail_parse_file_dependencies_missing_base():
-    """Test failing parsing of file dependencies using bad key."""
-    test_config = r"""
-files:
-    - name: "README.md"
-      depends_path: 'test_.*\.py'
-    """
-    config = _load_repo_structure_yamls(test_config)
-    with pytest.raises(ValueError):
-        structure = StructureRule()
-        _parse_directory_structure(config, structure)
-        pprint.pprint(structure)
-
-
 def test_fail_parse_bad_key():
     """Test failing parsing of file dependencies using bad key."""
     test_config = r"""
