@@ -122,11 +122,39 @@ def test_successful_parse_directory_structure():
     structure.name = "python_package"
     _parse_directory_structure(config["structure_rules"]["python_package"], structure)
 
-    assert re.compile(r"setup.py") in structure.required.files
-    assert re.compile(r"test/test_.*\.py") in structure.required.files
+    assert (
+        DirectoryEntryWrapper(
+            path=re.compile(r"setup.py"),
+            entry_type=EntryType.FILE,
+            content_requirement=ContentRequirement.REQUIRED,
+        )
+        in structure.entries
+    )
+    assert (
+        DirectoryEntryWrapper(
+            path=re.compile(r"test/test_.*\.py"),
+            entry_type=EntryType.FILE,
+            content_requirement=ContentRequirement.REQUIRED,
+        )
+        in structure.entries
+    )
 
-    assert re.compile(r"test") in structure.required.directories
-    assert re.compile(r"test/data") in structure.required.directories
+    assert (
+        DirectoryEntryWrapper(
+            path=re.compile(r"test"),
+            entry_type=EntryType.DIR,
+            content_requirement=ContentRequirement.REQUIRED,
+        )
+        in structure.entries
+    )
+    assert (
+        DirectoryEntryWrapper(
+            path=re.compile(r"test/data"),
+            entry_type=EntryType.DIR,
+            content_requirement=ContentRequirement.REQUIRED,
+        )
+        in structure.entries
+    )
 
 
 def test_successful_parse_directory_structure_wildcard():
