@@ -5,6 +5,7 @@
 import os
 import re
 from dataclasses import dataclass, field
+from enum import Enum
 from io import TextIOWrapper
 from typing import Dict, Final, List
 
@@ -22,6 +23,32 @@ ALLOWED_ENTRY_KEYS: Final = [
     "files",
     "dirs",
 ]
+
+
+class EntryType(Enum):
+    """Type of the directory entry, to allow for put all wrappers in a list."""
+
+    FILE = "file"
+    DIR = "dir"
+
+
+class ContentRequirement(Enum):
+    """Requirement mode for the directory entry."""
+
+    OPTIONAL = "optional"
+    REQUIRED = "required"
+
+
+@dataclass
+class DirectoryEntryWrapper:
+    """Wrapper for entries in the directory structure, that store the path
+    as a string together with the entry type."""
+
+    path: re.Pattern
+    entry_type: EntryType
+    content_requirement: ContentRequirement
+    use_rule: str = ""
+    depends: re.Pattern = re.compile(r"")
 
 
 @dataclass
@@ -45,6 +72,8 @@ class StructureRule:
     python_package, etc."""
 
     name: str = field(default_factory=str)
+    entries: List[DirectoryEntryWrapper] = field(default_factory=list)
+
     required: DirectoryStructure = field(default_factory=DirectoryStructure)
     optional: DirectoryStructure = field(default_factory=DirectoryStructure)
     use_rule: Dict[re.Pattern, str] = field(default_factory=dict)
@@ -120,13 +149,12 @@ def _build_rules(structure_rules: dict) -> Dict[str, StructureRule]:
 
 
 def _validate_use_rule_not_dangling(rules: Dict[str, StructureRule]) -> None:
-    for use_rule_list in [r.use_rule.values() for r in rules.values()]:
-        if use_rule_list:
-            for use_rule in use_rule_list:
-                if use_rule not in rules.keys():
-                    raise ValueError(
-                        f"use_rule rule {use_rule} not found in 'structure_rules'"
-                    )
+    for use_rule in rules.keys():
+        for entry in rules[use_rule].entries:
+            if entry.use_rule and entry.use_rule != use_rule:
+                raise ValueError(
+                    f"use_rule rule {use_rule} not found in 'structure_rules'"
+                )
 
 
 def _parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
@@ -163,6 +191,16 @@ class UseRuleError(Exception):
     """Use_rule related error."""
 
 
+def _parse_use_rule(entry: dict, local_path: str) -> str:
+    if "use_rule" in entry:
+        if "dirs" in entry:
+            raise UseRuleError(f"Unsupported dirs next to use_rule in {local_path}")
+        if "files" in entry:
+            raise UseRuleError(f"Unsupported files next to use_rule in {local_path}")
+        return entry["use_rule"]
+    return ""
+
+
 def _parse_file_or_directory(
     entry: dict, is_dir: bool, path: str, structure_rule: StructureRule
 ) -> str:
@@ -170,7 +208,31 @@ def _parse_file_or_directory(
 
     local_path = os.path.join(path, entry["name"])
 
+    # NEW CODE
     mode = _get_required_or_optional(entry)
+    use_rule = _parse_use_rule(entry, local_path)
+    if use_rule and structure_rule.name != use_rule:
+        raise UseRuleError(
+            f'Non recursive use_rule for "{structure_rule.name}" '
+            f"-> \"{entry['use_rule']}\" - path {local_path}"
+        )
+    depends = re.compile(entry.get("depends", ""))
+
+    structure_rule.entries.append(
+        DirectoryEntryWrapper(
+            re.compile(local_path),
+            EntryType.DIR if is_dir else EntryType.FILE,
+            (
+                ContentRequirement.OPTIONAL
+                if mode == "optional"
+                else ContentRequirement.REQUIRED
+            ),
+            use_rule,
+            depends,
+        )
+    )
+
+    # OLD CODE
     add_to = structure_rule.required if mode == "required" else structure_rule.optional
 
     if is_dir:

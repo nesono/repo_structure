@@ -7,6 +7,9 @@ import sys
 import pytest
 from repo_structure_config import (
     Configuration,
+    ContentRequirement,
+    DirectoryEntryWrapper,
+    EntryType,
     StructureRule,
     UseRuleError,
     _load_repo_structure_yaml,
@@ -58,15 +61,39 @@ def test_successful_parse_structure_rules():
     assert "base_structure" in rules
     assert "python_package" in rules
 
-    assert re.compile(r"setup.py") in rules["python_package"].required.files
-    assert re.compile(r"test/data") in rules["python_package"].required.directories
-
-    assert "python_package" in rules["python_package"].use_rule[re.compile(".*")]
-
-    assert re.compile(r"src/.*\.py") in rules["python_package"].dependencies
     assert (
-        re.compile(r"../test/test_.*\.py")
-        == rules["python_package"].dependencies[re.compile(r"src/.*\.py")]
+        DirectoryEntryWrapper(
+            path=re.compile(r"setup.py"),
+            entry_type=EntryType.FILE,
+            content_requirement=ContentRequirement.REQUIRED,
+        )
+        in rules["python_package"].entries
+    )
+    assert (
+        DirectoryEntryWrapper(
+            path=re.compile(r"test/data"),
+            entry_type=EntryType.DIR,
+            content_requirement=ContentRequirement.REQUIRED,
+        )
+        in rules["python_package"].entries
+    )
+
+    assert (
+        DirectoryEntryWrapper(
+            path=re.compile(r".*"),
+            entry_type=EntryType.DIR,
+            content_requirement=ContentRequirement.OPTIONAL,
+            use_rule="python_package",
+        )
+        in rules["python_package"].entries
+    )
+
+    assert DirectoryEntryWrapper(
+        path=re.compile(r"src/.*\.py"),
+        entry_type=EntryType.FILE,
+        content_requirement=ContentRequirement.OPTIONAL,
+        use_rule="",
+        depends=re.compile(r"../test_.*\.py"),
     )
 
 

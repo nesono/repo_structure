@@ -13,8 +13,7 @@ structure_rules:
         files:
           - name: '.*\.py'
             mode: optional
-            depends: 'test_.*\.py'
-            depends_path: "../test/"
+            depends: '../test/test_.*\.py'
       - name: "test"
         dirs:
           - name: "data"
