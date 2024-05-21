@@ -23,7 +23,7 @@ structure_rules:
           - name: 'test_[^/]*\.py'
       - name: "doc"
         mode: optional
-      - name: ".*"
+      - name: "[^/]*"
         mode: optional
         use_rule: python_package
     files:

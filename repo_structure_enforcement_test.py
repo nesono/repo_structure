@@ -438,37 +438,38 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-# @with_repo_structure(
-#     """
-# main.py
-# README.md
-# lib/
-# lib/README.md
-# """
-# )
-# def test_fail_use_rule_recursive():
-#     """Test missing required file."""
-#     config_yaml = r"""
-# structure_rules:
-#   base_structure:
-#     files:
-#       - name: README.md
-#   python_package:
-#     files:
-#       - name: '.*\.py'
-#         mode: required
-#     dirs:
-#       - name: '.*'
-#         mode: required
-#         use_rule: python_package
-# directory_mappings:
-#   /:
-#     - use_rule: base_structure
-#     - use_rule: python_package
-#     """
-#     config = Configuration(config_yaml, True)
-#     with pytest.raises(UseRuleError):
-#         _assert_repo_directory_structure(config)
+@with_repo_structure(
+    """
+main.py
+README.md
+lib/
+lib/README.md
+"""
+)
+def test_fail_use_rule_recursive():
+    """Test missing required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: README.md
+  python_package:
+    files:
+      - name: '[^/]*\.py'
+        mode: required
+    dirs:
+      - name: '[^/]*'
+        mode: required
+        use_rule: python_package
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    - use_rule: python_package
+    """
+    config = Configuration(config_yaml, True)
+    with pytest.raises(UnspecifiedEntryError):
+        _assert_repo_directory_structure(config)
+
 
 # Ensure use_rule in structure_rule only for recursion
 # Test with different directory mappings, overwriting specific sub dirs only

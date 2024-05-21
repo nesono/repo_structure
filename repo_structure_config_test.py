@@ -80,7 +80,7 @@ def test_successful_parse_structure_rules():
 
     assert (
         DirectoryEntryWrapper(
-            path=re.compile(r".*"),
+            path=re.compile(r"[^/]*"),
             entry_type=EntryType.DIR,
             content_requirement=ContentRequirement.OPTIONAL,
             use_rule="python_package",
@@ -165,7 +165,7 @@ def test_successful_parse_directory_structure_wildcard():
     _parse_directory_structure(config["structure_rules"]["python_package"], structure)
     assert (
         DirectoryEntryWrapper(
-            path=re.compile(r".*"),
+            path=re.compile(r"[^/]*"),
             entry_type=EntryType.DIR,
             content_requirement=ContentRequirement.OPTIONAL,
             use_rule="python_package",
