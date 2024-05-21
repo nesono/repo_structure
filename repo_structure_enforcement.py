@@ -88,24 +88,6 @@ def _get_matching_item_index(
     return None
 
 
-def _remove_if_present(
-    items: List[DirectoryEntryWrapper], needle: str
-) -> List[DirectoryEntryWrapper]:
-    # Not very efficient just yet, but does the job
-    result: List[DirectoryEntryWrapper] = []
-    for item in items:
-        if re.compile(needle) == item.path:
-            print(f"Full match: {item.path}")
-            continue
-        if item.path.match(needle):
-            print(f"Regex match: {item.path}")
-            continue
-        result.append(item)
-
-    print(f"Resulting items {result}")
-    return result
-
-
 def _fail_if_required_entries_missing(
     entry_backlog: List[DirectoryEntryWrapper],
 ) -> None:
