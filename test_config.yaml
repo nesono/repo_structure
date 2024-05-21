@@ -11,16 +11,16 @@ structure_rules:
     dirs:
       - name: "src"
         files:
-          - name: '.*\.py'
+          - name: '[^/]*\.py'
             mode: optional
-            depends: '../test/test_.*\.py'
+            depends: '../test/test_[^/]*\.py'
       - name: "test"
         dirs:
           - name: "data"
             files:
-              - name: '.*\.(yaml|yml)'
+              - name: '[^/]*\.(yaml|yml)'
         files:
-          - name: 'test_.*\.py'
+          - name: 'test_[^/]*\.py'
       - name: "doc"
         mode: optional
       - name: ".*"
@@ -33,9 +33,9 @@ structure_rules:
     files:
       - name: "index.md"
         mode: required
-      - name: '.*\.techspec\.md'
+      - name: '[^/]*\.techspec\.md'
         mode: required
-        depends: '.*\.swreq\.md'
+        depends: '[^/]*\.swreq\.md'
 
 directory_mappings:
   /:

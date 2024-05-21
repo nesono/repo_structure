@@ -132,7 +132,7 @@ def test_successful_parse_directory_structure():
     )
     assert (
         DirectoryEntryWrapper(
-            path=re.compile(r"test/test_.*\.py"),
+            path=re.compile(r"test/test_[^/]*\.py"),
             entry_type=EntryType.FILE,
             content_requirement=ContentRequirement.REQUIRED,
         )

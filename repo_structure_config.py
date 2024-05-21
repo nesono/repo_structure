@@ -208,7 +208,6 @@ def _parse_file_or_directory(
 
     local_path = os.path.join(path, entry["name"])
 
-    # NEW CODE
     mode = _get_required_or_optional(entry)
     use_rule = _parse_use_rule(entry, local_path)
     if use_rule and structure_rule.name != use_rule:
@@ -254,7 +253,6 @@ def _parse_directory_structure_recursive(
 def _parse_directory_structure(
     directory_structure: dict, structure_rule: StructureRule
 ) -> None:
-    """ "Parse a full directory structure (recursively)."""
     # if directory_structure is empty dict, return
     if not directory_structure:
         return
