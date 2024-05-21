@@ -41,6 +41,13 @@ def _rel_dir_to_map_dir(rel_dir: str):
     return rel_dir
 
 
+def _map_dir_to_rel_dir(map_dir: str):
+    if not map_dir or map_dir == "/":
+        return ""
+
+    return map_dir[1:-1]
+
+
 def _get_use_rules_for_directory(config: Configuration, directory: str) -> List[str]:
     d = _rel_dir_to_map_dir(directory)
 
@@ -134,6 +141,13 @@ def _fail_if_invalid_repo_structure_recursive(
             if entry_backlog[idx].entry_type != EntryType.DIR:
                 raise EntryTypeMismatchError(f"Directory {rel_path} matches file")
 
+            # Skip other directory mappings
+            if _rel_dir_to_map_dir(rel_path) in config.directory_mappings:
+                print(f"  skipping {rel_path}")
+                print(" ", config.directory_mappings.keys())
+                del entry_backlog[idx]
+                continue
+
             new_rules = []
             # Recursive use_rule handling (single use_rule supported only)
             if entry_backlog[idx].use_rule:
@@ -148,12 +162,6 @@ def _fail_if_invalid_repo_structure_recursive(
             del entry_backlog[idx]
             print(f"  after delete - entry backlog: {entry_backlog}")
             entry_backlog.extend(new_rules)
-
-            # Skip other directory mappings
-            if _rel_dir_to_map_dir(rel_path) in config.directory_mappings:
-                print(f"skipping {rel_path}")
-                print(config.directory_mappings.keys())
-                continue
 
             # enter the subdirectory
             _fail_if_invalid_repo_structure_recursive(
@@ -174,6 +182,9 @@ def fail_if_invalid_repo_structure(
         raise MissingMappingError("Config does not have a root mapping")
 
     for map_dir in config.directory_mappings:
-        entry_backlog = _map_dir_to_entry_backlog(config, map_dir[1:])
-        _fail_if_invalid_repo_structure_recursive(repo_root, "", config, entry_backlog)
+        rel_dir = _map_dir_to_rel_dir(map_dir)
+        entry_backlog = _map_dir_to_entry_backlog(config, rel_dir)
+        _fail_if_invalid_repo_structure_recursive(
+            repo_root, rel_dir, config, entry_backlog
+        )
         _fail_if_required_entries_missing(entry_backlog)
