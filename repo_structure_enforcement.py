@@ -33,15 +33,12 @@ def _rel_dir_to_map_dir(rel_dir: str):
     if not rel_dir or rel_dir == "/":
         return "/"
 
-    prefix = "/"
-    suffix = "/"
+    if not rel_dir.startswith("/"):
+        rel_dir = "/" + rel_dir
+    if not rel_dir.endswith("/"):
+        rel_dir = rel_dir + "/"
 
-    if rel_dir[-1] == "/":
-        suffix = ""
-    if rel_dir[0] == "/":
-        prefix = ""
-
-    return prefix + rel_dir + suffix
+    return rel_dir
 
 
 def _get_use_rules_for_directory(config: Configuration, directory: str) -> List[str]:
