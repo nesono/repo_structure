@@ -126,7 +126,7 @@ structure_rules:
     dirs:
       - name: "python"
         files:
-            - name: '.*'
+            - name: '[^/]*'
 directory_mappings:
   /:
     - use_rule: base_structure
@@ -459,7 +459,7 @@ structure_rules:
         mode: required
     dirs:
       - name: '[^/]*'
-        mode: required
+        mode: optional
         use_rule: python_package
 directory_mappings:
   /:
@@ -471,9 +471,42 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-# Ensure use_rule in structure_rule only for recursion
+# @with_repo_structure(
+#     """
+# main.py
+# README.md
+# lib/
+# lib/README.md
+# """
+# )
+# def test_fail_directory_mapping_precedence():
+#     """Test missing required file."""
+#     config_yaml = r"""
+# structure_rules:
+#   base_structure:
+#     files:
+#       - name: README.md
+#   python_package:
+#     files:
+#       - name: '[^/]*\.py'
+#         mode: required
+#     dirs:
+#       - name: '[^/]*'
+#         mode: optional
+#         use_rule: python_package
+# directory_mappings:
+#   /:
+#     - use_rule: base_structure
+#     - use_rule: python_package
+#   /lib/:
+#     - use_rule: base_structure
+#     """
+#     config = Configuration(config_yaml, True)
+#     _assert_repo_directory_structure(config)
+
+
 # Test with different directory mappings, overwriting specific sub dirs only
-# Test 'depends' and 'depends_path'
+# Test 'depends'
 
 # Limit the usage of inline use_rule to recursion, prefer directory_mappings for everything else.
 

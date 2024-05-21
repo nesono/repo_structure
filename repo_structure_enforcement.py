@@ -30,26 +30,27 @@ class EntryTypeMismatchError(Exception):
 
 
 def _rel_dir_to_map_dir(rel_dir: str):
-    return os.path.join("/", rel_dir)
+    if not rel_dir or rel_dir == "/":
+        return "/"
+
+    prefix = "/"
+    suffix = "/"
+
+    if rel_dir[-1] == "/":
+        suffix = ""
+    if rel_dir[0] == "/":
+        prefix = ""
+
+    return prefix + rel_dir + suffix
 
 
 def _get_use_rules_for_directory(config: Configuration, directory: str) -> List[str]:
-    d = os.path.join("/", directory)
+    d = _rel_dir_to_map_dir(directory)
 
     if d in config.directory_mappings:
         return config.directory_mappings[d]
 
-    # closest parent directory match
-    parent_dir = os.path.dirname(d)
-    while parent_dir != "/":
-        if parent_dir in config.directory_mappings:
-            return config.directory_mappings[parent_dir]
-        parent_dir = os.path.dirname(parent_dir)
-
-    if "/" not in config.directory_mappings:
-        raise MissingMappingError(f'Directory "{d}" does not have a directory mapping')
-
-    return config.directory_mappings["/"]
+    raise MissingMappingError(f'Directory "{d}" does not have a directory mapping')
 
 
 def _build_active_entry_backlog(
@@ -153,6 +154,8 @@ def _fail_if_invalid_repo_structure_recursive(
 
             # Skip other directory mappings
             if _rel_dir_to_map_dir(rel_path) in config.directory_mappings:
+                print(f"skipping {rel_path}")
+                print(config.directory_mappings.keys())
                 continue
 
             # enter the subdirectory
