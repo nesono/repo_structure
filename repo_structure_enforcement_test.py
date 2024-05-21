@@ -320,6 +320,92 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
+@with_repo_structure(
+    """
+filename.txt
+dirname/
+"""
+)
+def test_conflicting_file_and_dir_names():
+    """Test missing required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: '.*name.*'
+    dirs:
+      - name: '.*name.*'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
+@with_repo_structure(
+    """
+dirname/
+"""
+)
+def test_conflicting_dir_name():
+    """Test missing required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: '.*name.*'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    with pytest.raises(UnspecifiedEntryError):
+        _assert_repo_directory_structure(config)
+
+
+@with_repo_structure(
+    """
+filename.txt
+"""
+)
+def test_conflicting_file_name():
+    """Test missing required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    dirs:
+      - name: '.*name.*'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    with pytest.raises(UnspecifiedEntryError):
+        _assert_repo_directory_structure(config)
+
+
+@with_repo_structure(
+    """
+filename.txt
+"""
+)
+def test_filename_with_bad_substring_match():
+    """Test missing required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: '.*name'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    with pytest.raises(UnspecifiedEntryError):
+        _assert_repo_directory_structure(config)
+
+
 # @with_repo_structure(
 #     """
 # main.py

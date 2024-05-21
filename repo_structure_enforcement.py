@@ -83,7 +83,7 @@ def _get_matching_item_index(
     for i, v in enumerate(items):
         if re.compile(needle) == v.path and v.entry_type == entry_type:
             return i
-        if v.path.match(needle) and v.entry_type == entry_type:
+        if v.path.fullmatch(needle) and v.entry_type == entry_type:
             return i
     return None
 
