@@ -1,14 +1,15 @@
 # Repo Structure
 
-A tool to control your repository structure and keep it clean at all times.
+A tool to maintain and enforce a clean and organized repository structure.
 
-You can control
+You can control:
 
-- What files and directories are part of the repository
-- Differentiate between required and optional files (`required` vs `optinonal`)
-- Use regexes for specifications
-- Map directory structure rules to directories (`directory_mapping`)
-- Reuse directory structure rules recursively (`use_rule` in `structure_rules`)
+- Which files and directories must be part of the repository
+- Optional files and directories
+- Differentiation between required and optional files (`required` vs `optional`)
+- Specifications using Python regular expressions
+- Mapping directory structure rules to specific directories (`directory_mapping`)
+- Reusing directory structure rules recursively (`use_rule` in `structure_rules`)
 
-The example file showcases all the supported features:
-[example yaml](test_config.yaml)
+Here is an example file that showcases all the supported features:
+[example YAML](test_config.yaml)

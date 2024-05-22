@@ -550,10 +550,5 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-# Test 'depends'
-
-# Limit the usage of inline use_rule to recursion, prefer directory_mappings for everything else.
-
-
 if __name__ == "__main__":
     sys.exit(pytest.main(["-s", "-v", __file__]))

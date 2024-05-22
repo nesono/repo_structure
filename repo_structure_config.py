@@ -1,4 +1,3 @@
-# pylint: disable=missing-function-docstring
 # pylint: disable=import-error
 
 """Library functions for repo structure config parsing."""

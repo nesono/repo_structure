@@ -123,10 +123,7 @@ def _fail_if_invalid_repo_structure_recursive(
     for entry in os.scandir(os.path.join(repo_root, rel_dir)):
         rel_path = os.path.join(rel_dir, entry.name)
         entry_type = EntryType.DIR if entry.is_dir() else EntryType.FILE
-        print(f"rel path: {rel_path}")
-        print(f"  before - entry backlog: {entry_backlog}")
         idx = _get_matching_item_index(entry_backlog, rel_path, entry_type)
-        print(f"  idx: {idx}")
         if idx is None:
             raise UnspecifiedEntryError(f"Found unspecified entry: {rel_path}")
 
@@ -143,8 +140,6 @@ def _fail_if_invalid_repo_structure_recursive(
 
             # Skip other directory mappings
             if _rel_dir_to_map_dir(rel_path) in config.directory_mappings:
-                print(f"  skipping {rel_path}")
-                print(" ", config.directory_mappings.keys())
                 del entry_backlog[idx]
                 continue
 
@@ -160,14 +155,12 @@ def _fail_if_invalid_repo_structure_recursive(
                 )
 
             del entry_backlog[idx]
-            print(f"  after delete - entry backlog: {entry_backlog}")
             entry_backlog.extend(new_rules)
 
             # enter the subdirectory
             _fail_if_invalid_repo_structure_recursive(
                 repo_root, rel_path, config, entry_backlog
             )
-        print(f"  after - entry backlog: {entry_backlog}")
 
 
 def fail_if_invalid_repo_structure(

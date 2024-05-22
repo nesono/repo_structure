@@ -13,7 +13,6 @@ structure_rules:
         files:
           - name: '[^/]*\.py'
             mode: optional
-            depends: '../test/test_[^/]*\.py'
       - name: "test"
         dirs:
           - name: "data"
@@ -35,7 +34,7 @@ structure_rules:
         mode: required
       - name: '[^/]*\.techspec\.md'
         mode: required
-        depends: '[^/]*\.swreq\.md'
+      - name: '[^/]*\.swreq\.md'
 
 directory_mappings:
   /:
