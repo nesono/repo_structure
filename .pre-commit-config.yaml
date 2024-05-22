@@ -10,7 +10,7 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "9db9854e3041219b1eb619872a2dfaf58adfb20b" # frozen: v1.9.0
+    rev: "e5ea6670624c24f8321f6328ef3176dbba76db46" # frozen: v1.10.0
     hooks:
       - id: mypy
   - repo: https://github.com/pre-commit/mirrors-prettier
@@ -18,11 +18,11 @@ repos:
     hooks:
       - id: prettier
   - repo: https://github.com/psf/black
-    rev: 8fe627072f15ff2e3d380887b92f7868efaf6d05 # frozen: 24.4.0
+    rev: 3702ba224ecffbcec30af640c149f231d90aebdb # frozen: 24.4.2
     hooks:
       - id: black
   - repo: https://github.com/pylint-dev/pylint
-    rev: "053c2c3a25f97f043e10cdd41d2609e495a68f57" # frozen: v3.1.0
+    rev: "769ffd20bbf321a6cf23f5e7221a0b8221f51482" # frozen: v3.2.2
     hooks:
       - id: pylint
   - repo: https://github.com/miki725/importanize.git
@@ -36,11 +36,11 @@ repos:
         args: [-w]
         exclude: "MODULE.bazel.lock"
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: "c9ea83146232fb263effdfe6f222d87f5395b27a" # frozen: v0.39.0
+    rev: "88f5e62afbc373fb23bdf78010adab5e8b37ee98" # frozen: v0.40.0
     hooks:
       - id: markdownlint-fix
   - repo: https://github.com/Yelp/detect-secrets
-    rev: "9abc55ee9fe266d06d4f64d301c0bf71b24ca3aa" # frozen: v1.4.0
+    rev: "68e8b45440415753fff70a312ece8da92ba85b4a" # frozen: v1.5.0
     hooks:
       - id: detect-secrets
         exclude: .pre-commit-config.yaml
@@ -49,6 +49,6 @@ repos:
     hooks:
       - id: gitleaks
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "e76e45000a5aa92cd2ec4d3fb1485f2f9fea5097" # frozen: v0.3.7
+    rev: "f8a3f8c471fb698229face5ed7640a64900b781e" # frozen: v0.4.4
     hooks:
       - id: ruff
