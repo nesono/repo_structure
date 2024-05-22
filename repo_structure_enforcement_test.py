@@ -505,7 +505,51 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-# Test with different directory mappings, overwriting specific sub dirs only
+@with_repo_structure(
+    """
+README.md
+app/
+app/main.py
+app/lib/
+app/lib/lib.py
+app/lib/sub_lib/
+app/lib/sub_lib/lib.py
+app/lib/sub_lib/tool/
+app/lib/sub_lib/tool/README.md
+app/lib/sub_lib/tool/main.py
+"""
+)
+def test_elaborate_use_rule_recursive():
+    """Test missing required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: README.md
+    dirs:
+      - name: app
+        mode: optional
+  python_package:
+    files:
+      - name: '[^/]*\.py'
+        mode: required
+    dirs:
+      - name: '.*'
+        mode: optional
+        use_rule: python_package
+directory_mappings:
+  /:
+    - use_rule: base_structure
+  /app/:
+    - use_rule: python_package
+  /app/lib/sub_lib/tool/:
+    - use_rule: python_package
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
 # Test 'depends'
 
 # Limit the usage of inline use_rule to recursion, prefer directory_mappings for everything else.
