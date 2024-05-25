@@ -119,8 +119,13 @@ def _fail_if_invalid_repo_structure_recursive(
     rel_dir: str,
     config: Configuration,
     entry_backlog: List[DirectoryEntryWrapper],
+    follow_links: bool,
 ) -> None:
     for entry in os.scandir(os.path.join(repo_root, rel_dir)):
+
+        if not follow_links and entry.is_symlink():
+            continue
+
         rel_path = os.path.join(rel_dir, entry.name)
         entry_type = EntryType.DIR if entry.is_dir() else EntryType.FILE
         idx = _get_matching_item_index(entry_backlog, rel_path, entry_type)
@@ -159,12 +164,12 @@ def _fail_if_invalid_repo_structure_recursive(
 
             # enter the subdirectory
             _fail_if_invalid_repo_structure_recursive(
-                repo_root, rel_path, config, entry_backlog
+                repo_root, rel_path, config, entry_backlog, follow_links
             )
 
 
 def fail_if_invalid_repo_structure(
-    repo_root: "str | None", config: Configuration
+    repo_root: "str | None", config: Configuration, follow_links: bool = False
 ) -> None:
     """Fail if the repo structure directory is invalid given the configuration."""
     if repo_root is None:
@@ -178,6 +183,6 @@ def fail_if_invalid_repo_structure(
         rel_dir = _map_dir_to_rel_dir(map_dir)
         entry_backlog = _map_dir_to_entry_backlog(config, rel_dir)
         _fail_if_invalid_repo_structure_recursive(
-            repo_root, rel_dir, config, entry_backlog
+            repo_root, rel_dir, config, entry_backlog, follow_links
         )
         _fail_if_required_entries_missing(entry_backlog)

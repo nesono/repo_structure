@@ -7,27 +7,17 @@ structure_rules:
         # mode: required is default
       - name: '.*\.md'
         mode: optional
+      - name: '\.bazelversion'
+      - name: '\.pre-commit-config\.yaml'
+      - name: "test_config.yaml"
   python_package:
-    dirs:
-      - name: "src"
-        files:
-          - name: '[^/]*\.py'
-            mode: optional
-      - name: "test"
-        dirs:
-          - name: "data"
-            files:
-              - name: '[^/]*\.(yaml|yml)'
-        files:
-          - name: 'test_[^/]*\.py'
-      - name: "doc"
+    files:
+      - name: '[^/]*\.py'
         mode: optional
+    dirs:
       - name: "[^/]*"
         mode: optional
         use_rule: python_package
-    files:
-      - name: "setup.py"
-        mode: required
   documentation:
     files:
       - name: "index.md"

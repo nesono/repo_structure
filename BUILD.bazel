@@ -59,6 +59,7 @@ py_binary(
     ],
     deps = [
         "//:repo_structure_config",
+        "//:repo_structure_enforcement",
         "@pypi//click",
     ],
 )
