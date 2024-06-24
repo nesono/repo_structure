@@ -1,0 +1,9 @@
+# See https://github.com/GoogleContainerTools/container-structure-test#command-tests
+schemaVersion: 2.0.0
+metadataTest:
+  entrypoint: ["/main"]
+commandTests:
+  - name: "run help"
+    command: "/main"
+    args: ["--help"]
+    expectedOutput: ["Usage: "]

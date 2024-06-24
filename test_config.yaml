@@ -9,7 +9,6 @@ structure_rules:
         mode: optional
       - name: '\.bazelversion'
       - name: '\.pre-commit-config\.yaml'
-      - name: "test_config.yaml"
   python_package:
     files:
       - name: '[^/]*\.py'

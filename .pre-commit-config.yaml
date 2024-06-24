@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.12
+  python: python3.10
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -10,7 +10,7 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "e5ea6670624c24f8321f6328ef3176dbba76db46" # frozen: v1.10.0
+    rev: "6f546f30c2b142ad5b3edcf20e3d27cf1789b932" # frozen: v1.10.1
     hooks:
       - id: mypy
   - repo: https://github.com/pre-commit/mirrors-prettier
@@ -22,21 +22,17 @@ repos:
     hooks:
       - id: black
   - repo: https://github.com/pylint-dev/pylint
-    rev: "769ffd20bbf321a6cf23f5e7221a0b8221f51482" # frozen: v3.2.2
+    rev: "425ad66da9467bac9074de3f2294f7851cb3320b" # frozen: v3.2.4
     hooks:
       - id: pylint
-  - repo: https://github.com/miki725/importanize.git
-    rev: "37580b086696a2b5593499a5166cef137ef1eb6a" # frozen: 0.8.0-alpha2
-    hooks:
-      - id: importanize
   - repo: https://github.com/codespell-project/codespell
-    rev: "6e41aba91fb32e9feb741a6258eefeb9c6e4a482" # frozen: v2.2.6
+    rev: "193cd7d27cd571f79358af09a8fb8997e54f8fff" # frozen: v2.3.0
     hooks:
       - id: codespell
         args: [-w]
         exclude: "MODULE.bazel.lock"
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: "88f5e62afbc373fb23bdf78010adab5e8b37ee98" # frozen: v0.40.0
+    rev: "f295829140d25717bc79368d3f966fc1f67a824f" # frozen: v0.41.0
     hooks:
       - id: markdownlint-fix
   - repo: https://github.com/Yelp/detect-secrets
@@ -45,10 +41,10 @@ repos:
       - id: detect-secrets
         exclude: .pre-commit-config.yaml
   - repo: https://github.com/zricethezav/gitleaks
-    rev: "145400593c178304246371bc45290588bc72f43e" # frozen: v8.18.2
+    rev: "77c3c6a34b2577d71083442326c60b8fd58926ec" # frozen: v8.18.4
     hooks:
       - id: gitleaks
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "f8a3f8c471fb698229face5ed7640a64900b781e" # frozen: v0.4.4
+    rev: "1dc9eb131c2ea4816c708e4d85820d2cc8542683" # frozen: v0.5.0
     hooks:
       - id: ruff

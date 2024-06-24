@@ -122,7 +122,6 @@ def _fail_if_invalid_repo_structure_recursive(
     follow_links: bool,
 ) -> None:
     for entry in os.scandir(os.path.join(repo_root, rel_dir)):
-
         if not follow_links and entry.is_symlink():
             continue
 

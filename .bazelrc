@@ -1,2 +1,2 @@
-
---test_output=errors
+build --@rules_python//python/config_settings:bootstrap_impl=script
+test --test_output=errors

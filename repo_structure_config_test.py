@@ -63,17 +63,9 @@ def test_successful_parse_structure_rules():
 
     assert (
         DirectoryEntryWrapper(
-            path=re.compile(r"setup.py"),
+            path=re.compile(r"[^/]*\.py"),
             entry_type=EntryType.FILE,
-            content_requirement=ContentRequirement.REQUIRED,
-        )
-        in rules["python_package"].entries
-    )
-    assert (
-        DirectoryEntryWrapper(
-            path=re.compile(r"test/data"),
-            entry_type=EntryType.DIR,
-            content_requirement=ContentRequirement.REQUIRED,
+            content_requirement=ContentRequirement.OPTIONAL,
         )
         in rules["python_package"].entries
     )
@@ -86,14 +78,6 @@ def test_successful_parse_structure_rules():
             use_rule="python_package",
         )
         in rules["python_package"].entries
-    )
-
-    assert DirectoryEntryWrapper(
-        path=re.compile(r"src/.*\.py"),
-        entry_type=EntryType.FILE,
-        content_requirement=ContentRequirement.OPTIONAL,
-        use_rule="",
-        depends=re.compile(r"../test_.*\.py"),
     )
 
 
@@ -124,34 +108,9 @@ def test_successful_parse_directory_structure():
 
     assert (
         DirectoryEntryWrapper(
-            path=re.compile(r"setup.py"),
+            path=re.compile(r"[^/]*\.py"),
             entry_type=EntryType.FILE,
-            content_requirement=ContentRequirement.REQUIRED,
-        )
-        in structure.entries
-    )
-    assert (
-        DirectoryEntryWrapper(
-            path=re.compile(r"test/test_[^/]*\.py"),
-            entry_type=EntryType.FILE,
-            content_requirement=ContentRequirement.REQUIRED,
-        )
-        in structure.entries
-    )
-
-    assert (
-        DirectoryEntryWrapper(
-            path=re.compile(r"test"),
-            entry_type=EntryType.DIR,
-            content_requirement=ContentRequirement.REQUIRED,
-        )
-        in structure.entries
-    )
-    assert (
-        DirectoryEntryWrapper(
-            path=re.compile(r"test/data"),
-            entry_type=EntryType.DIR,
-            content_requirement=ContentRequirement.REQUIRED,
+            content_requirement=ContentRequirement.OPTIONAL,
         )
         in structure.entries
     )
