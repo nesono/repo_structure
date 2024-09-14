@@ -48,6 +48,7 @@ class DirectoryEntryWrapper:
     content_requirement: ContentRequirement
     use_rule: str = ""
     depends: re.Pattern = re.compile(r"")
+    count: int = 0
 
 
 @dataclass
@@ -72,11 +73,6 @@ class StructureRule:
 
     name: str = field(default_factory=str)
     entries: List[DirectoryEntryWrapper] = field(default_factory=list)
-
-    required: DirectoryStructure = field(default_factory=DirectoryStructure)
-    optional: DirectoryStructure = field(default_factory=DirectoryStructure)
-    use_rule: Dict[re.Pattern, str] = field(default_factory=dict)
-    dependencies: Dict[re.Pattern, re.Pattern] = field(default_factory=dict)
 
 
 @dataclass
@@ -129,7 +125,10 @@ class Configuration:
                     )
                 ],
             )
-            self.config.directory_mappings["/"].append(config_file)
+
+
+            self.config.directory_mappings["/"].insert(0, config_file)
+            #self.config.directory_mappings["/"].append(config_file)
 
     @property
     def structure_rules(self) -> Dict[str, StructureRule]:

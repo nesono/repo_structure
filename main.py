@@ -23,8 +23,8 @@ def main(repo_root: str, config_path: str, follow_links: bool, include_hidden: b
         fail_if_invalid_repo_structure(
             repo_root, Configuration(config_path), follow_links, include_hidden, verbose,
         )
+        click.echo("Your Repo-structure is compliant")
     except Exception as err:
-        click.echo("Error found:", err=True)
         click.echo(err, err=True)
 
 

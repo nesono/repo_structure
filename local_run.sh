@@ -9,10 +9,10 @@ if [[ $($PY_BINARY --version) != "Python ${PY_VERSION}"* ]]; then
   exit 1
 fi
 
-trap 'echo "An error occurred. Exiting..." >&2; deactivate; exit 1' ERR
+trap 'echo "An error occurred. Exiting..." >&2; deactivate; rm -rf .temp_venv; exit 1' ERR
 
-$PY_BINARY -m venv temp_venv
-source temp_venv/bin/activate
+$PY_BINARY -m venv .temp_venv
+source .temp_venv/bin/activate
 
 {
   pip install -r requirements_lock.txt > pip_install.log 2>&1
@@ -22,4 +22,4 @@ source temp_venv/bin/activate
 }
 rm -f pip_install.log
 
-python main.py --repo-root=. --config-path=repo_structure_config.yaml --verbose
+python main.py --repo-root=. --config-path=repo_structure_config.yaml

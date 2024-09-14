@@ -35,6 +35,9 @@ py_test(
 py_library(
     name = "repo_structure_enforcement",
     srcs = ["repo_structure_enforcement.py"],
+    deps = [
+        "@pypi//gitignore_parser",
+    ],
 )
 
 py_test(
@@ -62,6 +65,5 @@ py_binary(
         "//:repo_structure_config",
         "//:repo_structure_enforcement",
         "@pypi//click",
-        "@pypi//gitignore_parser",
     ],
 )
