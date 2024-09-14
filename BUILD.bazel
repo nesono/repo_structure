@@ -62,5 +62,6 @@ py_binary(
         "//:repo_structure_config",
         "//:repo_structure_enforcement",
         "@pypi//click",
+        "@pypi//gitignore_parser",
     ],
 )

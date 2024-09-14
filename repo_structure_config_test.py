@@ -17,6 +17,7 @@ from repo_structure_config import (
     _parse_directory_mappings,
     _parse_directory_structure,
     _parse_structure_rules,
+    ConfigurationParseError,
 )
 
 
@@ -241,6 +242,11 @@ directory_mappings:
     """
     with pytest.raises(UseRuleError):
         Configuration(config_yaml, True)
+
+def test_fail_config_file_structure_rule_conflict():
+
+    with pytest.raises(ConfigurationParseError):
+        Configuration("conflicting_test_config.yaml")
 
 
 if __name__ == "__main__":
