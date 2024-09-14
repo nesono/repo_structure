@@ -2,6 +2,13 @@ default_language_version:
   python: python3.10
 
 repos:
+  - repo: local
+    hooks:
+      - id: repo-structure
+        name: Run Repo-Structure on its own repo
+        entry: bash -c './local_run.sh'
+        language: system
+        pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 2c9f875913ee60ca25ce70243dc24d5b6415598c # frozen: v4.6.0
     hooks:
