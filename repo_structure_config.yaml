@@ -7,6 +7,8 @@ structure_rules:
         # mode: required is default
       - name: '.*\.md'
         mode: optional
+      - name: 'conflicting_test_config.yaml'
+      - name: 'requirements_lock.txt'
       - name: '\.bazelversion'
       - name: '\.pre-commit-config\.yaml'
   python_package:
