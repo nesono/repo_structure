@@ -1,9 +1,5 @@
-load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
-load("@rules_oci//oci:defs.bzl", "oci_tarball")
-load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
-load("//:py_layer.bzl", "py_oci_image")
 
 # This stanza calls a rule that generates targets for managing pip dependencies
 # with pip-compile.
@@ -66,65 +62,4 @@ py_binary(
         "//:repo_structure_enforcement",
         "@pypi//click",
     ],
-)
-
-py_oci_image(
-    name = "image",
-    base = "@ubuntu",
-    binary = ":main",
-    entrypoint = ["/main"],
-)
-
-platform(
-    name = "aarch64_linux",
-    constraint_values = [
-        "@platforms//os:linux",
-        "@platforms//cpu:aarch64",
-    ],
-)
-
-platform(
-    name = "x86_64_linux",
-    constraint_values = [
-        "@platforms//os:linux",
-        "@platforms//cpu:x86_64",
-    ],
-)
-
-platform_transition_filegroup(
-    name = "platform_image",
-    srcs = [":image"],
-    target_platform = select({
-        "@platforms//cpu:arm64": ":aarch64_linux",
-        "@platforms//cpu:x86_64": ":x86_64_linux",
-    }),
-)
-
-# $ bazel run //:tarball
-# $ docker run --rm nesono/repo_structure:latest
-oci_tarball(
-    name = "tarball",
-    image = ":platform_image",
-    repo_tags = ["nesono/repo_structure:latest"],
-)
-
-container_structure_test(
-    name = "container_structure_test",
-    configs = ["container_structure_test.yaml"],
-    image = ":platform_image",
-)
-
-py_test(
-    name = "test_container",
-    srcs = ["container_app_test.py"],
-    # NB: this depends on the image rather than the tarball, to avoid the test needing to wait for
-    # an action that reads all bytes of the layers and writes all those bytes again.
-    # However, in order for the image to be loaded into the Docker daemon from files on disk,
-    # the test Setup has to do some sophisticated work to load each layer.
-    data = [":platform_image"],
-    main = "container_app_test.py",
-    deps = [
-        "@pypi//testcontainers",
-    ],
-    size = "small",
 )
