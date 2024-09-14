@@ -12,4 +12,4 @@ You can control:
 - Reusing directory structure rules recursively (`use_rule` in `structure_rules`)
 
 Here is an example file that showcases all the supported features:
-[example YAML](test_config.yaml)
+[example YAML](repo_structure_config.yaml)

@@ -1,0 +1,8 @@
+structure_rules:
+  conflicting_test_config.yaml:
+    files:
+      - name: "conflicting_test_config.yaml"
+
+directory_mappings:
+  /:
+    - use_rule: conflicting_test_config.yaml

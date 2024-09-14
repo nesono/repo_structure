@@ -20,7 +20,7 @@ from repo_structure_config import (
 )
 
 
-TEST_CONFIG_YAML = "test_config.yaml"
+TEST_CONFIG_YAML = "repo_structure_config.yaml"
 
 
 def test_successful_load_yaml():

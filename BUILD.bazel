@@ -23,7 +23,8 @@ py_test(
         "repo_structure_config_test.py",
     ],
     data = [
-        "test_config.yaml",
+        "conflicting_test_config.yaml",
+        "repo_structure_config.yaml",
     ],
     deps = [
         ":repo_structure_config",
@@ -42,7 +43,7 @@ py_test(
         "repo_structure_enforcement_test.py",
     ],
     data = [
-        "test_config.yaml",
+        "repo_structure_config.yaml",
     ],
     deps = [
         ":repo_structure_config",
@@ -55,7 +56,7 @@ py_binary(
     name = "main",
     srcs = ["main.py"],
     data = [
-        "test_config.yaml",
+        "repo_structure_config.yaml",
     ],
     deps = [
         "//:repo_structure_config",
