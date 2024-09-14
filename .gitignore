@@ -1,4 +1,6 @@
+/.idea/
 /bazel-*
 /node_modules/
+__pycache__/
+*.py[cod]
 /MODULE.bazel.lock
-/.idea/
