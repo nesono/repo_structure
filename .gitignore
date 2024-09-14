@@ -1,4 +1,5 @@
-bazel-*
-.ijwb/
-node_modules/
+/bazel-*
+/.ijwb/
+/node_modules/
 /MODULE.bazel.lock
+/.idea/
