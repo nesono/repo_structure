@@ -16,12 +16,22 @@ from repo_structure_enforcement import fail_if_invalid_repo_structure
 @click.option("--follow-links", "-L", is_flag=True, default=False)
 @click.option("--include-hidden", "-H", is_flag=True, default=False)
 @click.option("--verbose", "-v", is_flag=True, default=False)
-def main(repo_root: str, config_path: str, follow_links: bool, include_hidden: bool, verbose: bool) -> None:
+def main(
+    repo_root: str,
+    config_path: str,
+    follow_links: bool,
+    include_hidden: bool,
+    verbose: bool,
+) -> None:
     """Ensure clean repository structure for your projects."""
     click.echo("Repo-Structure started, parsing parsing config and repo")
     try:
         fail_if_invalid_repo_structure(
-            repo_root, Configuration(config_path), follow_links, include_hidden, verbose,
+            repo_root,
+            Configuration(config_path),
+            follow_links,
+            include_hidden,
+            verbose,
         )
         click.echo("Your Repo-structure is compliant")
     except Exception as err:

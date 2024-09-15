@@ -238,8 +238,9 @@ directory_mappings:
     with pytest.raises(UseRuleError):
         Configuration(config_yaml, True)
 
-def test_fail_config_file_structure_rule_conflict():
 
+def test_fail_config_file_structure_rule_conflict():
+    """Test conflicting rules for automatic config file addition."""
     with pytest.raises(ConfigurationParseError):
         Configuration("conflicting_test_config.yaml")
 

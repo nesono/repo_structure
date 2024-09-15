@@ -7,11 +7,11 @@ structure_rules:
       - name: '.*\.md'
         mode: optional
       - name: '\.pre-commit-config\.yaml'
-      - name: '[^/]*.yaml'
-      - name: 'requirements(_lock.txt|.in)'
+      - name: "[^/]*.yaml"
+      - name: "requirements(_lock.txt|.in)"
       - name: '\.bazelversion'
-      - name: '[^/]*.sh'
-      - name: '[^/]*.bazel'
+      - name: "[^/]*.sh"
+      - name: "[^/]*.bazel"
   python_package:
     files:
       - name: '[^/]*\.py'

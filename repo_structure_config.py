@@ -111,7 +111,8 @@ class Configuration:
         if not param1_is_yaml_string:
             if config_file in self.config.structure_rules:
                 raise ConfigurationParseError(
-                    f"Conflicting Structure rule for {config_file}. No need to add the config to the configuration file."
+                    f"Conflicting Structure rule for {config_file}"
+                    "- do not add the config manually."
                 )
 
             # add the config file to the config
@@ -126,9 +127,7 @@ class Configuration:
                 ],
             )
 
-
             self.config.directory_mappings["/"].insert(0, config_file)
-            #self.config.directory_mappings["/"].append(config_file)
 
     @property
     def structure_rules(self) -> Dict[str, StructureRule]:
