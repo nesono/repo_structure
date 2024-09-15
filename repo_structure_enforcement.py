@@ -133,10 +133,7 @@ def _fail_if_invalid_repo_structure_recursive(
     include_hidden: bool,
     verbose: bool,
 ) -> None:
-    git_ignore = None
-    git_ignore_path = os.path.join(repo_root, ".gitignore")
-    if os.path.isfile(git_ignore_path):
-        git_ignore = parse_gitignore(git_ignore_path)
+    git_ignore = _get_git_ignore(repo_root)
 
     for entry in os.scandir(os.path.join(repo_root, rel_dir)):
         if verbose:
@@ -148,20 +145,9 @@ def _fail_if_invalid_repo_structure_recursive(
         rel_path = os.path.join(rel_dir, entry.name)
         entry_type = EntryType.DIR if entry.is_dir() else EntryType.FILE
         idx = _get_matching_item_index(entry_backlog, rel_path, entry_type, verbose)
+
         if idx is None:
-            if git_ignore and git_ignore(entry.path):
-                if verbose:
-                    print(".gitignore matched, skipping")
-                continue
-
-            if not follow_links and entry.is_symlink():
-                if verbose:
-                    print("Symlink found, skipping")
-                continue
-
-            if not include_hidden and entry.name.startswith("."):
-                if verbose:
-                    print("Hidden file found, skipping")
+            if _skip_entry(entry, git_ignore, follow_links, include_hidden, verbose):
                 continue
 
             raise UnspecifiedEntryError(f"Found unspecified entry: {rel_path}")
@@ -225,6 +211,32 @@ def _fail_if_invalid_repo_structure_recursive(
                 include_hidden,
                 verbose,
             )
+
+
+def _get_git_ignore(repo_root):
+    git_ignore_path = os.path.join(repo_root, ".gitignore")
+    if os.path.isfile(git_ignore_path):
+        return parse_gitignore(git_ignore_path)
+    return None
+
+
+def _skip_entry(entry, git_ignore, follow_links, include_hidden, verbose):
+    if git_ignore and git_ignore(entry.path):
+        if verbose:
+            print(".gitignore matched, skipping")
+        return True
+
+    if not follow_links and entry.is_symlink():
+        if verbose:
+            print("Symlink found, skipping")
+        return True
+
+    if not include_hidden and entry.name.startswith("."):
+        if verbose:
+            print("Hidden file found, skipping")
+        return True
+
+    return False
 
 
 def fail_if_invalid_repo_structure(
