@@ -3,7 +3,10 @@
 # pylint: disable=import-error
 import os
 import re
-from typing import List
+from os import DirEntry
+from dataclasses import dataclass
+
+from typing import List, Callable
 from gitignore_parser import parse_gitignore
 
 from repo_structure_config import (
@@ -12,6 +15,15 @@ from repo_structure_config import (
     DirectoryEntryWrapper,
     EntryType,
 )
+
+
+@dataclass
+class Flags:
+    """Flags for common parsing config settings."""
+
+    follow_links: bool = False
+    include_hidden: bool = False
+    verbose: bool = False
 
 
 # Exception for missing mapping
@@ -43,7 +55,7 @@ def _rel_dir_to_map_dir(rel_dir: str):
     return rel_dir
 
 
-def _map_dir_to_rel_dir(map_dir: str):
+def _map_dir_to_rel_dir(map_dir: str) -> str:
     if not map_dir or map_dir == "/":
         return ""
 
@@ -129,14 +141,12 @@ def _fail_if_invalid_repo_structure_recursive(
     rel_dir: str,
     config: Configuration,
     entry_backlog: List[DirectoryEntryWrapper],
-    follow_links: bool,
-    include_hidden: bool,
-    verbose: bool,
+    flags: Flags,
 ) -> None:
     git_ignore = _get_git_ignore(repo_root)
 
     for entry in os.scandir(os.path.join(repo_root, rel_dir)):
-        if verbose:
+        if flags.verbose:
             print(f"Checking file {entry.path}")
 
         # TODO(ji): make this flexible, i.e. when a file is specified in the config,
@@ -144,111 +154,116 @@ def _fail_if_invalid_repo_structure_recursive(
 
         rel_path = os.path.join(rel_dir, entry.name)
         entry_type = EntryType.DIR if entry.is_dir() else EntryType.FILE
-        idx = _get_matching_item_index(entry_backlog, rel_path, entry_type, verbose)
+        idx = _get_matching_item_index(
+            entry_backlog, rel_path, entry_type, flags.verbose
+        )
 
         if idx is None:
-            if _skip_entry(entry, git_ignore, follow_links, include_hidden, verbose):
+            if _skip_entry(entry, git_ignore, flags):
                 continue
-
             raise UnspecifiedEntryError(f"Found unspecified entry: {rel_path}")
 
-        # FILE CASE
         if entry.is_file():
-            if entry_backlog[idx].entry_type != EntryType.FILE:
-                raise EntryTypeMismatchError(f"File {rel_path} matches directory")
-            if verbose:
-                print(f"Matched file {entry.path}")
-            entry_backlog[idx].count += 1
+            _process_file_entry(entry, entry_backlog, idx, rel_path, flags.verbose)
 
-        # DIRECTORY CASE
         elif entry.is_dir():
             if entry_backlog[idx].entry_type != EntryType.DIR:
                 raise EntryTypeMismatchError(f"Directory {rel_path} matches file")
 
-            # Skip other directory mappings
-            if _rel_dir_to_map_dir(rel_path) in config.directory_mappings:
-                if verbose:
-                    print(f"Matched directory {entry.path}")
+            if _skip_entry_mapping(rel_path, config, flags.verbose):
                 entry_backlog[idx].count += 1
                 continue
 
-            if git_ignore and git_ignore(entry.path):
-                if verbose:
-                    print(".gitignore matched, skipping")
+            if _skip_entry(entry, git_ignore, flags):
                 continue
 
-            if not follow_links and entry.is_symlink():
-                if verbose:
-                    print("Symlink found, skipping")
-                continue
-
-            if not include_hidden and entry.name.startswith("."):
-                if verbose:
-                    print("Hidden file found, skipping")
-                continue
-
-            new_rules = []
-            # Recursive use_rule handling (single use_rule supported only)
-            if entry_backlog[idx].use_rule:
-                new_rules.extend(
-                    _build_active_entry_backlog(
-                        [entry_backlog[idx].use_rule],
-                        rel_path,
-                        config,
-                    )
-                )
-
+            new_rules = _handle_use_rule(entry_backlog[idx], rel_path, config)
             entry_backlog[idx].count += 1
             entry_backlog.extend(new_rules)
 
             # enter the subdirectory
             _fail_if_invalid_repo_structure_recursive(
-                repo_root,
-                rel_path,
-                config,
-                entry_backlog,
-                follow_links,
-                include_hidden,
-                verbose,
+                repo_root, rel_path, config, entry_backlog, flags
             )
 
 
-def _get_git_ignore(repo_root):
+def _get_git_ignore(repo_root: str) -> Callable[[str], bool] | None:
     git_ignore_path = os.path.join(repo_root, ".gitignore")
     if os.path.isfile(git_ignore_path):
         return parse_gitignore(git_ignore_path)
     return None
 
 
-def _skip_entry(entry, git_ignore, follow_links, include_hidden, verbose):
+def _skip_entry(
+    entry: DirEntry[str],
+    git_ignore: Callable[[str], bool] | None = None,
+    flags: Flags = Flags(),
+) -> bool:
     if git_ignore and git_ignore(entry.path):
-        if verbose:
+        if flags.verbose:
             print(".gitignore matched, skipping")
         return True
 
-    if not follow_links and entry.is_symlink():
-        if verbose:
+    if not flags.follow_links and entry.is_symlink():
+        if flags.verbose:
             print("Symlink found, skipping")
         return True
 
-    if not include_hidden and entry.name.startswith("."):
-        if verbose:
+    if not flags.include_hidden and entry.name.startswith("."):
+        if flags.verbose:
             print("Hidden file found, skipping")
         return True
 
     return False
 
 
-def fail_if_invalid_repo_structure(
-    repo_root: "str | None",
+def _process_file_entry(
+    entry: os.DirEntry[str],
+    entry_backlog: List[DirectoryEntryWrapper],
+    idx: int,
+    rel_path: str,
+    verbose: bool,
+) -> None:
+    if entry_backlog[idx].entry_type != EntryType.FILE:
+        raise EntryTypeMismatchError(f"File {rel_path} matches directory")
+    if verbose:
+        print(f"Matched file {entry.path}")
+    entry_backlog[idx].count += 1
+
+
+def _skip_entry_mapping(rel_path: str, config: Configuration, verbose: bool) -> bool:
+    if _rel_dir_to_map_dir(rel_path) in config.directory_mappings:
+        if verbose:
+            print(f"Matched directory {rel_path}")
+        return True
+    return False
+
+
+def _handle_use_rule(
+    entry: DirectoryEntryWrapper,
+    rel_path: str,
     config: Configuration,
-    follow_links: bool = False,
-    include_hidden: bool = False,
-    verbose: bool = False,
+) -> List[DirectoryEntryWrapper]:
+    new_rules = []
+    if entry.use_rule:
+        new_rules.extend(
+            _build_active_entry_backlog(
+                [entry.use_rule],
+                rel_path,
+                config,
+            )
+        )
+    return new_rules
+
+
+def fail_if_invalid_repo_structure(
+    repo_root: str,
+    config: Configuration,
+    flags: Flags,
 ) -> None:
     """Fail if the repo structure directory is invalid given the configuration."""
     if repo_root is None:
-        if verbose:
+        if flags.verbose:
             print("repo_root is None, returning early")
         return
 
@@ -266,9 +281,7 @@ def fail_if_invalid_repo_structure(
             rel_dir,
             config,
             entry_backlog,
-            follow_links,
-            include_hidden,
-            verbose,
+            flags,
         )
         # report non-empty entry_backlog
         _fail_if_required_entries_missing(entry_backlog)

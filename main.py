@@ -7,7 +7,7 @@
 import click
 
 from repo_structure_config import Configuration
-from repo_structure_enforcement import fail_if_invalid_repo_structure
+from repo_structure_enforcement import fail_if_invalid_repo_structure, Flags
 
 
 @click.command()
@@ -25,14 +25,13 @@ def main(
 ) -> None:
     """Ensure clean repository structure for your projects."""
     click.echo("Repo-Structure started, parsing parsing config and repo")
+    flags = Flags()
+    flags.follow_links = follow_links
+    flags.include_hidden = include_hidden
+    flags.verbose = verbose
+
     try:
-        fail_if_invalid_repo_structure(
-            repo_root,
-            Configuration(config_path),
-            follow_links,
-            include_hidden,
-            verbose,
-        )
+        fail_if_invalid_repo_structure(repo_root, Configuration(config_path), flags)
         click.echo("Your Repo-structure is compliant")
     except Exception as err:
         click.echo(err, err=True)

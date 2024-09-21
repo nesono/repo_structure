@@ -10,6 +10,7 @@ from repo_structure_enforcement import (
     MissingRequiredEntriesError,
     UnspecifiedEntryError,
     fail_if_invalid_repo_structure,
+    Flags,
 )
 
 
@@ -71,8 +72,11 @@ def _clear_repo_directory_structure() -> None:
 
 @chdir_test_tmpdir
 def _assert_repo_directory_structure(config: Configuration) -> None:
+    flags = Flags()
+    repo_root = os.environ.get("TEST_TMPDIR")
+    assert repo_root is not None
     try:
-        fail_if_invalid_repo_structure(os.environ.get("TEST_TMPDIR"), config)
+        fail_if_invalid_repo_structure(repo_root, config, flags)
     finally:
         _clear_repo_directory_structure()
 
