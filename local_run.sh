@@ -10,7 +10,7 @@ if [[ $($PY_BINARY --version) != "Python ${PY_VERSION}"* ]]; then
 fi
 
 trap 'echo "An error occurred. Exiting..." >&2; deactivate; exit 1' ERR
-trap 'rm -rf .temp_venv' EXIT
+trap 'rm -rf .temp_venv; rm -f pip_install.log' EXIT
 
 $PY_BINARY -m venv .temp_venv
 source .temp_venv/bin/activate
@@ -19,6 +19,7 @@ source .temp_venv/bin/activate
   pip install -r requirements_lock.txt > pip_install.log 2>&1
 } || {
   echo "Failed to install dependencies" >&2
+  cat pip_install.log
   exit 1
 }
 rm -f pip_install.log
