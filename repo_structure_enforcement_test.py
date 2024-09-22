@@ -554,5 +554,27 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
+@with_repo_structure(
+    """
+README.md
+"""
+)
+def test_fail_hidden_file_required_despite_hidden_disabled():
+    """Test missing required hidden file - hidden files not tracked."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: '\.hidden.md'
+      - name: 'README.md'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    with pytest.raises(MissingRequiredEntriesError):
+        _assert_repo_directory_structure(config)
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main(["-s", "-v", __file__]))
