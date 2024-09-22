@@ -149,9 +149,6 @@ def _fail_if_invalid_repo_structure_recursive(
         if flags.verbose:
             print(f"Checking file {entry.path}")
 
-        # TODO(ji): make this flexible, i.e. when a file is specified in the config,
-        # test against it anyways no matter if it's in gitignore or hidden, or symlink?
-
         rel_path = os.path.join(rel_dir, entry.name)
         entry_type = EntryType.DIR if entry.is_dir() else EntryType.FILE
         idx = _get_matching_item_index(
