@@ -49,15 +49,31 @@ def with_repo_structure(specification: str):
 
 @chdir_test_tmpdir
 def _create_repo_directory_structure(specification: str) -> None:
-    """Creates a directory structure based on a specification file."""
+    """Creates a directory structure based on a specification file.
+
+    A specification file can contain the following entries:
+    | Entry                      | Meaning                                                         |
+    | # <string>                 | comment string (ignored in output)                              |
+    | <filename>:<content>       | File with content <content> (single line only)                  |
+    | <dirname>/                 | Directory                                                       |
+    | <linkname> -> <targetfile> | Symbolic link with the name <linkname> pointing to <targetfile> |
+    """
     for item in iter(specification.splitlines()):
         if item.startswith("#") or item.strip() == "":
             continue
         if item.strip().endswith("/"):
             os.makedirs(item.strip(), exist_ok=True)
+        elif "->" in item:
+            link_name, target_file = item.strip().split("->")
+            os.symlink(target_file.strip(), link_name.strip())
         else:
-            with open(item.strip(), "w", encoding="utf-8") as f:
-                f.write("Created for testing only")
+            file_content = "Created for testing only"
+            if ":" in item:
+                file_name, file_content = item.strip().split(":")
+            else:
+                file_name = item.strip()
+            with open(file_name.strip(), "w", encoding="utf-8") as f:
+                f.write(file_content.strip() + "\r\n")
 
 
 @chdir_test_tmpdir
@@ -625,6 +641,76 @@ directory_mappings:
     flags.include_hidden = True
     with pytest.raises(UnspecifiedEntryError):
         _assert_repo_directory_structure(config, flags)
+
+
+@with_repo_structure(
+    """
+README.md
+ignored.md
+.gitignore:ignored.md
+"""
+)
+def test_succeed_gitignored_file():
+    """Test for ignored file from gitignore."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: 'README.md'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
+@with_repo_structure(
+    """
+README.md
+link -> README.md
+"""
+)
+def test_fail_unspecified_link():
+    """Test for unspecified symlink."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: 'README.md'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    flags = Flags()
+    flags.follow_symlinks = True
+    with pytest.raises(UnspecifiedEntryError):
+        _assert_repo_directory_structure(config, flags)
+
+
+@with_repo_structure(
+    """
+README.md
+link -> README.md
+"""
+)
+def test_succeed_specified_link():
+    """Test for unspecified symlink."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: 'README.md'
+      - name: 'link'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    flags = Flags()
+    flags.follow_symlinks = True
+    _assert_repo_directory_structure(config, flags)
 
 
 if __name__ == "__main__":

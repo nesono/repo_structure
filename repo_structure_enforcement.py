@@ -21,7 +21,7 @@ from repo_structure_config import (
 class Flags:
     """Flags for common parsing config settings."""
 
-    follow_links: bool = False
+    follow_symlinks: bool = False
     include_hidden: bool = False
     verbose: bool = False
 
@@ -204,7 +204,7 @@ def _skip_entry(
             print(".gitignore matched, skipping")
         return True
 
-    if not flags.follow_links and entry.is_symlink():
+    if not flags.follow_symlinks and entry.is_symlink():
         if flags.verbose:
             print("Symlink found, skipping")
         return True

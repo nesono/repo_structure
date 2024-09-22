@@ -26,7 +26,7 @@ def main(
     """Ensure clean repository structure for your projects."""
     click.echo("Repo-Structure started, parsing parsing config and repo")
     flags = Flags()
-    flags.follow_links = follow_links
+    flags.follow_symlinks = follow_links
     flags.include_hidden = include_hidden
     flags.verbose = verbose
 
