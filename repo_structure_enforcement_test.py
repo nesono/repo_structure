@@ -2,6 +2,7 @@
 """Tests for repo_structure library functions."""
 import os
 import sys
+from typing import Optional
 
 import pytest
 from repo_structure_config import Configuration, ConfigurationParseError
@@ -71,8 +72,11 @@ def _clear_repo_directory_structure() -> None:
 
 
 @chdir_test_tmpdir
-def _assert_repo_directory_structure(config: Configuration) -> None:
-    flags = Flags()
+def _assert_repo_directory_structure(
+    config: Configuration, flags: Optional[Flags] = None
+) -> None:
+    if flags is None:
+        flags = Flags()
     repo_root = os.environ.get("TEST_TMPDIR")
     assert repo_root is not None
     try:
@@ -556,6 +560,27 @@ directory_mappings:
 
 @with_repo_structure(
     """
+.hidden.md
+README.md
+"""
+)
+def test_succeed_ignored_hidden_file():
+    """Test existing ignored hidden file - hidden files not tracked."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: 'README.md'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
+@with_repo_structure(
+    """
 README.md
 """
 )
@@ -574,6 +599,32 @@ directory_mappings:
     config = Configuration(config_yaml, True)
     with pytest.raises(MissingRequiredEntriesError):
         _assert_repo_directory_structure(config)
+
+
+@with_repo_structure(
+    """
+README.md
+.hidden.md
+.unspecified.md
+"""
+)
+def test_fail_unspecified_hidden_files_when_hidden_enabled():
+    """Test for unspecified hidden file - hidden files tracked."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: '\.hidden.md'
+      - name: 'README.md'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    flags = Flags()
+    flags.include_hidden = True
+    with pytest.raises(UnspecifiedEntryError):
+        _assert_repo_directory_structure(config, flags)
 
 
 if __name__ == "__main__":
