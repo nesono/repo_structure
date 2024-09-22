@@ -15,7 +15,7 @@ from repo_structure_enforcement import (
 
 
 def chdir_test_tmpdir(func):
-    """Change working directory to Bazel's TEST_TMPDIR."""
+    """Change working directory to Bazel's TEST_TMPDIR. Use as decorator"""
 
     def wrapper(*args, **kwargs):
         cwd = os.getcwd()
@@ -30,7 +30,7 @@ def chdir_test_tmpdir(func):
 
 
 def with_repo_structure(specification: str):
-    """Create and remove repo structure based on specification."""
+    """Create and remove repo structure based on specification for testing. Us as decorator."""
 
     def decorator(func):
         def wrapper(*args, **kwargs):
