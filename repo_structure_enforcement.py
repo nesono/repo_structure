@@ -243,15 +243,15 @@ def fail_if_invalid_repo_structure(
 
     for map_dir in config.directory_mappings:
         rel_dir = _map_dir_to_rel_dir(map_dir)
-        entry_backlog = _map_dir_to_entry_backlog(config, rel_dir)
+        backlog = _map_dir_to_entry_backlog(config, rel_dir)
 
-        # parse directory and burn down entry_backlog
+        # parse directory and burn down backlog
         _fail_if_invalid_repo_structure_recursive(
             repo_root,
             rel_dir,
             config,
-            entry_backlog,
+            backlog,
             flags or Flags(),
         )
-        # report non-empty entry_backlog
-        _fail_if_required_entries_missing(entry_backlog)
+        # report non-empty backlog
+        _fail_if_required_entries_missing(backlog)
