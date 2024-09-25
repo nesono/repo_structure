@@ -5,6 +5,7 @@ import sys
 from typing import Optional
 
 import pytest
+
 from repo_structure_config import Configuration, ConfigurationParseError
 from repo_structure_enforcement import (
     MissingMappingError,
@@ -89,10 +90,9 @@ def _clear_repo_directory_structure() -> None:
 
 @chdir_test_tmpdir
 def _assert_repo_directory_structure(
-    config: Configuration, flags: Optional[Flags] = None
+    config: Configuration,
+    flags: Optional[Flags] = Flags(),
 ) -> None:
-    if flags is None:
-        flags = Flags()
     repo_root = os.environ.get("TEST_TMPDIR")
     assert repo_root is not None
     try:
@@ -439,7 +439,7 @@ lib/lib.py
 """
 )
 def test_use_rule_recursive():
-    """Test missing required file."""
+    """Test self-recursion from a use rule."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -504,7 +504,7 @@ lib/README.md
 """
 )
 def test_fail_directory_mapping_precedence():
-    """Test missing required file."""
+    """Test that directories from directory_mapping take precedence."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -543,8 +543,8 @@ app/lib/sub_lib/tool/README.md
 app/lib/sub_lib/tool/main.py
 """
 )
-def test_elaborate_use_rule_recursive():
-    """Test missing required file."""
+def test_succeed_elaborate_use_rule_recursive():
+    """Test deeper nested use rule setup with existing entries."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -711,6 +711,27 @@ directory_mappings:
     flags = Flags()
     flags.follow_symlinks = True
     _assert_repo_directory_structure(config, flags)
+
+
+@with_repo_structure(
+    """
+README.md
+"""
+)
+def test_succeed_overlapping_required_file_rules():
+    """Test for overlapping required file rules - two different rules apply to the same file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: 'README\.md'
+      - name: 'README\..*'
+directory_mappings:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
 
 
 if __name__ == "__main__":
