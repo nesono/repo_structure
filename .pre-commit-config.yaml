@@ -1,5 +1,10 @@
 default_language_version:
   python: python3.10
+exclude: |
+  (?x)^(
+    \.ijwb/.*|
+    \.idea/.*
+  )$
 
 repos:
   - repo: local
