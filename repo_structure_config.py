@@ -125,15 +125,15 @@ def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
     return result
 
 
-def _build_rules(structure_rules: dict) -> Dict[str, StructureRule]:
+def _build_rules(structure_rules_yaml: dict) -> Dict[str, StructureRule]:
     rules: Dict[str, StructureRule] = {}
-    if not structure_rules:
+    if not structure_rules_yaml:
         return rules
 
-    for rule in structure_rules:
+    for rule in structure_rules_yaml:
         structure = StructureRule()
         structure.name = rule
-        _parse_directory_structure(structure_rules[rule], structure)
+        _parse_directory_structure(structure_rules_yaml[rule], structure)
         rules[rule] = structure
     return rules
 
@@ -147,8 +147,8 @@ def _validate_use_rule_not_dangling(rules: Dict[str, StructureRule]) -> None:
                 )
 
 
-def _parse_structure_rules(structure_rules: dict) -> Dict[str, StructureRule]:
-    rules = _build_rules(structure_rules)
+def _parse_structure_rules(structure_rules_yaml: dict) -> Dict[str, StructureRule]:
+    rules = _build_rules(structure_rules_yaml)
     _validate_use_rule_not_dangling(rules)
 
     # Note: We do not validate dependencies towards being allowed, since that
@@ -192,20 +192,20 @@ def _parse_use_rule(entry: dict, local_path: str) -> str:
 
 
 def _parse_file_or_directory(
-    entry: dict, is_dir: bool, path: str, structure_rule: StructureRule
+    input_yaml: dict, is_dir: bool, path: str, structure_rule: StructureRule
 ) -> str:
-    _validate_path_entry(entry)
+    _validate_path_entry(input_yaml)
 
-    local_path = os.path.join(path, entry["name"])
+    local_path = os.path.join(path, input_yaml["name"])
 
-    mode = _get_required_or_optional(entry)
-    use_rule = _parse_use_rule(entry, local_path)
+    mode = _get_required_or_optional(input_yaml)
+    use_rule = _parse_use_rule(input_yaml, local_path)
     if use_rule and structure_rule.name != use_rule:
         raise UseRuleError(
             f'Non recursive use_rule for "{structure_rule.name}" '
-            f"-> \"{entry['use_rule']}\" - path {local_path}"
+            f"-> \"{input_yaml['use_rule']}\" - path {local_path}"
         )
-    depends = re.compile(entry.get("depends", ""))
+    depends = re.compile(input_yaml.get("depends", ""))
 
     structure_rule.entries.append(
         DirectoryEntryWrapper(
@@ -221,28 +221,22 @@ def _parse_file_or_directory(
 
 
 def _parse_directory_structure_recursive(
-    path: str, cfg: dict, structure_rule: StructureRule
+    path: str, directory_structure_yaml: dict, structure_rule: StructureRule
 ) -> None:
-    assert "dirs" in cfg or "files" in cfg or "use_rule" in cfg, (
-        f"Neither 'dirs', nor 'files', nor 'use_rule' found during "
-        f"parsing in structure rule: {structure_rule.name} "
-        f"in path: {path}"
-    )
-    for d in cfg.get("dirs", []):
+    for d in directory_structure_yaml.get("dirs", []):
         local_path = _parse_file_or_directory(d, True, path, structure_rule)
-        if "dirs" in d or "files" in d or "use_rule" in d:
-            _parse_directory_structure_recursive(local_path, d, structure_rule)
-    for f in cfg.get("files", []):
+        _parse_directory_structure_recursive(local_path, d, structure_rule)
+    for f in directory_structure_yaml.get("files", []):
         _parse_file_or_directory(f, False, path, structure_rule)
 
 
 def _parse_directory_structure(
-    directory_structure: dict, structure_rule: StructureRule
+    directory_structure_yaml: dict, structure_rule: StructureRule
 ) -> None:
     # if directory_structure is empty dict, return
-    if not directory_structure:
+    if not directory_structure_yaml:
         return
-    _parse_directory_structure_recursive("", directory_structure, structure_rule)
+    _parse_directory_structure_recursive("", directory_structure_yaml, structure_rule)
 
 
 def _parse_directory_mappings(directory_mappings: dict) -> DirectoryMapping:
