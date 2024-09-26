@@ -46,12 +46,15 @@ class StructureRule:
     entries: List[DirectoryEntryWrapper] = field(default_factory=list)
 
 
+DirectoryMapping = Dict[str, List[str]]
+
+
 @dataclass
 class ConfigurationData:
     """Stores configuration data."""
 
     structure_rules: Dict[str, StructureRule] = field(default_factory=dict)
-    directory_mappings: Dict[str, List[str]] = field(default_factory=dict)
+    directory_mappings: DirectoryMapping = field(default_factory=dict)
 
 
 class ConfigurationParseError(Exception):
@@ -106,7 +109,7 @@ class Configuration:
         return self.config.structure_rules
 
     @property
-    def directory_mappings(self) -> Dict[str, List[str]]:
+    def directory_mappings(self) -> DirectoryMapping:
         """Property for directory mappings."""
         return self.config.directory_mappings
 
@@ -242,8 +245,8 @@ def _parse_directory_structure(
     _parse_directory_structure_recursive("", directory_structure, structure_rule)
 
 
-def _parse_directory_mappings(directory_mappings: dict) -> Dict[str, List[str]]:
-    mapping: Dict[str, List[str]] = {}
+def _parse_directory_mappings(directory_mappings: dict) -> DirectoryMapping:
+    mapping: DirectoryMapping = {}
     for directory, rules in directory_mappings.items():
         for r in rules:
             if r.keys() != {"use_rule"}:
