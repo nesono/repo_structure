@@ -36,19 +36,6 @@ class DirectoryEntryWrapper:
 
 
 @dataclass
-class DirectoryStructure:
-    """Storing directory structure rules.
-
-    Storing directories and files separately helps for parsing.
-    All directories and files are stored expanded and not in a
-    tree to facilitate parsing.
-    """
-
-    directories: List[re.Pattern] = field(default_factory=list)
-    files: List[re.Pattern] = field(default_factory=list)
-
-
-@dataclass
 class StructureRule:
     """Storing structure rule.
 
