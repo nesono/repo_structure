@@ -12,3 +12,15 @@ You can control:
 
 Here is an example file that showcases all the supported features:
 [example YAML](repo_structure_config.yaml)
+
+## System Requirements
+
+- Python 3.11
+- [Pip requirements](requirements.in)
+
+## Building from Source
+
+### Using Bazel
+
+- Install Bazelisk
+- Run `bazel test`
