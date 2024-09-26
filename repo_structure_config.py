@@ -4,9 +4,7 @@
 import os
 import re
 from dataclasses import dataclass, field
-from enum import Enum
-from io import TextIOWrapper
-from typing import Dict, Final, List
+from typing import Dict, Final, List, TextIO
 
 from ruamel import yaml as YAML
 
@@ -24,28 +22,14 @@ ALLOWED_ENTRY_KEYS: Final = [
 ]
 
 
-class EntryType(Enum):
-    """Type of the directory entry, to allow for put all wrappers in a list."""
-
-    FILE = "file"
-    DIR = "dir"
-
-
-class ContentRequirement(Enum):
-    """Requirement mode for the directory entry."""
-
-    OPTIONAL = "optional"
-    REQUIRED = "required"
-
-
 @dataclass
 class DirectoryEntryWrapper:
     """Wrapper for entries in the directory structure, that store the path
     as a string together with the entry type."""
 
     path: re.Pattern
-    entry_type: EntryType
-    content_requirement: ContentRequirement
+    is_dir: bool
+    is_required: bool
     use_rule: str = ""
     depends: re.Pattern = re.compile(r"")
     count: int = 0
@@ -120,9 +104,9 @@ class Configuration:
                 name=config_file,
                 entries=[
                     DirectoryEntryWrapper(
-                        re.compile(config_file),
-                        EntryType.FILE,
-                        ContentRequirement.REQUIRED,
+                        path=re.compile(config_file),
+                        is_dir=False,
+                        is_required=True,
                     )
                 ],
             )
@@ -145,7 +129,7 @@ def _load_repo_structure_yaml(filename: str) -> dict:
         return _load_repo_structure_yamls(file)
 
 
-def _load_repo_structure_yamls(yaml_string: str | TextIOWrapper) -> dict:
+def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
     yaml = YAML.YAML(typ="safe")
     result = yaml.load(yaml_string)
     return result
@@ -235,15 +219,11 @@ def _parse_file_or_directory(
 
     structure_rule.entries.append(
         DirectoryEntryWrapper(
-            re.compile(local_path),
-            EntryType.DIR if is_dir else EntryType.FILE,
-            (
-                ContentRequirement.OPTIONAL
-                if mode == "optional"
-                else ContentRequirement.REQUIRED
-            ),
-            use_rule,
-            depends,
+            path=re.compile(local_path),
+            is_dir=is_dir,
+            is_required=mode == "required",
+            use_rule=use_rule,
+            depends=depends,
         )
     )
 

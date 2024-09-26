@@ -7,9 +7,7 @@ import sys
 import pytest
 from repo_structure_config import (
     Configuration,
-    ContentRequirement,
     DirectoryEntryWrapper,
-    EntryType,
     StructureRule,
     UseRuleError,
     _load_repo_structure_yaml,
@@ -65,8 +63,8 @@ def test_successful_parse_structure_rules():
     assert (
         DirectoryEntryWrapper(
             path=re.compile(r"[^/]*\.py"),
-            entry_type=EntryType.FILE,
-            content_requirement=ContentRequirement.OPTIONAL,
+            is_dir=False,
+            is_required=False,
         )
         in rules["python_package"].entries
     )
@@ -74,8 +72,8 @@ def test_successful_parse_structure_rules():
     assert (
         DirectoryEntryWrapper(
             path=re.compile(r"[^/]*"),
-            entry_type=EntryType.DIR,
-            content_requirement=ContentRequirement.OPTIONAL,
+            is_dir=True,
+            is_required=False,
             use_rule="python_package",
         )
         in rules["python_package"].entries
@@ -109,8 +107,8 @@ def test_successful_parse_directory_structure():
     assert (
         DirectoryEntryWrapper(
             path=re.compile(r"[^/]*\.py"),
-            entry_type=EntryType.FILE,
-            content_requirement=ContentRequirement.OPTIONAL,
+            is_dir=False,
+            is_required=False,
         )
         in structure.entries
     )
@@ -125,8 +123,8 @@ def test_successful_parse_directory_structure_wildcard():
     assert (
         DirectoryEntryWrapper(
             path=re.compile(r"[^/]*"),
-            entry_type=EntryType.DIR,
-            content_requirement=ContentRequirement.OPTIONAL,
+            is_dir=True,
+            is_required=False,
             use_rule="python_package",
         )
         in structure.entries

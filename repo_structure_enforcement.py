@@ -1,6 +1,7 @@
 """Library functions for repo structure directory verification."""
 
 # pylint: disable=import-error
+
 import os
 import re
 from os import DirEntry
@@ -11,9 +12,7 @@ from gitignore_parser import parse_gitignore
 
 from repo_structure_config import (
     Configuration,
-    ContentRequirement,
     DirectoryEntryWrapper,
-    EntryType,
 )
 
 
@@ -92,10 +91,10 @@ def _build_active_entry_backlog(
         for e in config.structure_rules[rule].entries:
             result.append(
                 DirectoryEntryWrapper(
-                    re.compile(os.path.join(map_dir, e.path.pattern)),
-                    e.entry_type,
-                    e.content_requirement,
-                    e.use_rule,
+                    path=re.compile(os.path.join(map_dir, e.path.pattern)),
+                    is_dir=e.is_dir,
+                    is_required=e.is_required,
+                    use_rule=e.use_rule,
                 )
             )
     return result
@@ -112,14 +111,14 @@ def _map_dir_to_entry_backlog(
 def _get_matching_item_index(
     items: List[DirectoryEntryWrapper],
     needle: str,
-    entry_type: EntryType,
+    is_dir: bool,
     verbose: bool = False,
 ) -> Generator[int, None, None]:
     was_found = False
     for i, v in enumerate(items):
         if verbose:
             print(f"  Matching against {v.path}")
-        if v.path.fullmatch(needle) and v.entry_type == entry_type:
+        if v.path.fullmatch(needle) and v.is_dir == is_dir:
             if verbose:
                 print(f"  Found match at index {i}, yielding")
             was_found = True
@@ -133,19 +132,12 @@ def _fail_if_required_entries_missing(
 ) -> None:
     missing_required: List[DirectoryEntryWrapper] = []
     for entry in entry_backlog:
-        if (
-            entry.content_requirement == ContentRequirement.REQUIRED
-            and entry.count == 0
-        ):
+        if entry.is_required and entry.count == 0:
             missing_required.append(entry)
 
     if missing_required:
-        missing_required_files = [
-            f.path for f in missing_required if f.entry_type == EntryType.FILE
-        ]
-        missing_required_dirs = [
-            d.path for d in missing_required if d.entry_type == EntryType.DIR
-        ]
+        missing_required_files = [f.path for f in missing_required if not f.is_dir]
+        missing_required_dirs = [d.path for d in missing_required if d.is_dir]
         raise MissingRequiredEntriesError(
             f"Required entries missing:\nFiles: "
             f"{missing_required_files}\nDirs: {missing_required_dirs}"
@@ -174,7 +166,7 @@ def _fail_if_invalid_repo_structure_recursive(
         for idx in _get_matching_item_index(
             backlog,
             rel_path,
-            EntryType.DIR if entry.is_dir() else EntryType.FILE,
+            entry.is_dir(),
             flags.verbose,
         ):
             backlog_entry = backlog[idx]
