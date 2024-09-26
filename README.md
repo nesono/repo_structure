@@ -24,3 +24,9 @@ Here is an example file that showcases all the supported features:
 
 - Install Bazelisk
 - Run `bazel test`
+
+### Using Python Venv
+
+- `python3.11 -m venv .venv`
+- `source .venv/bin/activate`
+- `pytest *_test.py`

@@ -1,8 +1,10 @@
 # pylint: disable=import-error
 """Tests for repo_structure library functions."""
 import os
+import shutil
 import sys
-from typing import Optional
+import tempfile
+from typing import Optional, Callable, TypeVar
 
 import pytest
 
@@ -16,41 +18,21 @@ from repo_structure_enforcement import (
 )
 
 
-def chdir_test_tmpdir(func):
-    """Change working directory to Bazel's TEST_TMPDIR. Use as decorator"""
-
-    def wrapper(*args, **kwargs):
-        cwd = os.getcwd()
-        os.chdir(os.environ.get("TEST_TMPDIR"))
-        try:
-            result = func(*args, **kwargs)
-        finally:
-            os.chdir(cwd)
-        return result
-
-    return wrapper
+def _get_tmp_dir() -> str:
+    if "TEST_TMPDIR" in os.environ:
+        return os.environ.get("TEST_TMPDIR", "")
+    return tempfile.mkdtemp()
 
 
-def with_repo_structure(specification: str):
-    """Create and remove repo structure based on specification for testing. Us as decorator."""
-
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            _create_repo_directory_structure(specification)
-            try:
-                result = func(*args, **kwargs)
-            finally:
-                _clear_repo_directory_structure()
-            return result
-
-        return wrapper
-
-    return decorator
+def _remove_tmp_dir(tmpdir: str) -> None:
+    # if TEST_TMPDIR is there, bazel will take care of it, otherwise:
+    if "TEST_TMPDIR" not in os.environ:
+        shutil.rmtree(tmpdir)
 
 
-@chdir_test_tmpdir
 def _create_repo_directory_structure(specification: str) -> None:
     """Creates a directory structure based on a specification file.
+    Must be run in the target directory.
 
     A specification file can contain the following entries:
     | Entry                      | Meaning                                                         |
@@ -77,9 +59,8 @@ def _create_repo_directory_structure(specification: str) -> None:
                 f.write(file_content.strip() + "\r\n")
 
 
-@chdir_test_tmpdir
 def _clear_repo_directory_structure() -> None:
-    for root, dirs, files in os.walk(os.environ.get("TEST_TMPDIR", ""), topdown=False):
+    for root, dirs, files in os.walk(".", topdown=False):
         if not root:
             continue
         for name in files:
@@ -88,20 +69,42 @@ def _clear_repo_directory_structure() -> None:
             os.rmdir(os.path.join(root, name))
 
 
-@chdir_test_tmpdir
+R = TypeVar("R")
+
+
+def with_repo_structure_in_tmpdir(specification: str):
+    """Create and remove repo structure based on specification for testing. Use as decorator."""
+
+    def decorator(func: Callable[..., R]) -> Callable[..., R]:
+
+        def wrapper(*args, **kwargs):
+            cwd = os.getcwd()
+            tmpdir = _get_tmp_dir()
+            os.chdir(tmpdir)
+            _create_repo_directory_structure(specification)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                _clear_repo_directory_structure()
+                os.chdir(cwd)
+                _remove_tmp_dir(tmpdir)
+            return result
+
+        return wrapper
+
+    return decorator
+
+
 def _assert_repo_directory_structure(
     config: Configuration,
     flags: Optional[Flags] = Flags(),
 ) -> None:
-    repo_root = os.environ.get("TEST_TMPDIR")
+    repo_root = "."
     assert repo_root is not None
-    try:
-        fail_if_invalid_repo_structure(repo_root, config, flags)
-    finally:
-        _clear_repo_directory_structure()
+    fail_if_invalid_repo_structure(repo_root, config, flags)
 
 
-@with_repo_structure("")
+@with_repo_structure_in_tmpdir("")
 def test_all_empty():
     """Test empty directory structure and spec."""
     config_yaml = r"""
@@ -110,7 +113,7 @@ def test_all_empty():
         Configuration(config_yaml, True)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 """
@@ -130,7 +133,7 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 LICENSE
@@ -159,7 +162,7 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 LICENSE
@@ -190,7 +193,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 """
@@ -214,7 +217,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 """
@@ -238,7 +241,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 LICENSE
@@ -266,7 +269,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 main.py
@@ -292,7 +295,7 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 main.py
 """
@@ -318,7 +321,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 """
@@ -344,7 +347,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 filename.txt
 dirname/
@@ -367,7 +370,7 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 dirname/
 """
@@ -388,7 +391,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 filename.txt
 """
@@ -409,7 +412,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 filename.txt
 """
@@ -430,7 +433,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 main.py
 README.md
@@ -462,7 +465,7 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 main.py
 README.md
@@ -495,7 +498,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 main.py
 README.md
@@ -529,7 +532,7 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 app/
@@ -574,7 +577,7 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 .hidden.md
 README.md
@@ -595,7 +598,7 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 """
@@ -617,7 +620,7 @@ directory_mappings:
         _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 .hidden.md
@@ -643,7 +646,7 @@ directory_mappings:
         _assert_repo_directory_structure(config, flags)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 ignored.md
@@ -665,7 +668,7 @@ directory_mappings:
     _assert_repo_directory_structure(config)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 link -> README.md
@@ -689,7 +692,7 @@ directory_mappings:
         _assert_repo_directory_structure(config, flags)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 link -> README.md
@@ -713,7 +716,7 @@ directory_mappings:
     _assert_repo_directory_structure(config, flags)
 
 
-@with_repo_structure(
+@with_repo_structure_in_tmpdir(
     """
 README.md
 """
