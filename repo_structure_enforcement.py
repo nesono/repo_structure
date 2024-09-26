@@ -170,21 +170,25 @@ def _fail_if_invalid_repo_structure_recursive(
                 print(f"  Registered usage for path {rel_path}")
 
             if entry.is_dir():
-                if backlog_entry.use_rule:
-                    if flags.verbose:
-                        print(f"use_rule found for rel path {rel_path}")
-                    backlog.extend(
-                        _build_active_entry_backlog(
-                            [backlog_entry.use_rule],
-                            rel_path,
-                            config,
-                        )
-                    )
+                _handle_use_rule(backlog, backlog_entry, config, flags, rel_path)
 
                 # enter the subdirectory recursively
                 _fail_if_invalid_repo_structure_recursive(
                     repo_root, rel_path, config, backlog, flags
                 )
+
+
+def _handle_use_rule(backlog, backlog_entry, config, flags, rel_path):
+    if backlog_entry.use_rule:
+        if flags.verbose:
+            print(f"use_rule found for rel path {rel_path}")
+        backlog.extend(
+            _build_active_entry_backlog(
+                [backlog_entry.use_rule],
+                rel_path,
+                config,
+            )
+        )
 
 
 def _get_git_ignore(repo_root: str) -> Callable[[str], bool] | None:
