@@ -29,4 +29,11 @@ Here is an example file that showcases all the supported features:
 
 - `python3.11 -m venv .venv`
 - `source .venv/bin/activate`
+- `pip install -r requirements_lock.txt`
+- `pytest *_test.py`
+
+### Using Conda
+
+- `conda activate <conda_env>`
+- `pip install -r requirements_lock.txt`
 - `pytest *_test.py`
