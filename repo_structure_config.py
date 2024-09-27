@@ -15,7 +15,6 @@ ALLOWED_ENTRY_KEYS: Final = [
     "name",
     "mode",
     "depends",
-    "depends_path",
     "use_rule",
     "files",
     "dirs",
