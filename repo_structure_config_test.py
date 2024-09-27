@@ -7,7 +7,7 @@ import sys
 import pytest
 from repo_structure_config import (
     Configuration,
-    DirectoryEntryWrapper,
+    RepoEntry,
     StructureRuleList,
     UseRuleError,
     _load_repo_structure_yaml,
@@ -61,7 +61,7 @@ def test_successful_parse_structure_rules():
     assert "python_package" in rules
 
     assert (
-        DirectoryEntryWrapper(
+        RepoEntry(
             path=re.compile(r"[^/]*\.py"),
             is_dir=False,
             is_required=False,
@@ -70,7 +70,7 @@ def test_successful_parse_structure_rules():
     )
 
     assert (
-        DirectoryEntryWrapper(
+        RepoEntry(
             path=re.compile(r"[^/]*"),
             is_dir=True,
             is_required=False,
@@ -105,7 +105,7 @@ def test_successful_parse_directory_structure():
     )
 
     assert (
-        DirectoryEntryWrapper(
+        RepoEntry(
             path=re.compile(r"[^/]*\.py"),
             is_dir=False,
             is_required=False,
@@ -122,7 +122,7 @@ def test_successful_parse_directory_structure_wildcard():
         config["structure_rules"]["python_package"], structure_rules
     )
     assert (
-        DirectoryEntryWrapper(
+        RepoEntry(
             path=re.compile(r"[^/]*"),
             is_dir=True,
             is_required=False,

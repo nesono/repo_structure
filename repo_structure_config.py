@@ -26,7 +26,7 @@ class UseRuleError(Exception):
 
 
 @dataclass
-class DirectoryEntryWrapper:
+class RepoEntry:
     """Wrapper for entries in the directory structure, that store the path
     as a string together with the entry type."""
 
@@ -39,7 +39,7 @@ class DirectoryEntryWrapper:
 
 
 DirectoryMap = Dict[str, List[str]]
-StructureRuleList = List[DirectoryEntryWrapper]
+StructureRuleList = List[RepoEntry]
 StructureRuleMap = Dict[str, StructureRuleList]
 
 
@@ -85,7 +85,7 @@ class Configuration:
 
             # add the config file to the config
             self.config.structure_rules[config_file] = [
-                DirectoryEntryWrapper(
+                RepoEntry(
                     path=re.compile(config_file),
                     is_dir=False,
                     is_required=True,
@@ -201,7 +201,7 @@ def _parse_file_or_directory(
     depends = re.compile(input_yaml.get("depends", ""))
 
     structure_rule_list.append(
-        DirectoryEntryWrapper(
+        RepoEntry(
             path=re.compile(local_path),
             is_dir=is_dir,
             is_required=mode == "required",

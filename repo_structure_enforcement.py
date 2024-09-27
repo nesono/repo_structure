@@ -12,7 +12,7 @@ from gitignore_parser import parse_gitignore
 
 from repo_structure_config import (
     Configuration,
-    DirectoryEntryWrapper,
+    RepoEntry,
 )
 
 
@@ -85,12 +85,12 @@ def _get_use_rules_for_directory(config: Configuration, directory: str) -> List[
 
 def _build_active_entry_backlog(
     active_use_rules: List[str], map_dir: str, config: Configuration
-) -> List[DirectoryEntryWrapper]:
-    result: List[DirectoryEntryWrapper] = []
+) -> List[RepoEntry]:
+    result: List[RepoEntry] = []
     for rule in active_use_rules:
         for e in config.structure_rules[rule]:
             result.append(
-                DirectoryEntryWrapper(
+                RepoEntry(
                     path=re.compile(os.path.join(map_dir, e.path.pattern)),
                     is_dir=e.is_dir,
                     is_required=e.is_required,
@@ -103,13 +103,13 @@ def _build_active_entry_backlog(
 def _map_dir_to_entry_backlog(
     config: Configuration,
     map_dir: str,
-) -> List[DirectoryEntryWrapper]:
+) -> List[RepoEntry]:
     use_rules = _get_use_rules_for_directory(config, map_dir)
     return _build_active_entry_backlog(use_rules, map_dir, config)
 
 
 def _get_matching_item_index(
-    items: List[DirectoryEntryWrapper],
+    items: List[RepoEntry],
     needle: str,
     is_dir: bool,
     verbose: bool = False,
@@ -128,9 +128,9 @@ def _get_matching_item_index(
 
 
 def _fail_if_required_entries_missing(
-    entry_backlog: List[DirectoryEntryWrapper],
+    entry_backlog: List[RepoEntry],
 ) -> None:
-    missing_required: List[DirectoryEntryWrapper] = []
+    missing_required: List[RepoEntry] = []
     for entry in entry_backlog:
         if entry.is_required and entry.count == 0:
             missing_required.append(entry)
@@ -148,7 +148,7 @@ def _fail_if_invalid_repo_structure_recursive(
     repo_root: str,
     rel_dir: str,
     config: Configuration,
-    backlog: List[DirectoryEntryWrapper],
+    backlog: List[RepoEntry],
     flags: Flags,
 ) -> None:
     git_ignore = _get_git_ignore(repo_root)
