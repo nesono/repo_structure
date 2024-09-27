@@ -22,6 +22,10 @@ ALLOWED_ENTRY_KEYS: Final = [
 ]
 
 
+class UseRuleError(Exception):
+    """Use_rule related error."""
+
+
 @dataclass
 class DirectoryEntryWrapper:
     """Wrapper for entries in the directory structure, that store the path
@@ -35,26 +39,17 @@ class DirectoryEntryWrapper:
     count: int = 0
 
 
-@dataclass
-class StructureRule:
-    """Storing structure rule.
-
-    Compound instance for structure rules, e.g. cpp_source,
-    python_package, etc."""
-
-    name: str = field(default_factory=str)
-    entries: List[DirectoryEntryWrapper] = field(default_factory=list)
-
-
-DirectoryMapping = Dict[str, List[str]]
+DirectoryMap = Dict[str, List[str]]
+StructureRuleList = List[DirectoryEntryWrapper]
+StructureRuleMap = Dict[str, StructureRuleList]
 
 
 @dataclass
 class ConfigurationData:
     """Stores configuration data."""
 
-    structure_rules: Dict[str, StructureRule] = field(default_factory=dict)
-    directory_mappings: DirectoryMapping = field(default_factory=dict)
+    structure_rules: StructureRuleMap = field(default_factory=dict)
+    directory_mappings: DirectoryMap = field(default_factory=dict)
 
 
 class ConfigurationParseError(Exception):
@@ -90,26 +85,23 @@ class Configuration:
                 )
 
             # add the config file to the config
-            self.config.structure_rules[config_file] = StructureRule(
-                name=config_file,
-                entries=[
-                    DirectoryEntryWrapper(
-                        path=re.compile(config_file),
-                        is_dir=False,
-                        is_required=True,
-                    )
-                ],
-            )
+            self.config.structure_rules[config_file] = [
+                DirectoryEntryWrapper(
+                    path=re.compile(config_file),
+                    is_dir=False,
+                    is_required=True,
+                )
+            ]
 
             self.config.directory_mappings["/"].insert(0, config_file)
 
     @property
-    def structure_rules(self) -> Dict[str, StructureRule]:
+    def structure_rules(self) -> StructureRuleMap:
         """Property for structure rules."""
         return self.config.structure_rules
 
     @property
-    def directory_mappings(self) -> DirectoryMapping:
+    def directory_mappings(self) -> DirectoryMap:
         """Property for directory mappings."""
         return self.config.directory_mappings
 
@@ -125,31 +117,42 @@ def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
     return result
 
 
-def _build_rules(structure_rules_yaml: dict) -> Dict[str, StructureRule]:
-    rules: Dict[str, StructureRule] = {}
+def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
+    rules: StructureRuleMap = {}
     if not structure_rules_yaml:
         return rules
 
     for rule in structure_rules_yaml:
-        structure = StructureRule()
-        structure.name = rule
-        _parse_directory_structure(structure_rules_yaml[rule], structure)
-        rules[rule] = structure
+        structure_rules: StructureRuleList = []
+        _parse_directory_structure(structure_rules_yaml[rule], structure_rules)
+        rules[rule] = structure_rules
     return rules
 
 
-def _validate_use_rule_not_dangling(rules: Dict[str, StructureRule]) -> None:
-    for use_rule in rules.keys():
-        for entry in rules[use_rule].entries:
-            if entry.use_rule and entry.use_rule != use_rule:
-                raise ValueError(
-                    f"use_rule rule {use_rule} not found in 'structure_rules'"
+def _validate_use_rule_not_dangling(rules: StructureRuleMap) -> None:
+    for rule_key in rules.keys():
+        for entry in rules[rule_key]:
+            if entry.use_rule and entry.use_rule not in rules:
+                raise UseRuleError(
+                    f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
+                    "is not a valid rule key"
                 )
 
 
-def _parse_structure_rules(structure_rules_yaml: dict) -> Dict[str, StructureRule]:
+def _validate_use_rule_only_recursive(rules: StructureRuleMap) -> None:
+    for rule_key in rules.keys():
+        for entry in rules[rule_key]:
+            if entry.use_rule and entry.use_rule != rule_key:
+                raise UseRuleError(
+                    f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
+                    "is not recursive"
+                )
+
+
+def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
     rules = _build_rules(structure_rules_yaml)
     _validate_use_rule_not_dangling(rules)
+    _validate_use_rule_only_recursive(rules)
 
     # Note: We do not validate dependencies towards being allowed, since that
     # would require us to check if the 'depends' pattern is fully enclosed
@@ -177,10 +180,6 @@ def _get_required_or_optional(entry: dict) -> str:
     return "required"
 
 
-class UseRuleError(Exception):
-    """Use_rule related error."""
-
-
 def _parse_use_rule(entry: dict, local_path: str) -> str:
     if "use_rule" in entry:
         if "dirs" in entry:
@@ -192,7 +191,7 @@ def _parse_use_rule(entry: dict, local_path: str) -> str:
 
 
 def _parse_file_or_directory(
-    input_yaml: dict, is_dir: bool, path: str, structure_rule: StructureRule
+    input_yaml: dict, is_dir: bool, path: str, structure_rule_list: StructureRuleList
 ) -> str:
     _validate_path_entry(input_yaml)
 
@@ -200,14 +199,9 @@ def _parse_file_or_directory(
 
     mode = _get_required_or_optional(input_yaml)
     use_rule = _parse_use_rule(input_yaml, local_path)
-    if use_rule and structure_rule.name != use_rule:
-        raise UseRuleError(
-            f'Non recursive use_rule for "{structure_rule.name}" '
-            f"-> \"{input_yaml['use_rule']}\" - path {local_path}"
-        )
     depends = re.compile(input_yaml.get("depends", ""))
 
-    structure_rule.entries.append(
+    structure_rule_list.append(
         DirectoryEntryWrapper(
             path=re.compile(local_path),
             is_dir=is_dir,
@@ -221,26 +215,28 @@ def _parse_file_or_directory(
 
 
 def _parse_directory_structure_recursive(
-    path: str, directory_structure_yaml: dict, structure_rule: StructureRule
+    path: str, directory_structure_yaml: dict, structure_rule_list: StructureRuleList
 ) -> None:
     for d in directory_structure_yaml.get("dirs", []):
-        local_path = _parse_file_or_directory(d, True, path, structure_rule)
-        _parse_directory_structure_recursive(local_path, d, structure_rule)
+        local_path = _parse_file_or_directory(d, True, path, structure_rule_list)
+        _parse_directory_structure_recursive(local_path, d, structure_rule_list)
     for f in directory_structure_yaml.get("files", []):
-        _parse_file_or_directory(f, False, path, structure_rule)
+        _parse_file_or_directory(f, False, path, structure_rule_list)
 
 
 def _parse_directory_structure(
-    directory_structure_yaml: dict, structure_rule: StructureRule
+    directory_structure_yaml: dict, structure_rule_list: StructureRuleList
 ) -> None:
     # if directory_structure is empty dict, return
     if not directory_structure_yaml:
         return
-    _parse_directory_structure_recursive("", directory_structure_yaml, structure_rule)
+    _parse_directory_structure_recursive(
+        "", directory_structure_yaml, structure_rule_list
+    )
 
 
-def _parse_directory_mappings(directory_mappings: dict) -> DirectoryMapping:
-    mapping: DirectoryMapping = {}
+def _parse_directory_mappings(directory_mappings: dict) -> DirectoryMap:
+    mapping: DirectoryMap = {}
     for directory, rules in directory_mappings.items():
         for r in rules:
             if r.keys() != {"use_rule"}:

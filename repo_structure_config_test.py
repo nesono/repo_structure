@@ -8,7 +8,7 @@ import pytest
 from repo_structure_config import (
     Configuration,
     DirectoryEntryWrapper,
-    StructureRule,
+    StructureRuleList,
     UseRuleError,
     _load_repo_structure_yaml,
     _load_repo_structure_yamls,
@@ -66,7 +66,7 @@ def test_successful_parse_structure_rules():
             is_dir=False,
             is_required=False,
         )
-        in rules["python_package"].entries
+        in rules["python_package"]
     )
 
     assert (
@@ -76,7 +76,7 @@ def test_successful_parse_structure_rules():
             is_required=False,
             use_rule="python_package",
         )
-        in rules["python_package"].entries
+        in rules["python_package"]
     )
 
 
@@ -96,13 +96,13 @@ python_package:
 
 def test_successful_parse_directory_structure():
     """Test successful parsing of directory structure."""
-    structure = StructureRule()
-    _parse_directory_structure({}, structure)
-    assert len(structure.name) == 0
+    structure_rules: StructureRuleList = []
+    _parse_directory_structure({}, structure_rules)
 
     config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
-    structure.name = "python_package"
-    _parse_directory_structure(config["structure_rules"]["python_package"], structure)
+    _parse_directory_structure(
+        config["structure_rules"]["python_package"], structure_rules
+    )
 
     assert (
         DirectoryEntryWrapper(
@@ -110,16 +110,17 @@ def test_successful_parse_directory_structure():
             is_dir=False,
             is_required=False,
         )
-        in structure.entries
+        in structure_rules
     )
 
 
 def test_successful_parse_directory_structure_wildcard():
     """Test successful parsing of directory structure."""
     config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
-    structure = StructureRule()
-    structure.name = "python_package"
-    _parse_directory_structure(config["structure_rules"]["python_package"], structure)
+    structure_rules: StructureRuleList = []
+    _parse_directory_structure(
+        config["structure_rules"]["python_package"], structure_rules
+    )
     assert (
         DirectoryEntryWrapper(
             path=re.compile(r"[^/]*"),
@@ -127,7 +128,7 @@ def test_successful_parse_directory_structure_wildcard():
             is_required=False,
             use_rule="python_package",
         )
-        in structure.entries
+        in structure_rules
     )
 
 
@@ -162,9 +163,9 @@ files:
     """
     config = _load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):
-        structure = StructureRule()
-        _parse_directory_structure(config, structure)
-        pprint.pprint(structure)
+        structure_rules: StructureRuleList = []
+        _parse_directory_structure(config, structure_rules)
+        pprint.pprint(structure_rules)
 
 
 def test_successful_parse_directory_mappings():

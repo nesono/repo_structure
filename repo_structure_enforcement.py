@@ -88,7 +88,7 @@ def _build_active_entry_backlog(
 ) -> List[DirectoryEntryWrapper]:
     result: List[DirectoryEntryWrapper] = []
     for rule in active_use_rules:
-        for e in config.structure_rules[rule].entries:
+        for e in config.structure_rules[rule]:
             result.append(
                 DirectoryEntryWrapper(
                     path=re.compile(os.path.join(map_dir, e.path.pattern)),
