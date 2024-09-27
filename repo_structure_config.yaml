@@ -21,7 +21,7 @@ structure_rules:
         mode: optional
         use_rule: python_package
 
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     - use_rule: python_package

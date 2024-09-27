@@ -125,7 +125,7 @@ structure_rules:
   base_structure:
     files:
       - name: '.*\.md'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -154,7 +154,7 @@ structure_rules:
       - name: "python"
         files:
             - name: '[^/]*'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
         """
@@ -184,7 +184,7 @@ structure_rules:
       - name: "python"
         files:
             - name: '.*'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
         """
@@ -208,7 +208,7 @@ structure_rules:
         mode: required
       - name: "README.md"
         # mode: required is default
-directory_mappings:
+directory_map:
   /some_dir:
     - use_rule: base_structure
     """
@@ -232,7 +232,7 @@ structure_rules:
         mode: required
       - name: "README.md"
         # mode: required is default
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -260,7 +260,7 @@ structure_rules:
       - name: "python"
         files:
             - name: '.*'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
         """
@@ -286,7 +286,7 @@ structure_rules:
     files:
       - name: '.*\.py'
         mode: required
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     - use_rule: python_package
@@ -311,7 +311,7 @@ structure_rules:
     files:
       - name: '.*\.py'
         mode: required
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     - use_rule: python_package
@@ -337,7 +337,7 @@ structure_rules:
     files:
       - name: '.*\.py'
         mode: required
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     - use_rule: python_package
@@ -362,7 +362,7 @@ structure_rules:
       - name: '.*name.*'
     dirs:
       - name: '.*name.*'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -382,7 +382,7 @@ structure_rules:
   base_structure:
     files:
       - name: '.*name.*'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -403,7 +403,7 @@ structure_rules:
   base_structure:
     dirs:
       - name: '.*name.*'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -424,7 +424,7 @@ structure_rules:
   base_structure:
     files:
       - name: '.*name'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -456,7 +456,7 @@ structure_rules:
       - name: '.*'
         mode: optional
         use_rule: python_package
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     - use_rule: python_package
@@ -488,7 +488,7 @@ structure_rules:
       - name: '[^/]*'
         mode: optional
         use_rule: python_package
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     - use_rule: python_package
@@ -521,7 +521,7 @@ structure_rules:
       - name: '[^/]*'
         mode: optional
         use_rule: python_package
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     - use_rule: python_package
@@ -564,7 +564,7 @@ structure_rules:
       - name: '.*'
         mode: optional
         use_rule: python_package
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
   /app/:
@@ -590,7 +590,7 @@ structure_rules:
   base_structure:
     files:
       - name: 'README.md'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -611,7 +611,7 @@ structure_rules:
     files:
       - name: '\.hidden.md'
       - name: 'README.md'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -635,7 +635,7 @@ structure_rules:
     files:
       - name: '\.hidden.md'
       - name: 'README.md'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -660,7 +660,7 @@ structure_rules:
   base_structure:
     files:
       - name: 'README.md'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -681,7 +681,7 @@ structure_rules:
   base_structure:
     files:
       - name: 'README.md'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -706,7 +706,7 @@ structure_rules:
     files:
       - name: 'README.md'
       - name: 'link'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """
@@ -729,7 +729,7 @@ structure_rules:
     files:
       - name: 'README\.md'
       - name: 'README\..*'
-directory_mappings:
+directory_map:
   /:
     - use_rule: base_structure
     """

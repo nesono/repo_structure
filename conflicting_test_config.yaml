@@ -3,6 +3,6 @@ structure_rules:
     files:
       - name: "conflicting_test_config.yaml"
 
-directory_mappings:
+directory_map:
   /:
     - use_rule: conflicting_test_config.yaml

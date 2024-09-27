@@ -12,7 +12,7 @@ from repo_structure_config import (
     UseRuleError,
     _load_repo_structure_yaml,
     _load_repo_structure_yamls,
-    _parse_directory_mappings,
+    _parse_directory_map,
     _parse_directory_structure,
     _parse_structure_rules,
     ConfigurationParseError,
@@ -40,7 +40,7 @@ base_structure:
         - "LICENSE": required
         - "README.md": required
         - '.*\.md': optional
-directory_mappings:
+directory_map:
     /:
         - use_rule: base_structure
 """
@@ -168,19 +168,19 @@ files:
         pprint.pprint(structure_rules)
 
 
-def test_successful_parse_directory_mappings():
+def test_successful_parse_directory_map():
     """Test successful parsing of directory mappings."""
-    mappings = _parse_directory_mappings({})
+    mappings = _parse_directory_map({})
     assert len(mappings) == 0
 
     config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
-    mappings = _parse_directory_mappings(config["directory_mappings"])
+    mappings = _parse_directory_map(config["directory_map"])
     assert len(mappings) == 1
     assert "/" in mappings
     assert mappings["/"] == ["base_structure", "python_package"]
 
 
-def test_fail_directory_mappings_bad_key():
+def test_fail_directory_map_bad_key():
     """Test failing parsing of file mappings using bad key."""
     test_config = """
 /:
@@ -190,11 +190,11 @@ def test_fail_directory_mappings_bad_key():
     """
     config = _load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):
-        mappings = _parse_directory_mappings(config)
+        mappings = _parse_directory_map(config)
         pprint.pprint(mappings)
 
 
-def test_fail_directory_mappings_bad_list():
+def test_fail_directory_map_bad_list():
     """Test failing parsing of file mappings using multiple entries."""
     test_config = """
 /:
@@ -203,7 +203,7 @@ def test_fail_directory_mappings_bad_list():
     """
     config = _load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):
-        mappings = _parse_directory_mappings(config)
+        mappings = _parse_directory_map(config)
         pprint.pprint(mappings)
 
 
@@ -211,8 +211,8 @@ def test_successful_full_example_parse():
     """Test parsing of the full example file."""
     config = Configuration(TEST_CONFIG_YAML)
     assert config is not None
-    assert config.directory_mappings is not None
-    assert "/" in config.directory_mappings
+    assert config.directory_map is not None
+    assert "/" in config.directory_map
     assert config.structure_rules is not None
     assert "base_structure" in config.structure_rules
     assert "python_package" in config.structure_rules
@@ -222,15 +222,15 @@ def test_fail_use_rule_not_recursive():
     """Test missing required file."""
     config_yaml = r"""
 structure_rules:
-  base_structure:
-    files:
-      - name: LICENSE
-  python_package:
-    dirs:
-      - name: '.*'
-        mode: required
-        use_rule: base_structure
-directory_mappings:
+    base_structure:
+        files:
+            - name: LICENSE
+    python_package:
+        dirs:
+            - name: '.*'
+              mode: required
+              use_rule: base_structure
+directory_map:
   /:
     - use_rule: python_package
     """
@@ -242,6 +242,28 @@ def test_fail_config_file_structure_rule_conflict():
     """Test conflicting rules for automatic config file addition."""
     with pytest.raises(ConfigurationParseError):
         Configuration("conflicting_test_config.yaml")
+
+
+def test_succeed_config_file_depends_entry():
+    """Test usage of a 'depends' entry."""
+    config_yaml = r"""
+structure_rules:
+    base_structure:
+        files:
+            - name: 'main\.cpp'
+              depends: 'main_test\.cpp'
+    """
+    config = Configuration(config_yaml, param1_is_yaml_string=True)
+    assert (
+        RepoEntry(
+            path=re.compile(r"main\.cpp"),
+            is_dir=False,
+            is_required=True,
+            use_rule="",
+            depends=re.compile(r"main_test\.cpp"),
+        )
+        in config.structure_rules["base_structure"]
+    )
 
 
 if __name__ == "__main__":

@@ -48,7 +48,7 @@ class ConfigurationData:
     """Stores configuration data."""
 
     structure_rules: StructureRuleMap = field(default_factory=dict)
-    directory_mappings: DirectoryMap = field(default_factory=dict)
+    directory_map: DirectoryMap = field(default_factory=dict)
 
 
 class ConfigurationParseError(Exception):
@@ -71,9 +71,7 @@ class Configuration:
             structure_rules=_parse_structure_rules(
                 yaml_dict.get("structure_rules", {})
             ),
-            directory_mappings=_parse_directory_mappings(
-                yaml_dict.get("directory_mappings", {})
-            ),
+            directory_map=_parse_directory_map(yaml_dict.get("directory_map", {})),
         )
 
         if not param1_is_yaml_string:
@@ -92,7 +90,7 @@ class Configuration:
                 )
             ]
 
-            self.config.directory_mappings["/"].insert(0, config_file)
+            self.config.directory_map["/"].insert(0, config_file)
 
     @property
     def structure_rules(self) -> StructureRuleMap:
@@ -100,9 +98,9 @@ class Configuration:
         return self.config.structure_rules
 
     @property
-    def directory_mappings(self) -> DirectoryMap:
+    def directory_map(self) -> DirectoryMap:
         """Property for directory mappings."""
-        return self.config.directory_mappings
+        return self.config.directory_map
 
 
 def _load_repo_structure_yaml(filename: str) -> dict:
@@ -234,9 +232,9 @@ def _parse_directory_structure(
     )
 
 
-def _parse_directory_mappings(directory_mappings: dict) -> DirectoryMap:
+def _parse_directory_map(directory_map: dict) -> DirectoryMap:
     mapping: DirectoryMap = {}
-    for directory, rules in directory_mappings.items():
+    for directory, rules in directory_map.items():
         for r in rules:
             if r.keys() != {"use_rule"}:
                 raise ValueError(

@@ -77,8 +77,8 @@ def _map_dir_to_rel_dir(map_dir: str) -> str:
 def _get_use_rules_for_directory(config: Configuration, directory: str) -> List[str]:
     d = _rel_dir_to_map_dir(directory)
 
-    if d in config.directory_mappings:
-        return config.directory_mappings[d]
+    if d in config.directory_map:
+        return config.directory_map[d]
 
     raise MissingMappingError(f'Directory "{d}" does not have a directory mapping')
 
@@ -227,7 +227,7 @@ def _skip_entry(
 
     if entry.is_dir():
         map_dir = _rel_dir_to_map_dir(rel_path)
-        if map_dir in config.directory_mappings:
+        if map_dir in config.directory_map:
             if flags.verbose:
                 print(f"Overlapping directory mappings found: {rel_path} - skipping")
             return True
@@ -247,10 +247,10 @@ def fail_if_invalid_repo_structure(
         return
 
     # ensure root mapping is there
-    if "/" not in config.directory_mappings:
+    if "/" not in config.directory_map:
         raise MissingMappingError("Config does not have a root mapping")
 
-    for map_dir in config.directory_mappings:
+    for map_dir in config.directory_map:
         rel_dir = _map_dir_to_rel_dir(map_dir)
         backlog = _map_dir_to_entry_backlog(config, rel_dir)
 
