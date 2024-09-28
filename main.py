@@ -15,7 +15,7 @@ from repo_structure_enforcement import fail_if_invalid_repo_structure, Flags
 @click.option("--repo-root", "-r", required=True, type=click.Path(exists=True))
 @click.option("--config-path", "-c", required=True, type=click.Path(exists=True))
 @click.option("--follow-symlinks", "-L", is_flag=True, default=False)
-@click.option("--include-hidden", "-H", is_flag=True, default=False)
+@click.option("--include-hidden", "-H", is_flag=True, default=True)
 @click.option("--verbose", "-v", is_flag=True, default=False)
 def main(
     repo_root: str,

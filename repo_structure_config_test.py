@@ -1,269 +1,218 @@
 # pylint: disable=import-error
 """Tests for repo_structure library functions."""
-import pprint
-import re
 import sys
 
 import pytest
 from repo_structure_config import (
     Configuration,
-    RepoEntry,
-    StructureRuleList,
     UseRuleError,
-    _load_repo_structure_yaml,
-    _load_repo_structure_yamls,
-    _parse_directory_map,
-    _parse_directory_structure,
-    _parse_structure_rules,
     ConfigurationParseError,
+    DirectoryStructureError,
 )
 
 
-TEST_CONFIG_YAML = "repo_structure_config.yaml"
-
-
-def test_successful_load_yaml():
-    """Test successful loading of the yaml configuration using ruamel.yaml."""
-    config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
-    assert isinstance(config, dict)
-    assert isinstance(config["structure_rules"], dict)
-
-
-def test_successful_load_yamls():
-    """Test loading from string."""
-    config = _load_repo_structure_yamls("")
-    assert config is None
-
+def test_successful_parse():
+    """Test successful parsing with many features."""
     test_yaml = r"""
-base_structure:
+structure_rules:
+  basic_rule:
     files:
-        - "LICENSE": required
-        - "README.md": required
-        - '.*\.md': optional
+      - name: "README.md"
+        mode: required
+        # mode: required is default
+      - name: '.*\.md'
+        mode: optional
+    dirs:
+      - name: '.github'
+        files:
+          - name: '[^/]*'
+  recursive_rule:
+    files:
+      - name: '[^/]*\.py'
+        mode: required
+    dirs:
+      - name: "package"
+        mode: optional
+        use_rule: recursive_rule
+  template_rule_second_map:
+    files:
+      - name: "BUILD"
+    dirs:
+      - name: "example"
+        dirs:
+          - name: "doc"
+            mode: required
+        files:
+          - name: "[^/]*"
+
 directory_map:
-    /:
-        - use_rule: base_structure
-"""
-    config = _load_repo_structure_yamls(test_yaml)
-    assert isinstance(config, dict)
-    assert isinstance(config, dict)
+  /:
+    - use_rule: basic_rule
+    - use_rule: recursive_rule
+  /test_folder_structure/:
+    - use_rule: template_rule_second_map
+    """
+    # parsing should not throw using the above yaml
+    config = Configuration(test_yaml, True)
+
+    # assert on basics
+    assert config is not None
+    assert config.directory_map is not None
+    assert config.structure_rules is not None
 
 
-def test_successful_parse_structure_rules():
-    """Test successful parsing of the structure rules."""
-    rules = _parse_structure_rules({})
-    assert len(rules) == 0
-
-    config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
-    rules = _parse_structure_rules(config["structure_rules"])
-
-    assert "base_structure" in rules
-    assert "python_package" in rules
-
-    assert (
-        RepoEntry(
-            path=re.compile(r"[^/]*\.py"),
-            is_dir=False,
-            is_required=False,
-        )
-        in rules["python_package"]
-    )
-
-    assert (
-        RepoEntry(
-            path=re.compile(r"[^/]*"),
-            is_dir=True,
-            is_required=False,
-            use_rule="python_package",
-        )
-        in rules["python_package"]
-    )
-
-
-def test_fail_parse_structure_rules_dangling_use_rule():
+def test_fail_parse_dangling_use_rule_in_directory_map():
     """Test failing parsing of the structure rules with dangling use_rule."""
     test_yaml = r"""
-python_package:
-  dirs:
-    - name: "docs"
-      mode: optional
-      use_rule: documentation
+structure_rules:
+  base_structure:
+    files:
+      - name: "README.md"
+
+directory_map:
+  /:
+    - use_rule: base_structure
+    - use_rule: python_package
     """
-    config = _load_repo_structure_yamls(test_yaml)
     with pytest.raises(UseRuleError):
-        _parse_structure_rules(config)
+        Configuration(test_yaml, True)
 
 
-def test_successful_parse_directory_structure():
-    """Test successful parsing of directory structure."""
-    structure_rules: StructureRuleList = []
-    _parse_directory_structure({}, structure_rules)
+def test_fail_parse_dangling_use_rule_in_structure_rule():
+    """Test failing parsing of the structure rules with dangling use_rule."""
+    test_yaml = r"""
+structure_rules:
+  base_structure:
+    files:
+      - name: "README.md"
+    dirs:
+      - name: 'docs'
+        use_rule: python_package
 
-    config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
-    _parse_directory_structure(
-        config["structure_rules"]["python_package"], structure_rules
-    )
-
-    assert (
-        RepoEntry(
-            path=re.compile(r"[^/]*\.py"),
-            is_dir=False,
-            is_required=False,
-        )
-        in structure_rules
-    )
-
-
-def test_successful_parse_directory_structure_wildcard():
-    """Test successful parsing of directory structure."""
-    config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
-    structure_rules: StructureRuleList = []
-    _parse_directory_structure(
-        config["structure_rules"]["python_package"], structure_rules
-    )
-    assert (
-        RepoEntry(
-            path=re.compile(r"[^/]*"),
-            is_dir=True,
-            is_required=False,
-            use_rule="python_package",
-        )
-        in structure_rules
-    )
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    with pytest.raises(UseRuleError):
+        Configuration(test_yaml, True)
 
 
 def test_fail_directory_structure_mixing_use_rule_and_files():
     """Test failing parsing of directory when use_rule and files are mixed."""
-    test_config = """
-package:
-    dirs:
-        - name: "docs"
-          mode: optional
-          use_rule: documentation
-          dirs:
-            - ".*/": optional
-              files:
-                - ".*": optional
-documentation:
-    files:
-        - name: "README.md"
+    test_config = r"""
+structure_rules:
+    package:
+        dirs:
+            - name: "docs"
+              mode: optional
+              use_rule: documentation
+              dirs:
+                - ".*/": optional
+                  files:
+                    - ".*": optional
+directory_map:
+/:
+    - use_rule: package
 """
-    config = _load_repo_structure_yamls(test_config)
     with pytest.raises(UseRuleError):
-        structure = _parse_structure_rules(config)
-        pprint.pprint(structure)
+        Configuration(test_config, True)
 
 
-def test_fail_parse_bad_key():
+def test_fail_parse_bad_key_in_structure_rule():
     """Test failing parsing of file dependencies using bad key."""
     test_config = r"""
-files:
-    - name: "README.md"
-      foo: '.*\.py'
+structure_rules:
+    bad_key_rule:
+        files:
+            - name: "README.md"
+              foo: '.*\.py'
+directory_map:
+/:
+    - use_rule: bad_key_rule
     """
-    config = _load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):
-        structure_rules: StructureRuleList = []
-        _parse_directory_structure(config, structure_rules)
-        pprint.pprint(structure_rules)
+        Configuration(test_config, True)
 
 
-def test_successful_parse_directory_map():
-    """Test successful parsing of directory mappings."""
-    mappings = _parse_directory_map({})
-    assert len(mappings) == 0
-
-    config = _load_repo_structure_yaml(TEST_CONFIG_YAML)
-    mappings = _parse_directory_map(config["directory_map"])
-    assert len(mappings) == 1
-    assert "/" in mappings
-    assert mappings["/"] == ["base_structure", "python_package"]
-
-
-def test_fail_directory_map_bad_key():
+def test_fail_directory_map_key_in_directory_map():
     """Test failing parsing of file mappings using bad key."""
     test_config = """
-/:
-    - use_rule: python_package
-/docs/:
-    - foo: documentation
+structure_rules:
+    correct_rule:
+        files:
+            - name: 'unused_file'
+              mode: optional
+directory_map:
+    /:
+        - use_rule: correct_rule
+        - foo: documentation
     """
-    config = _load_repo_structure_yamls(test_config)
     with pytest.raises(ValueError):
-        mappings = _parse_directory_map(config)
-        pprint.pprint(mappings)
-
-
-def test_fail_directory_map_bad_list():
-    """Test failing parsing of file mappings using multiple entries."""
-    test_config = """
-/:
-    - use_rule: python_package
-    - foo: documentation
-    """
-    config = _load_repo_structure_yamls(test_config)
-    with pytest.raises(ValueError):
-        mappings = _parse_directory_map(config)
-        pprint.pprint(mappings)
-
-
-def test_successful_full_example_parse():
-    """Test parsing of the full example file."""
-    config = Configuration(TEST_CONFIG_YAML)
-    assert config is not None
-    assert config.directory_map is not None
-    assert "/" in config.directory_map
-    assert config.structure_rules is not None
-    assert "base_structure" in config.structure_rules
-    assert "python_package" in config.structure_rules
+        Configuration(test_config, True)
 
 
 def test_fail_use_rule_not_recursive():
-    """Test missing required file."""
+    """Test use rule usage not recursive."""
     config_yaml = r"""
 structure_rules:
-    base_structure:
+    license_rule:
         files:
             - name: LICENSE
-    python_package:
+    bad_use_rule:
         dirs:
             - name: '.*'
               mode: required
-              use_rule: base_structure
+              use_rule: license_rule
 directory_map:
   /:
-    - use_rule: python_package
+    - use_rule: bad_use_rule
     """
     with pytest.raises(UseRuleError):
         Configuration(config_yaml, True)
 
 
-def test_fail_config_file_structure_rule_conflict():
-    """Test conflicting rules for automatic config file addition."""
-    with pytest.raises(ConfigurationParseError):
-        Configuration("conflicting_test_config.yaml")
-
-
-def test_succeed_config_file_depends_entry():
-    """Test usage of a 'depends' entry."""
+def test_fail_directory_map_missing_trailing_slash():
+    """Test missing trailing slash in directory_map entry."""
     config_yaml = r"""
 structure_rules:
-    base_structure:
+    license_rule:
         files:
-            - name: 'main\.cpp'
-              depends: 'main_test\.cpp'
+            - name: LICENSE
+directory_map:
+  /:
+    - use_rule: license_rule
+  /missing_trailing_slash:
+    - use_rule: license_rule
     """
-    config = Configuration(config_yaml, param1_is_yaml_string=True)
-    assert (
-        RepoEntry(
-            path=re.compile(r"main\.cpp"),
-            is_dir=False,
-            is_required=True,
-            use_rule="",
-            depends=re.compile(r"main_test\.cpp"),
-        )
-        in config.structure_rules["base_structure"]
-    )
+    with pytest.raises(DirectoryStructureError):
+        Configuration(config_yaml, True)
+
+
+def test_fail_directory_map_missing_starting_slash():
+    """Test missing starting slash in directory_map entry."""
+    config_yaml = r"""
+structure_rules:
+    license_rule:
+        files:
+            - name: LICENSE
+directory_map:
+  /:
+    - use_rule: license_rule
+  missing_starting_slash/:
+    - use_rule: license_rule
+    """
+    with pytest.raises(DirectoryStructureError):
+        Configuration(config_yaml, True)
+
+
+def test_fail_config_file_structure_rule_conflict():
+    """Test conflicting rules for automatic config file addition.
+
+    This test requires file parsing, since the parsed file name will
+    be added as an automatic rule.
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration("conflicting_test_config.yaml")
 
 
 if __name__ == "__main__":

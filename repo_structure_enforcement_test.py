@@ -209,7 +209,7 @@ structure_rules:
       - name: "README.md"
         # mode: required is default
 directory_map:
-  /some_dir:
+  /some_dir/:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -301,7 +301,7 @@ main.py
 """
 )
 def test_multi_use_rule_missing_readme():
-    """Test missing required file."""
+    """Test missing required file with multiple rules being used."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -327,7 +327,7 @@ README.md
 """
 )
 def test_multi_use_rule_missing_py_file():
-    """Test missing required file."""
+    """Test missing required pattern file while using multi rules."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -435,10 +435,10 @@ directory_map:
 
 @with_repo_structure_in_tmpdir(
     """
-main.py
+main.cpp
 README.md
 lib/
-lib/lib.py
+lib/lib.cpp
 """
 )
 def test_use_rule_recursive():
@@ -448,18 +448,18 @@ structure_rules:
   base_structure:
     files:
       - name: README.md
-  python_package:
+  cpp_source:
     files:
-      - name: '[^/]*\.py'
+      - name: '[^/]*\.cpp'
         mode: required
     dirs:
       - name: '.*'
         mode: optional
-        use_rule: python_package
+        use_rule: cpp_source
 directory_map:
   /:
     - use_rule: base_structure
-    - use_rule: python_package
+    - use_rule: cpp_source
     """
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config)
@@ -595,7 +595,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    flags = Flags()
+    flags.include_hidden = False
+    _assert_repo_directory_structure(config, flags)
 
 
 @with_repo_structure_in_tmpdir(

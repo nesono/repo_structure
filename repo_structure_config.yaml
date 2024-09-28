@@ -6,22 +6,41 @@ structure_rules:
         # mode: required is default
       - name: '.*\.md'
         mode: optional
-      - name: '\.pre-commit-config\.yaml'
-      - name: "[^/]*.yaml"
-      - name: "requirements(_lock.txt|.in)"
+      - name: '\.bazelrc'
       - name: '\.bazelversion'
-      - name: "[^/]*.sh"
+      - name: '\.pre-commit-config\.yaml'
+      - name: '[^/]*config\.yaml'
+      - name: "requirements(_lock.txt|.in)"
+      - name: "local_run.sh"
       - name: "[^/]*.bazel"
+    dirs:
+      - name: ".github"
+        dirs:
+          - name: "workflows"
+            files:
+              - name: '[^/]*\.yml'
   python_package:
     files:
       - name: '[^/]*\.py'
-        mode: optional
+        mode: required
     dirs:
-      - name: "[^/]*"
+      - name: "package"
         mode: optional
         use_rule: python_package
+  software_component:
+    files:
+      - name: "BUILD"
+    dirs:
+      - name: "example"
+        dirs:
+          - name: "doc"
+            mode: required
+        files:
+          - name: "[^/]*"
 
 directory_map:
   /:
     - use_rule: base_structure
     - use_rule: python_package
+  /test_folder_structure/:
+    - use_rule: software_component

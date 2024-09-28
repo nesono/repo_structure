@@ -7,7 +7,7 @@ import re
 from os import DirEntry
 from dataclasses import dataclass
 
-from typing import List, Callable, Generator, Optional
+from typing import List, Callable, Optional
 from gitignore_parser import parse_gitignore
 
 from repo_structure_config import (
@@ -21,7 +21,7 @@ class Flags:
     """Flags for common parsing config settings."""
 
     follow_symlinks: bool = False
-    include_hidden: bool = False
+    include_hidden: bool = True
     verbose: bool = False
 
 
@@ -109,22 +109,22 @@ def _map_dir_to_entry_backlog(
 
 
 def _get_matching_item_index(
-    items: List[RepoEntry],
-    needle: str,
+    backlog: List[RepoEntry],
+    entry_path: str,
     is_dir: bool,
     verbose: bool = False,
-) -> Generator[int, None, None]:
-    was_found = False
-    for i, v in enumerate(items):
+) -> List[int]:
+    result: List[int] = []
+    for i, v in enumerate(backlog):
         if verbose:
             print(f"  Matching against {v.path}")
-        if v.path.fullmatch(needle) and v.is_dir == is_dir:
+        if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
             if verbose:
-                print(f"  Found match at index {i}, yielding")
-            was_found = True
-            yield i
-    if not was_found:
-        raise UnspecifiedEntryError(f"Found unspecified entry: {needle}")
+                print(f"  Found match at index {i}")
+            result.append(i)
+    if len(result) != 0:
+        return result
+    raise UnspecifiedEntryError(f"Found unspecified entry: {entry_path}")
 
 
 def _fail_if_required_entries_missing(
@@ -157,7 +157,7 @@ def _fail_if_invalid_repo_structure_recursive(
     for entry in os.scandir(os.path.join(repo_root, rel_dir)):
         rel_path = os.path.join(rel_dir, entry.name)
         if flags.verbose:
-            print(f"Checking file {rel_path}")
+            print(f"Checking entry {rel_path}")
 
         if _skip_entry(entry, rel_path, config, git_ignore, flags):
             continue
@@ -210,26 +210,19 @@ def _skip_entry(
     git_ignore: Callable[[str], bool] | None = None,
     flags: Flags = Flags(),
 ) -> bool:
-    if git_ignore and git_ignore(entry.path):
-        if flags.verbose:
-            print(".gitignore matched, skipping")
-        return True
+    skip_conditions = [
+        (not flags.follow_symlinks and entry.is_symlink()),
+        (not flags.include_hidden and entry.name.startswith(".")),
+        (rel_path == ".gitignore" and entry.is_file()),
+        (rel_path == ".git" and entry.is_dir()),
+        (git_ignore and git_ignore(entry.path)),
+        (entry.is_dir() and _rel_dir_to_map_dir(rel_path) in config.directory_map),
+    ]
 
-    if not flags.follow_symlinks and entry.is_symlink():
-        if flags.verbose:
-            print("Symlink found, skipping")
-        return True
-
-    if not flags.include_hidden and entry.name.startswith("."):
-        if flags.verbose:
-            print("Hidden file found, skipping")
-        return True
-
-    if entry.is_dir():
-        map_dir = _rel_dir_to_map_dir(rel_path)
-        if map_dir in config.directory_map:
+    for condition in skip_conditions:
+        if condition:
             if flags.verbose:
-                print(f"Overlapping directory mappings found: {rel_path} - skipping")
+                print(f"Skipping {rel_path}")
             return True
 
     return False

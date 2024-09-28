@@ -25,6 +25,10 @@ class UseRuleError(Exception):
     """Use_rule related error."""
 
 
+class DirectoryStructureError(Exception):
+    """Directory structure related error."""
+
+
 @dataclass
 class RepoEntry:
     """Wrapper for entries in the directory structure, that store the path
@@ -73,6 +77,7 @@ class Configuration:
             ),
             directory_map=_parse_directory_map(yaml_dict.get("directory_map", {})),
         )
+        self._validate_directory_map_use_rules()
 
         if not param1_is_yaml_string:
             if config_file in self.config.structure_rules:
@@ -91,6 +96,15 @@ class Configuration:
             ]
 
             self.config.directory_map["/"].insert(0, config_file)
+
+    def _validate_directory_map_use_rules(self):
+        existing_rules = self.config.structure_rules.keys()
+        for directory, rule in self.config.directory_map.items():
+            for r in rule:
+                if r not in existing_rules:
+                    raise UseRuleError(
+                        f"Directory mapping '{directory}' uses non-existing rule '{r}'"
+                    )
 
     @property
     def structure_rules(self) -> StructureRuleMap:
@@ -227,21 +241,42 @@ def _parse_directory_structure(
     # if directory_structure is empty dict, return
     if not directory_structure_yaml:
         return
+    _validate_top_level_dirs_and_files(directory_structure_yaml)
     _parse_directory_structure_recursive(
         "", directory_structure_yaml, structure_rule_list
     )
 
 
+def _validate_top_level_dirs_and_files(directory_structure_yaml):
+    for k in directory_structure_yaml.keys():
+        if k not in ["dirs", "files"]:
+            raise DirectoryStructureError(
+                f"Top level key '{k}' in directory structure is not supported"
+            )
+
+
 def _parse_directory_map(directory_map: dict) -> DirectoryMap:
     mapping: DirectoryMap = {}
     for directory, rules in directory_map.items():
+        _ensure_start_and_end_slashes(directory)
         for r in rules:
-            if r.keys() != {"use_rule"}:
-                raise ValueError(
-                    f"Only a 'use_rule' is allowed in directory mappings, but is '{r.keys()}'"
-                )
+            _ensure_only_use_rule(r)
             if mapping.get(directory) is None:
                 mapping[directory] = []
             mapping[directory].append(r["use_rule"])
 
     return mapping
+
+
+def _ensure_start_and_end_slashes(directory):
+    if not (directory.startswith("/") and directory.endswith("/")):
+        raise DirectoryStructureError(
+            f"Directory mapping must start and end with '/', but is '{directory}'"
+        )
+
+
+def _ensure_only_use_rule(r):
+    if r.keys() != {"use_rule"}:
+        raise ValueError(
+            f"Only a 'use_rule' is allowed in directory mappings, but is '{r.keys()}'"
+        )

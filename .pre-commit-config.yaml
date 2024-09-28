@@ -37,6 +37,7 @@ repos:
     rev: "425ad66da9467bac9074de3f2294f7851cb3320b" # frozen: v3.2.4
     hooks:
       - id: pylint
+        args: [--verbose]
   - repo: https://github.com/codespell-project/codespell
     rev: "193cd7d27cd571f79358af09a8fb8997e54f8fff" # frozen: v2.3.0
     hooks:

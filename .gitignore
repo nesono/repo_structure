@@ -1,6 +1,11 @@
 /.idea/
+/.ijwb/
 /bazel-*
 /node_modules/
 __pycache__/
 *.py[cod]
 /MODULE.bazel.lock
+/.pytest_cache/
+/.ruff_cache/
+/.mypy_cache/
+/.temp_venv/
