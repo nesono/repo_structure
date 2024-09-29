@@ -34,7 +34,7 @@ Here is an example file that showcases all the supported features:
 
 ### Using Conda
 
-- `conda create -n <conda_env> python=3.11`
-- `conda activate <conda_env>`
+- `conda create -n .conda_env python=3.11`
+- `conda activate .conda_env`
 - `pip install -r requirements_lock.txt`
 - `pytest *_test.py`
