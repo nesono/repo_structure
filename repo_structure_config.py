@@ -14,7 +14,6 @@ from ruamel import yaml as YAML
 ALLOWED_ENTRY_KEYS: Final = [
     "name",
     "mode",
-    "depends",
     "use_rule",
     "files",
     "dirs",
@@ -38,7 +37,6 @@ class RepoEntry:
     is_dir: bool
     is_required: bool
     use_rule: str = ""
-    depends: re.Pattern = re.compile(r"")
     count: int = 0
 
 
@@ -210,7 +208,6 @@ def _parse_file_or_directory(
 
     mode = _get_required_or_optional(input_yaml)
     use_rule = _parse_use_rule(input_yaml, local_path)
-    depends = re.compile(input_yaml.get("depends", ""))
 
     structure_rule_list.append(
         RepoEntry(
@@ -218,7 +215,6 @@ def _parse_file_or_directory(
             is_dir=is_dir,
             is_required=mode == "required",
             use_rule=use_rule,
-            depends=depends,
         )
     )
 
