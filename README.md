@@ -74,18 +74,14 @@ structure_rules:
     - "LICENSE":
     - "BUILD": required
     - "main.py"
-    - "library/"
+    - "library/": optional
     - 'library/lib\.py'
     - 'library/[^/]*\.py': optional
 ```
 
-Here, we require a sub-directory 'library' to exist with the file 'lib.py' in
-it. And any other file ending on '.py' is allowed in it as well, but not
-required.
-
-Note that for directories that are optional, all required entries below these
-directories will be conditionally required only. They will only be required, if
-the directory exists.
+Here, we allow a subdirectory 'library' to exist. We require with the file
+'lib.py' if 'library' exists. it. And any other file ending on '.py' is allowed
+in it as well, but not required.
 
 ### Recursion
 
@@ -130,7 +126,7 @@ The root key '/' must be in the Dictionary Map. A key must start and end with a
 slash '/' and must point to a real directory in the repository.
 
 A mapped directory only requires the Structure Rules that are mapped to it, it
-**does not inherit** the rules from it's parent directories.
+**does not inherit** the rules from its parent directories.
 
 For example:
 

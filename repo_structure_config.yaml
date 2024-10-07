@@ -1,42 +1,28 @@
 structure_rules:
   base_structure:
-    files:
-      - name: "README.md"
-        mode: required
-        # mode: required is default
-      - name: '.*\.md'
-        mode: optional
-      - name: '\.bazelrc'
-      - name: '\.bazelversion'
-      - name: '\.pre-commit-config\.yaml'
-      - name: '[^/]*config\.yaml'
-      - name: "requirements(_lock.txt|.in)"
-      - name: "local_run.sh"
-      - name: "[^/]*.bazel"
-    dirs:
-      - name: ".github"
-        dirs:
-          - name: "workflows"
-            files:
-              - name: '[^/]*\.yml'
+    - 'README\.md': required
+      # mode: required is default
+    - '.*\.md': optional
+    - '\.bazelrc'
+    - '\.bazelversion'
+    - '\.pre-commit-config\.yaml'
+    - '[^/]*config\.yaml'
+    - "requirements(_lock.txt|.in)"
+    - "local_run.sh"
+    - "[^/]*.bazel"
+    - ".github/"
+    - ".github/workflows/"
+    - '.github/workflows/[^/]*\.yml'
   python_package:
-    files:
-      - name: '[^/]*\.py'
-        mode: required
-    dirs:
-      - name: "package"
-        mode: optional
-        use_rule: python_package
+    - '[^/]*\.py': required
+    - "package/": optional
+      use_rule: python_package
   software_component:
-    files:
-      - name: "BUILD"
-    dirs:
-      - name: "example"
-        dirs:
-          - name: "doc"
-            mode: required
-        files:
-          - name: "[^/]*"
+    - "BUILD"
+    - "example/": optional
+      if_exists:
+        - "example/doc/": required
+        - "example/[^/]*": optional
 
 directory_map:
   /:

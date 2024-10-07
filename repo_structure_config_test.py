@@ -192,6 +192,23 @@ directory_map:
         Configuration(config_yaml, True)
 
 
+def test_fail_old_config_format():
+    """Test wrong config format."""
+    config_yaml = r"""
+structure_rules:
+    license_rule:
+        files:
+            - name: 'LICENSE'
+        dirs:
+            - name: 'dirname'
+directory_map:
+  /:
+    - use_rule: license_rule
+    """
+    with pytest.raises(StructureRuleError):
+        Configuration(config_yaml, True)
+
+
 def test_fail_config_file_structure_rule_conflict():
     """Test conflicting rules for automatic config file addition.
 

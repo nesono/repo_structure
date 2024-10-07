@@ -402,6 +402,48 @@ directory_map:
 
 @with_repo_structure_in_tmpdir(
     """
+README.md
+"""
+)
+def test_succeed_overlapping_required_file_rules():
+    """Test for overlapping required file rules - two different rules apply to the same file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - 'README\.md'
+    - 'README\.[^/]*'
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
+@with_repo_structure_in_tmpdir(
+    """
+LICENSE
+"""
+)
+def test_required_file_in_optional_directory_no_entry():
+    """Test for overlapping required file rules - two different rules apply to the same file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - 'LICENSE'
+    - 'doc/': optional
+      if_exists:
+        - 'README\.md': required
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
+@with_repo_structure_in_tmpdir(
+    """
 main.cpp
 README.md
 lib/
@@ -657,26 +699,6 @@ directory_map:
     flags = Flags()
     flags.follow_symlinks = True
     _assert_repo_directory_structure(config, flags)
-
-
-@with_repo_structure_in_tmpdir(
-    """
-README.md
-"""
-)
-def test_succeed_overlapping_required_file_rules():
-    """Test for overlapping required file rules - two different rules apply to the same file."""
-    config_yaml = r"""
-structure_rules:
-  base_structure:
-    - 'README\.md'
-    - 'README\.[^/]*'
-directory_map:
-  /:
-    - use_rule: base_structure
-    """
-    config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
 
 
 if __name__ == "__main__":
