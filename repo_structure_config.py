@@ -1,23 +1,15 @@
 # pylint: disable=import-error
 
 """Library functions for repo structure config parsing."""
-import os
 import re
 from dataclasses import dataclass, field
-from typing import Dict, Final, List, TextIO
+from typing import Dict, List, TextIO
 
 from ruamel import yaml as YAML
 
 
-# An entry here is an entry for files / directories.
-# The allowed keys matches the supported dict keys for parsing.
-ALLOWED_ENTRY_KEYS: Final = [
-    "name",
-    "mode",
-    "use_rule",
-    "files",
-    "dirs",
-]
+class StructureRuleError(Exception):
+    """Structure rule related error."""
 
 
 class UseRuleError(Exception):
@@ -126,6 +118,14 @@ def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
     return result
 
 
+def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
+    rules = _build_rules(structure_rules_yaml)
+    _validate_use_rule_not_dangling(rules)
+    _validate_use_rule_only_recursive(rules)
+
+    return rules
+
+
 def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
     rules: StructureRuleMap = {}
     if not structure_rules_yaml:
@@ -136,6 +136,58 @@ def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
         _parse_directory_structure(structure_rules_yaml[rule], structure_rules)
         rules[rule] = structure_rules
     return rules
+
+
+def _parse_directory_structure(
+    directory_structure_yaml: dict, structure_rule_list: StructureRuleList
+) -> None:
+    # if directory_structure is empty dict, return
+    if not directory_structure_yaml:
+        return
+    for item in directory_structure_yaml:
+        structure_rule_list.append(_parse_entry_to_repo_entry(item))
+
+
+def _validate_entry_keys(entry: dict, file: str) -> None:
+    allowed_keys = {file, "use_rule"}
+    if not entry.keys() <= allowed_keys:
+        raise StructureRuleError(
+            f"only 'use_rule' and file name is allowed"
+            f"as an entry key, but contains extra keys '{entry.keys() - allowed_keys}'"
+        )
+
+
+def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
+    mode = True
+    use_rule = ""
+    if isinstance(entry, dict):
+        file = next(iter(entry.keys()))
+        _validate_entry_keys(entry, file)
+        if entry[file] not in [None, "required", "optional"]:
+            raise StructureRuleError(
+                f"mode must be either 'required' or 'optional'"
+                f"but is '{entry[file]}'"
+            )
+        mode = entry[file] != "optional"
+        if "use_rule" in entry:
+            if entry.keys() != {file, "use_rule"}:
+                raise StructureRuleError(
+                    f"only 'use_rule' and file name is allowed"
+                    f"as an entry key, but is '{entry.keys()}'"
+                )
+            use_rule = entry["use_rule"]
+    else:
+        file = entry
+
+    is_dir = file.endswith("/")
+    file = file[0:-1] if is_dir else file
+
+    return RepoEntry(
+        path=re.compile(file),
+        is_dir=is_dir,
+        is_required=mode,
+        use_rule=use_rule,
+    )
 
 
 def _validate_use_rule_not_dangling(rules: StructureRuleMap) -> None:
@@ -156,99 +208,6 @@ def _validate_use_rule_only_recursive(rules: StructureRuleMap) -> None:
                     f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
                     "is not recursive"
                 )
-
-
-def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
-    rules = _build_rules(structure_rules_yaml)
-    _validate_use_rule_not_dangling(rules)
-    _validate_use_rule_only_recursive(rules)
-
-    # Note: We do not validate dependencies towards being allowed, since that
-    # would require us to check if the 'depends' pattern is fully enclosed
-    # in any file name pattern, which is non-trivial and seems not worth
-    # the hassle.
-
-    return rules
-
-
-def _validate_path_entry(entry: dict) -> None:
-    if "name" not in entry:
-        raise ValueError(f"name not defined in entry with key '{entry}'")
-    if "mode" in entry and entry["mode"] not in ["required", "optional"]:
-        raise ValueError(
-            f"mode must be either 'required' or 'optional' but is '{entry['mode']}'"
-        )
-    for k in entry.keys():
-        if k not in ALLOWED_ENTRY_KEYS:
-            raise ValueError(f"Unsupported key '{k}' in entry {entry}")
-
-
-def _get_required_or_optional(entry: dict) -> str:
-    if "mode" in entry:
-        return entry["mode"]
-    return "required"
-
-
-def _parse_use_rule(entry: dict, local_path: str) -> str:
-    if "use_rule" in entry:
-        if "dirs" in entry:
-            raise UseRuleError(f"Unsupported dirs next to use_rule in {local_path}")
-        if "files" in entry:
-            raise UseRuleError(f"Unsupported files next to use_rule in {local_path}")
-        return entry["use_rule"]
-    return ""
-
-
-def _parse_file_or_directory(
-    input_yaml: dict, is_dir: bool, path: str, structure_rule_list: StructureRuleList
-) -> str:
-    _validate_path_entry(input_yaml)
-
-    local_path = os.path.join(path, input_yaml["name"])
-
-    mode = _get_required_or_optional(input_yaml)
-    use_rule = _parse_use_rule(input_yaml, local_path)
-
-    structure_rule_list.append(
-        RepoEntry(
-            path=re.compile(local_path),
-            is_dir=is_dir,
-            is_required=mode == "required",
-            use_rule=use_rule,
-        )
-    )
-
-    return local_path
-
-
-def _parse_directory_structure_recursive(
-    path: str, directory_structure_yaml: dict, structure_rule_list: StructureRuleList
-) -> None:
-    for d in directory_structure_yaml.get("dirs", []):
-        local_path = _parse_file_or_directory(d, True, path, structure_rule_list)
-        _parse_directory_structure_recursive(local_path, d, structure_rule_list)
-    for f in directory_structure_yaml.get("files", []):
-        _parse_file_or_directory(f, False, path, structure_rule_list)
-
-
-def _parse_directory_structure(
-    directory_structure_yaml: dict, structure_rule_list: StructureRuleList
-) -> None:
-    # if directory_structure is empty dict, return
-    if not directory_structure_yaml:
-        return
-    _validate_top_level_dirs_and_files(directory_structure_yaml)
-    _parse_directory_structure_recursive(
-        "", directory_structure_yaml, structure_rule_list
-    )
-
-
-def _validate_top_level_dirs_and_files(directory_structure_yaml):
-    for k in directory_structure_yaml.keys():
-        if k not in ["dirs", "files"]:
-            raise DirectoryStructureError(
-                f"Top level key '{k}' in directory structure is not supported"
-            )
 
 
 def _parse_directory_map(directory_map: dict) -> DirectoryMap:

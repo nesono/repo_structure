@@ -123,8 +123,7 @@ def test_matching_regex():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: '.*\.md'
+    - '.*\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -146,14 +145,10 @@ def test_required_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: "LICENSE"
-        mode: required
-      - name: "README.md"
-    dirs:
-      - name: "python"
-        files:
-            - name: '[^/]*'
+    - "LICENSE": required
+    - 'README\.md'
+    - 'python/'
+    - 'python/[^/]*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -176,14 +171,10 @@ def test_unspecified_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: "LICENSE"
-        mode: required
-      - name: "README.md"
-    dirs:
-      - name: "python"
-        files:
-            - name: '.*'
+    - "LICENSE": required
+    - "README.md"
+    - "python/"
+    - 'python/[^/]*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -203,11 +194,7 @@ def test_missing_root_mapping():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: "LICENSE"
-        mode: required
-      - name: "README.md"
-        # mode: required is default
+      - "irrelevant": required
 directory_map:
   /some_dir/:
     - use_rule: base_structure
@@ -227,10 +214,8 @@ def test_missing_required_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: "LICENSE"
-        mode: required
-      - name: "README.md"
+    - "LICENSE": required
+    - 'README\.md'
         # mode: required is default
 directory_map:
   /:
@@ -252,14 +237,10 @@ def test_missing_required_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: "LICENSE"
-        mode: required
-      - name: "README.md"
-    dirs:
-      - name: "python"
-        files:
-            - name: '.*'
+    - "LICENSE": required
+    - 'README\.md'
+    - 'python/'
+    - 'python/[^/]*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -280,12 +261,9 @@ def test_multi_use_rule():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: README.md
+      - 'README\.md'
   python_package:
-    files:
-      - name: '.*\.py'
-        mode: required
+      - '[^/]*\.py': required
 directory_map:
   /:
     - use_rule: base_structure
@@ -305,12 +283,9 @@ def test_multi_use_rule_missing_readme():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: README.md
+      - 'README\.md'
   python_package:
-    files:
-      - name: '.*\.py'
-        mode: required
+      - '[^/]*\.py': required
 directory_map:
   /:
     - use_rule: base_structure
@@ -331,12 +306,9 @@ def test_multi_use_rule_missing_py_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: README.md
+      - 'README\.md'
   python_package:
-    files:
-      - name: '.*\.py'
-        mode: required
+      - '.*\.py': required
 directory_map:
   /:
     - use_rule: base_structure
@@ -354,14 +326,12 @@ dirname/
 """
 )
 def test_conflicting_file_and_dir_names():
-    """Test missing required file."""
+    """Test two required entries, one file, one dir. Need to pass ensuring distinct detection."""
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: '.*name.*'
-    dirs:
-      - name: '.*name.*'
+      - '[^/]*name[^/]*'
+      - '[^/]*name[^/]*/'
 directory_map:
   /:
     - use_rule: base_structure
@@ -376,12 +346,11 @@ dirname/
 """
 )
 def test_conflicting_dir_name():
-    """Test missing required file."""
+    """Ensure that a matching directory does not suffice a required file."""
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: '.*name.*'
+    - '[^/]*name[^/]*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -397,12 +366,11 @@ filename.txt
 """
 )
 def test_conflicting_file_name():
-    """Test missing required file."""
+    """Ensure that a matching file does not suffice a required directory."""
     config_yaml = r"""
 structure_rules:
   base_structure:
-    dirs:
-      - name: '.*name.*'
+    - '[^/]*name[^/]*/'
 directory_map:
   /:
     - use_rule: base_structure
@@ -418,12 +386,11 @@ filename.txt
 """
 )
 def test_filename_with_bad_substring_match():
-    """Test missing required file."""
+    """Ensure substring match is not enough to match."""
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: '.*name'
+    - '[^/]*name'
 directory_map:
   /:
     - use_rule: base_structure
@@ -446,16 +413,11 @@ def test_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: README.md
+    - 'README\.md'
   cpp_source:
-    files:
-      - name: '[^/]*\.cpp'
-        mode: required
-    dirs:
-      - name: '.*'
-        mode: optional
-        use_rule: cpp_source
+    - '[^/]*\.cpp': required
+    - '[^/]*/': optional
+      use_rule: cpp_source
 directory_map:
   /:
     - use_rule: base_structure
@@ -474,20 +436,15 @@ lib/README.md
 """
 )
 def test_fail_use_rule_recursive():
-    """Test missing required file."""
+    """Ensure use_rules are not mixed up in recursion."""
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: README.md
+    - 'README\.md'
   python_package:
-    files:
-      - name: '[^/]*\.py'
-        mode: required
-    dirs:
-      - name: '[^/]*'
-        mode: optional
-        use_rule: python_package
+    - '[^/]*\.py': required
+    - '[^/]*/': optional
+      use_rule: python_package
 directory_map:
   /:
     - use_rule: base_structure
@@ -511,16 +468,11 @@ def test_fail_directory_mapping_precedence():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: README.md
+    - 'README\.md'
   python_package:
-    files:
-      - name: '[^/]*\.py'
-        mode: required
-    dirs:
-      - name: '[^/]*'
-        mode: optional
-        use_rule: python_package
+    - '[^/]*\.py': required
+    - '[^/]*': optional
+      use_rule: python_package
 directory_map:
   /:
     - use_rule: base_structure
@@ -551,19 +503,12 @@ def test_succeed_elaborate_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: README.md
-    dirs:
-      - name: app
-        mode: optional
+    - 'README\.md'
+    - app/: optional
   python_package:
-    files:
-      - name: '[^/]*\.py'
-        mode: required
-    dirs:
-      - name: '.*'
-        mode: optional
-        use_rule: python_package
+    - '[^/]*\.py': required
+    - '[^/]*/': optional
+      use_rule: python_package
 directory_map:
   /:
     - use_rule: base_structure
@@ -588,8 +533,7 @@ def test_succeed_ignored_hidden_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: 'README.md'
+    - 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -606,18 +550,19 @@ README.md
 """
 )
 def test_fail_hidden_file_required_despite_hidden_disabled():
-    """Test missing required hidden file - hidden files not tracked."""
+    """Test with a missing, required, hidden file - hidden files not tracked."""
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: '\.hidden.md'
-      - name: 'README.md'
+     - '\.hidden\.md'
+     - 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
+    flags = Flags()
+    flags.include_hidden = True
     with pytest.raises(MissingRequiredEntriesError):
         _assert_repo_directory_structure(config)
 
@@ -634,9 +579,8 @@ def test_fail_unspecified_hidden_files_when_hidden_enabled():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: '\.hidden.md'
-      - name: 'README.md'
+    - '\.hidden.md'
+    - 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -660,8 +604,7 @@ def test_succeed_gitignored_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: 'README.md'
+    - 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -681,8 +624,7 @@ def test_fail_unspecified_link():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: 'README.md'
+    - 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -701,13 +643,12 @@ link -> README.md
 """
 )
 def test_succeed_specified_link():
-    """Test for unspecified symlink."""
+    """Test for specified symlink."""
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: 'README.md'
-      - name: 'link'
+    - 'README\.md'
+    - 'link'
 directory_map:
   /:
     - use_rule: base_structure
@@ -728,9 +669,8 @@ def test_succeed_overlapping_required_file_rules():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: 'README\.md'
-      - name: 'README\..*'
+    - 'README\.md'
+    - 'README\.[^/]*'
 directory_map:
   /:
     - use_rule: base_structure

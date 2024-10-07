@@ -8,43 +8,43 @@ from repo_structure_config import (
     UseRuleError,
     ConfigurationParseError,
     DirectoryStructureError,
+    StructureRuleError,
 )
 
 
 def test_successful_parse():
-    """Test successful parsing with many features."""
+    """Test successful parsing with many features.
+
+    This is not so much a test than a showroom.
+    """
     test_yaml = r"""
 structure_rules:
   basic_rule:
-    files:
-      - name: "README.md"
-        mode: required
-        # mode: required is default
-      - name: '.*\.md'
-        mode: optional
-    dirs:
-      - name: '.github'
-        files:
-          - name: '[^/]*'
+    - 'README.md': required
+      # mode: required is default
+    - '[^/]*\.md': optional
+    - '.github/[^/]*': required
   recursive_rule:
-    files:
-      - name: '[^/]*\.py'
-        mode: required
-    dirs:
-      - name: "package"
-        mode: optional
-        use_rule: recursive_rule
+    - '[^/]*\.py'
+    - 'package/[^/]*':
+      use_rule: recursive_rule
   template_rule_second_map:
-    files:
-      - name: "BUILD"
-    dirs:
-      - name: "example"
-        dirs:
-          - name: "doc"
-            mode: required
-        files:
-          - name: "[^/]*"
-
+    - "BUILD"
+    - "example/[^/]*"
+    - "example/doc/"
+templates:
+  software_component:
+    - '{{component_name}}_component.cpp'
+    - '{{component_name}}_component.h'
+    - '{{component_name}}_config.h': optional
+    - '{{component_name}}_factory.cpp'
+    - '{{component_name}}_factory.h'
+    - 'BUILD'
+    - 'README.md'
+    - 'doc/{{component_name}}.swreq.md'
+    - 'doc/{{component_name}}.techspec.md'
+    - '[^/]*\_test.cpp': optional
+    - 'tests/[^/]*_test.cpp': optional
 directory_map:
   /:
     - use_rule: basic_rule
@@ -66,8 +66,7 @@ def test_fail_parse_dangling_use_rule_in_directory_map():
     test_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: "README.md"
+    - "README.md"
 
 directory_map:
   /:
@@ -83,11 +82,10 @@ def test_fail_parse_dangling_use_rule_in_structure_rule():
     test_yaml = r"""
 structure_rules:
   base_structure:
-    files:
-      - name: "README.md"
-    dirs:
-      - name: 'docs'
-        use_rule: python_package
+    - 'README.md'
+    # if we use a use_rule, we need to add required/optional, too
+    - 'docs/': required
+      use_rule: python_package
 
 directory_map:
   /:
@@ -102,14 +100,10 @@ def test_fail_directory_structure_mixing_use_rule_and_files():
     test_config = r"""
 structure_rules:
     package:
-        dirs:
-            - name: "docs"
-              mode: optional
-              use_rule: documentation
-              dirs:
-                - ".*/": optional
-                  files:
-                    - ".*": optional
+      - "docs/": optional
+        use_rule: documentation
+      - "docs/[^/]*/": optional
+      - "docs/[^/]/[^/]*": optional
 directory_map:
 /:
     - use_rule: package
@@ -123,14 +117,13 @@ def test_fail_parse_bad_key_in_structure_rule():
     test_config = r"""
 structure_rules:
     bad_key_rule:
-        files:
-            - name: "README.md"
-              foo: '.*\.py'
+      - "README.md": optional
+        bad_key: '.*\.py'
 directory_map:
 /:
     - use_rule: bad_key_rule
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(StructureRuleError):
         Configuration(test_config, True)
 
 
@@ -139,9 +132,7 @@ def test_fail_directory_map_key_in_directory_map():
     test_config = """
 structure_rules:
     correct_rule:
-        files:
-            - name: 'unused_file'
-              mode: optional
+        - 'unused_file'
 directory_map:
     /:
         - use_rule: correct_rule
@@ -156,15 +147,13 @@ def test_fail_use_rule_not_recursive():
     config_yaml = r"""
 structure_rules:
     license_rule:
-        files:
-            - name: LICENSE
+        - LICENSE
     bad_use_rule:
-        dirs:
-            - name: '.*'
-              mode: required
-              use_rule: license_rule
+        - '.*/': optional
+          use_rule: license_rule
 directory_map:
   /:
+    # it doesn't matter here what we 'use', the test should fail always
     - use_rule: bad_use_rule
     """
     with pytest.raises(UseRuleError):
@@ -176,8 +165,7 @@ def test_fail_directory_map_missing_trailing_slash():
     config_yaml = r"""
 structure_rules:
     license_rule:
-        files:
-            - name: LICENSE
+        - LICENSE
 directory_map:
   /:
     - use_rule: license_rule
@@ -193,8 +181,7 @@ def test_fail_directory_map_missing_starting_slash():
     config_yaml = r"""
 structure_rules:
     license_rule:
-        files:
-            - name: LICENSE
+        - LICENSE
 directory_map:
   /:
     - use_rule: license_rule
