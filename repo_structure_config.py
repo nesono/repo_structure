@@ -29,6 +29,7 @@ class RepoEntry:
     is_dir: bool
     is_required: bool
     use_rule: str = ""
+    if_exists: List["RepoEntry"] = field(default_factory=list)
     count: int = 0
 
 
@@ -119,6 +120,8 @@ def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
 
 
 def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
+    _validate_yaml_dict(structure_rules_yaml)
+
     rules = _build_rules(structure_rules_yaml)
     _validate_use_rule_not_dangling(rules)
     _validate_use_rule_only_recursive(rules)
@@ -149,7 +152,7 @@ def _parse_directory_structure(
 
 
 def _validate_entry_keys(entry: dict, file: str) -> None:
-    allowed_keys = {file, "use_rule"}
+    allowed_keys = {file, "use_rule", "if_exists"}
     if not entry.keys() <= allowed_keys:
         raise StructureRuleError(
             f"only 'use_rule' and file name is allowed"
@@ -160,6 +163,7 @@ def _validate_entry_keys(entry: dict, file: str) -> None:
 def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     mode = True
     use_rule = ""
+    if_exists = []
     if isinstance(entry, dict):
         file = next(iter(entry.keys()))
         _validate_entry_keys(entry, file)
@@ -170,24 +174,37 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
             )
         mode = entry[file] != "optional"
         if "use_rule" in entry:
-            if entry.keys() != {file, "use_rule"}:
-                raise StructureRuleError(
-                    f"only 'use_rule' and file name is allowed"
-                    f"as an entry key, but is '{entry.keys()}'"
-                )
             use_rule = entry["use_rule"]
+        if "if_exists" in entry:
+            if_exists = entry["if_exists"]
     else:
         file = entry
 
     is_dir = file.endswith("/")
     file = file[0:-1] if is_dir else file
 
-    return RepoEntry(
+    result = RepoEntry(
         path=re.compile(file),
         is_dir=is_dir,
         is_required=mode,
         use_rule=use_rule,
     )
+    for e in if_exists:
+        result.if_exists.append(_parse_entry_to_repo_entry(e))
+
+    return result
+
+
+def _validate_yaml_dict(yaml_dict: dict) -> None:
+    if not isinstance(yaml_dict, dict):
+        raise StructureRuleError(
+            f"Structure rules must be a dictionary, but is '{type(yaml_dict)}'"
+        )
+    for key in yaml_dict:
+        if not isinstance(yaml_dict[key], list):
+            raise StructureRuleError(
+                f"Structure rules must be a dictionary of lists, but is '{type(yaml_dict[key])}'"
+            )
 
 
 def _validate_use_rule_not_dangling(rules: StructureRuleMap) -> None:

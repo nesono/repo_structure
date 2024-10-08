@@ -23,7 +23,9 @@ structure_rules:
     - 'README.md': required
       # mode: required is default
     - '[^/]*\.md': optional
-    - '.github/[^/]*': required
+    - '.github/': optional
+      if_exists:
+      - 'CODEOWNERS'
   recursive_rule:
     - '[^/]*\.py'
     - 'package/[^/]*':

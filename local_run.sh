@@ -16,7 +16,7 @@ $PY_BINARY -m venv .temp_venv
 source .temp_venv/bin/activate
 
 {
-  pip install -r requirements_lock.txt > pip_install.log 2>&1
+  pip install -r requirements.txt > pip_install.log 2>&1
 } || {
   echo "Failed to install dependencies" >&2
   cat pip_install.log

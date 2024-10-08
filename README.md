@@ -154,7 +154,7 @@ directory_map:
 ## System Requirements
 
 - Python 3.11
-- [Pip requirements](requirements.in)
+- [Pip requirements](requirements.txt)
 
 ## Building from Source
 
