@@ -85,13 +85,13 @@ def _get_use_rules_for_directory(config: Configuration, directory: str) -> List[
 
 
 def _build_active_entry_backlog(
-    active_use_rules: List[str], map_dir: str, config: Configuration
+    active_use_rules: List[str], rel_dir: str, config: Configuration
 ) -> StructureRuleList:
     result: StructureRuleList = []
     for rule in active_use_rules:
         for e in config.structure_rules[rule]:
             result.append(
-                replace(e, path=re.compile(os.path.join(map_dir, e.path.pattern)))
+                replace(e, path=re.compile(os.path.join(rel_dir, e.path.pattern)))
             )
     return result
 
@@ -171,7 +171,9 @@ def _fail_if_invalid_repo_structure_recursive(
                 print(f"  Registered usage for path {rel_path}")
 
             if entry.is_dir():
-                _handle_use_rule(backlog, backlog_entry, config, flags, rel_path)
+                _handle_use_rule(
+                    backlog, backlog_entry.use_rule, config, flags, rel_path
+                )
                 _handle_if_exists(backlog, backlog_entry, rel_path, flags)
 
                 # enter the subdirectory recursively
@@ -182,17 +184,17 @@ def _fail_if_invalid_repo_structure_recursive(
 
 def _handle_use_rule(
     backlog: StructureRuleList,
-    backlog_entry: RepoEntry,
+    use_rule: str,
     config: Configuration,
     flags: Flags,
     rel_path: str,
 ):
-    if backlog_entry.use_rule:
+    if use_rule:
         if flags.verbose:
             print(f"use_rule found for rel path {rel_path}")
         backlog.extend(
             _build_active_entry_backlog(
-                [backlog_entry.use_rule],
+                [use_rule],
                 rel_path,
                 config,
             )

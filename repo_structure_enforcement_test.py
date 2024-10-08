@@ -487,9 +487,7 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    flags = Flags()
-    flags.verbose = True
-    _assert_repo_directory_structure(config, flags)
+    _assert_repo_directory_structure(config)
 
 
 @with_repo_structure_in_tmpdir(
