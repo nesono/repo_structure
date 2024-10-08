@@ -151,7 +151,7 @@ def _parse_directory_structure(
         structure_rule_list.append(_parse_entry_to_repo_entry(item))
 
 
-def _validate_entry_keys(entry: dict, file: str) -> None:
+def _validate_structure_rule_entry_keys(entry: dict, file: str) -> None:
     allowed_keys = {file, "use_rule", "if_exists"}
     if not entry.keys() <= allowed_keys:
         raise StructureRuleError(
@@ -166,7 +166,7 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     if_exists = []
     if isinstance(entry, dict):
         file = next(iter(entry.keys()))
-        _validate_entry_keys(entry, file)
+        _validate_structure_rule_entry_keys(entry, file)
         if entry[file] not in [None, "required", "optional"]:
             raise StructureRuleError(
                 f"mode must be either 'required' or 'optional'"
@@ -227,15 +227,27 @@ def _validate_use_rule_only_recursive(rules: StructureRuleMap) -> None:
                 )
 
 
+def _handle_use_rule(rule: dict, mapping: DirectoryMap, directory: str):
+    if rule.keys() == {"use_rule"}:
+        mapping[directory].append(rule["use_rule"])
+
+
+# def _handle_use_template(rule: dict, mapping: DirectoryMap, directory: str):
+#     if "use_template" in rule.keys():
+#         template = rule["use_template"]
+#         print(f"found template usage {template} in {directory}")
+
+
 def _parse_directory_map(directory_map: dict) -> DirectoryMap:
     mapping: DirectoryMap = {}
-    for directory, rules in directory_map.items():
+    for directory, value in directory_map.items():
         _ensure_start_and_end_slashes(directory)
-        for r in rules:
-            _ensure_only_use_rule(r)
+        for r in value:
+            _validate_directory_map_keys(r)
             if mapping.get(directory) is None:
                 mapping[directory] = []
-            mapping[directory].append(r["use_rule"])
+            _handle_use_rule(r, mapping, directory)
+            # _handle_use_template(r, mapping, directory)
 
     return mapping
 
@@ -247,8 +259,11 @@ def _ensure_start_and_end_slashes(directory):
         )
 
 
-def _ensure_only_use_rule(r):
-    if r.keys() != {"use_rule"}:
+def _validate_directory_map_keys(r):
+    if r.keys() == {"use_rule"}:
+        return
+    if "use_template" not in r.keys():
         raise ValueError(
-            f"Only a 'use_rule' is allowed in directory mappings, but is '{r.keys()}'"
+            "Only 'use_rule' or 'use_template' are allowed "
+            f"in directory mappings, but is '{r.keys()}'"
         )

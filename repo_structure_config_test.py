@@ -51,6 +51,9 @@ directory_map:
   /:
     - use_rule: basic_rule
     - use_rule: recursive_rule
+  /software_components/:
+    - use_template: software_component
+      component_name: ['lidar', 'camera', 'driver', 'control']
   /test_folder_structure/:
     - use_rule: template_rule_second_map
     """
