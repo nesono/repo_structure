@@ -75,13 +75,14 @@ structure_rules:
     - "BUILD": required
     - "main.py"
     - "library/": optional
-    - 'library/lib\.py'
-    - 'library/[^/]*\.py': optional
+      if_exists:
+        - 'lib\.py'
+        - '[^/]*\.py': optional
 ```
 
-Here, we allow a subdirectory 'library' to exist. We require with the file
-'lib.py' if 'library' exists. it. And any other file ending on '.py' is allowed
-in it as well, but not required.
+Here, we allow a subdirectory 'library' to exist. We require the file
+'library/lib.py' if the folder 'library' exists. Any other file ending on '.py'
+is allowed in it as well, but not required.
 
 ### Recursion
 

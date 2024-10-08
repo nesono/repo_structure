@@ -426,7 +426,7 @@ LICENSE
 """
 )
 def test_required_file_in_optional_directory_no_entry():
-    """Test for overlapping required file rules - two different rules apply to the same file."""
+    """Test required file under optional directory - no entry."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -440,6 +440,56 @@ directory_map:
     """
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config)
+
+
+@with_repo_structure_in_tmpdir(
+    """
+LICENSE
+doc/
+"""
+)
+def test_required_file_in_optional_directory_with_entry():
+    """Test required file under optional directory - with directory entry."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - 'LICENSE'
+    - 'doc/': optional
+      if_exists:
+        - 'README\.md': required
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    with pytest.raises(MissingRequiredEntriesError):
+        _assert_repo_directory_structure(config)
+
+
+@with_repo_structure_in_tmpdir(
+    """
+LICENSE
+doc/
+doc/README.md
+"""
+)
+def test_required_file_in_optional_directory_with_entry_and_exists():
+    """Test required file under optional directory - with directory entry and file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - 'LICENSE'
+    - 'doc/': optional
+      if_exists:
+        - 'README\.md': required
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    flags = Flags()
+    flags.verbose = True
+    _assert_repo_directory_structure(config, flags)
 
 
 @with_repo_structure_in_tmpdir(

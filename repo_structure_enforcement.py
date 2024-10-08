@@ -5,7 +5,7 @@
 import os
 import re
 from os import DirEntry
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from typing import List, Callable, Optional
 from gitignore_parser import parse_gitignore
@@ -13,6 +13,7 @@ from gitignore_parser import parse_gitignore
 from repo_structure_config import (
     Configuration,
     RepoEntry,
+    StructureRuleList,
 )
 
 
@@ -85,17 +86,12 @@ def _get_use_rules_for_directory(config: Configuration, directory: str) -> List[
 
 def _build_active_entry_backlog(
     active_use_rules: List[str], map_dir: str, config: Configuration
-) -> List[RepoEntry]:
-    result: List[RepoEntry] = []
+) -> StructureRuleList:
+    result: StructureRuleList = []
     for rule in active_use_rules:
         for e in config.structure_rules[rule]:
             result.append(
-                RepoEntry(
-                    path=re.compile(os.path.join(map_dir, e.path.pattern)),
-                    is_dir=e.is_dir,
-                    is_required=e.is_required,
-                    use_rule=e.use_rule,
-                )
+                replace(e, path=re.compile(os.path.join(map_dir, e.path.pattern)))
             )
     return result
 
@@ -103,13 +99,13 @@ def _build_active_entry_backlog(
 def _map_dir_to_entry_backlog(
     config: Configuration,
     map_dir: str,
-) -> List[RepoEntry]:
+) -> StructureRuleList:
     use_rules = _get_use_rules_for_directory(config, map_dir)
     return _build_active_entry_backlog(use_rules, map_dir, config)
 
 
 def _get_matching_item_index(
-    backlog: List[RepoEntry],
+    backlog: StructureRuleList,
     entry_path: str,
     is_dir: bool,
     verbose: bool = False,
@@ -128,9 +124,9 @@ def _get_matching_item_index(
 
 
 def _fail_if_required_entries_missing(
-    entry_backlog: List[RepoEntry],
+    entry_backlog: StructureRuleList,
 ) -> None:
-    missing_required: List[RepoEntry] = []
+    missing_required: StructureRuleList = []
     for entry in entry_backlog:
         if entry.is_required and entry.count == 0:
             missing_required.append(entry)
@@ -148,7 +144,7 @@ def _fail_if_invalid_repo_structure_recursive(
     repo_root: str,
     rel_dir: str,
     config: Configuration,
-    backlog: List[RepoEntry],
+    backlog: StructureRuleList,
     flags: Flags,
 ) -> None:
     git_ignore = _get_git_ignore(repo_root)
@@ -176,6 +172,7 @@ def _fail_if_invalid_repo_structure_recursive(
 
             if entry.is_dir():
                 _handle_use_rule(backlog, backlog_entry, config, flags, rel_path)
+                _handle_if_exists(backlog, backlog_entry, rel_path, flags)
 
                 # enter the subdirectory recursively
                 _fail_if_invalid_repo_structure_recursive(
@@ -183,7 +180,13 @@ def _fail_if_invalid_repo_structure_recursive(
                 )
 
 
-def _handle_use_rule(backlog, backlog_entry, config, flags, rel_path):
+def _handle_use_rule(
+    backlog: StructureRuleList,
+    backlog_entry: RepoEntry,
+    config: Configuration,
+    flags: Flags,
+    rel_path: str,
+):
     if backlog_entry.use_rule:
         if flags.verbose:
             print(f"use_rule found for rel path {rel_path}")
@@ -194,6 +197,18 @@ def _handle_use_rule(backlog, backlog_entry, config, flags, rel_path):
                 config,
             )
         )
+
+
+def _handle_if_exists(
+    backlog: StructureRuleList, backlog_entry: RepoEntry, rel_path: str, flags: Flags
+):
+    if backlog_entry.if_exists:
+        if flags.verbose:
+            print(f"if_exists found for rel path {backlog_entry.path.pattern}")
+        for e in backlog_entry.if_exists:
+            backlog.append(
+                replace(e, path=re.compile(os.path.join(rel_path, e.path.pattern)))
+            )
 
 
 def _get_git_ignore(repo_root: str) -> Callable[[str], bool] | None:
