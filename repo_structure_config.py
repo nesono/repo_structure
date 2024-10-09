@@ -227,29 +227,43 @@ def _validate_use_rule_only_recursive(rules: StructureRuleMap) -> None:
                 )
 
 
-def _handle_use_rule(rule: dict, mapping: DirectoryMap, directory: str):
+def _parse_use_rule(rule: dict, dir_map: List[str]):
     if rule.keys() == {"use_rule"}:
-        mapping[directory].append(rule["use_rule"])
+        dir_map.append(rule["use_rule"])
 
 
-# def _handle_use_template(rule: dict, mapping: DirectoryMap, directory: str):
-#     if "use_template" in rule.keys():
-#         template = rule["use_template"]
-#         print(f"found template usage {template} in {directory}")
+def _parse_use_template(dm: dict, templates_yaml: dict, config: Configuration):
+    if "use_template" in dm.keys():
+        template = dm["use_template"]
+        # get template contents
+        # get template expansion dictionary
+        # parse template contents into a structure rule
+        # add structure rule to structure_rules using a reserved name
+        # add structure rule to directory map
+        print(f"found template usage {template}")
 
 
-def _parse_directory_map(directory_map: dict) -> DirectoryMap:
+def _parse_directory_map(
+    directory_map_yaml: dict,
+) -> DirectoryMap:
     mapping: DirectoryMap = {}
-    for directory, value in directory_map.items():
+    for directory, value in directory_map_yaml.items():
         _ensure_start_and_end_slashes(directory)
         for r in value:
             _validate_directory_map_keys(r)
             if mapping.get(directory) is None:
                 mapping[directory] = []
-            _handle_use_rule(r, mapping, directory)
-            # _handle_use_template(r, mapping, directory)
+            _parse_use_rule(r, mapping[directory])
 
     return mapping
+
+
+def _parse_templates_to_configuration(
+    templates_yaml: dict, directory_map_yaml: dict, config: Configuration
+) -> None:
+    for directory, value in directory_map_yaml.items():
+        for dm in value:
+            _parse_use_template(dm, templates_yaml, config)
 
 
 def _ensure_start_and_end_slashes(directory):
