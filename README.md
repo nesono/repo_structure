@@ -38,6 +38,10 @@ directories.
 Structure rules are specified within the `structure_rules` section in the yaml
 configuration file.
 
+**Nota Bene**: The names of structure rules must
+(`example_rule_with_recursion`) not start with a '`__`', since this is reserved
+for expanded templates.
+
 ### Files
 
 For example, the following snippet declares a rule called `example_rule` that
@@ -115,7 +119,41 @@ structure_rules:
 
 ## Templates
 
-_Templates are still under construction._
+Templates provide the ability to reuse patterns of directory structures and
+thereby reduce duplication in structure rules. Templates are expanded during
+parsing and will populate the directory map and structure rules as if they
+were specified in their expanded state.
+
+The following example shows a simple template specification
+
+```yaml
+templates:
+  example_template:
+    - "{{component}}/"
+    - "{{component}}/{{component}}_component.py"
+    - "{{component}}/doc/"
+    - "{{component}}/doc/{{component}}.techspec.md"
+directory_map:
+  /:
+    - use_template: example_template
+      component: ["lidar", "driver"]
+```
+
+During parsing, the template parameter `component` will be expanded to what
+is provided in the `use_template` section in the `directory_map`.
+
+The example would call this directory structure as compliant:
+
+```console
+lidar/
+lidar/lidar_component.py
+lidar/doc/
+lidar/doc/lidar.techspec.md
+driver/
+driver/driver_component.py
+driver/doc/
+driver/doc/driver.techspec.md
+```
 
 ## Directory Map
 
