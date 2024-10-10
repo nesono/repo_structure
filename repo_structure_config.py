@@ -3,7 +3,7 @@
 """Library functions for repo structure config parsing."""
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, TextIO
+from typing import Dict, List, TextIO, Union
 
 from ruamel import yaml as YAML
 
@@ -72,6 +72,7 @@ class Configuration:
             ),
             directory_map=_parse_directory_map(yaml_dict.get("directory_map", {})),
         )
+        # Template parsing is expanded in-place and added as structure rules to the directory_map
         _parse_templates_to_configuration(
             yaml_dict.get("templates", {}),
             yaml_dict.get("directory_map", {}),
@@ -251,34 +252,35 @@ def _build_expansion_map(dir_map_yaml: dict):
 def _parse_use_template(
     dir_map_yaml: dict, directory: str, templates_yaml: dict, config: Configuration
 ):
-    if "use_template" in dir_map_yaml.keys():
-        structure_rule_list: StructureRuleList = []
-        template_name = dir_map_yaml["use_template"]
-        expansion_map = _build_expansion_map(dir_map_yaml)
-        # pylint: disable=consider-using-dict-items, consider-iterating-dictionary
-        for expansion_key in expansion_map.keys():
-            for expansion_var in expansion_map[expansion_key]:
-                for entry in templates_yaml[template_name]:
-                    if isinstance(entry, dict):
-                        entry_key = next(iter(entry.keys()))
-                        expanded = entry_key.replace(
-                            f"{{{{{expansion_key}}}}}", expansion_var
-                        )
-                        entry[expanded] = entry.pop(entry_key)
-                    elif isinstance(entry, str):
-                        expanded = entry.replace(
-                            f"{{{{{expansion_key}}}}}", expansion_var
-                        )
-                        entry = expanded
-                    else:
-                        raise RepoStructureTemplateError(
-                            "only instances 'dict' and 'str' are"
-                            f" allowed, but found '{type(entry)}'"
-                        )
-                    structure_rule_list.append(_parse_entry_to_repo_entry(entry))
-        template_rule_name = "__template_rule_" + template_name
-        config.config.structure_rules[template_rule_name] = structure_rule_list
-        config.config.directory_map[directory].append(template_rule_name)
+    if "use_template" not in dir_map_yaml:
+        return
+
+    template_name = dir_map_yaml["use_template"]
+    expansion_map = _build_expansion_map(dir_map_yaml)
+    template_entries = templates_yaml[template_name]
+
+    def _expand_entry(entry: Union[dict, str], expansion_key: str, expansion_var: str):
+        if isinstance(entry, dict):
+            entry_key = next(iter(entry.keys()))
+            return entry_key.replace(f"{{{{{expansion_key}}}}}", expansion_var)
+
+        if isinstance(entry, str):
+            return entry.replace(f"{{{{{expansion_key}}}}}", expansion_var)
+
+        raise RepoStructureTemplateError(
+            "only instances 'dict' and 'str' are" f" allowed, but found '{type(entry)}'"
+        )
+
+    structure_rule_list: StructureRuleList = []
+    for expansion_key, expansion_vars in expansion_map.items():
+        for expansion_var in expansion_vars:
+            for entry in template_entries:
+                expanded = _expand_entry(entry, expansion_key, expansion_var)
+                structure_rule_list.append(_parse_entry_to_repo_entry(expanded))
+
+    template_rule_name = f"__template_rule_{template_name}"
+    config.config.structure_rules[template_rule_name] = structure_rule_list
+    config.config.directory_map[directory].append(template_rule_name)
 
 
 def _parse_directory_map(
