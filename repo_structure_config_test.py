@@ -30,10 +30,6 @@ structure_rules:
     - '[^/]*\.py'
     - 'package/[^/]*':
       use_rule: recursive_rule
-  template_rule_second_map:
-    - "BUILD"
-    - "example/[^/]*"
-    - "example/doc/"
 templates:
   software_component:
     - '{{component_name}}_component.cpp'
@@ -43,6 +39,7 @@ templates:
     - '{{component_name}}_factory.h'
     - 'BUILD'
     - 'README.md'
+    - 'doc/'
     - 'doc/{{component_name}}.swreq.md'
     - 'doc/{{component_name}}.techspec.md'
     - '[^/]*\_test.cpp': optional
@@ -54,8 +51,6 @@ directory_map:
   /software_components/:
     - use_template: software_component
       component_name: ['lidar', 'camera', 'driver', 'control']
-  /test_folder_structure/:
-    - use_rule: template_rule_second_map
     """
     # parsing should not throw using the above yaml
     config = Configuration(test_yaml, True)

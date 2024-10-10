@@ -20,6 +20,10 @@ class DirectoryStructureError(Exception):
     """Directory structure related error."""
 
 
+class RepoStructureTemplateError(Exception):
+    """Repo structure template related error."""
+
+
 @dataclass
 class RepoEntry:
     """Wrapper for entries in the directory structure, that store the path
@@ -68,6 +72,11 @@ class Configuration:
             ),
             directory_map=_parse_directory_map(yaml_dict.get("directory_map", {})),
         )
+        _parse_templates_to_configuration(
+            yaml_dict.get("templates", {}),
+            yaml_dict.get("directory_map", {}),
+            self,
+        )
         self._validate_directory_map_use_rules()
 
         if not param1_is_yaml_string:
@@ -85,7 +94,6 @@ class Configuration:
                     is_required=True,
                 )
             ]
-
             self.config.directory_map["/"].insert(0, config_file)
 
     def _validate_directory_map_use_rules(self):
@@ -232,15 +240,45 @@ def _parse_use_rule(rule: dict, dir_map: List[str]):
         dir_map.append(rule["use_rule"])
 
 
-def _parse_use_template(dm: dict, templates_yaml: dict, config: Configuration):
-    if "use_template" in dm.keys():
-        template = dm["use_template"]
-        # get template contents
-        # get template expansion dictionary
-        # parse template contents into a structure rule
-        # add structure rule to structure_rules using a reserved name
-        # add structure rule to directory map
-        print(f"found template usage {template}")
+def _build_expansion_map(dir_map_yaml: dict):
+    expansion_map = {}
+    for key in dir_map_yaml.keys():
+        if key != "use_template":
+            expansion_map[key] = dir_map_yaml[key]
+    return expansion_map
+
+
+def _parse_use_template(
+    dir_map_yaml: dict, directory: str, templates_yaml: dict, config: Configuration
+):
+    if "use_template" in dir_map_yaml.keys():
+        structure_rule_list: StructureRuleList = []
+        template_name = dir_map_yaml["use_template"]
+        expansion_map = _build_expansion_map(dir_map_yaml)
+        # pylint: disable=consider-using-dict-items, consider-iterating-dictionary
+        for expansion_key in expansion_map.keys():
+            for expansion_var in expansion_map[expansion_key]:
+                for entry in templates_yaml[template_name]:
+                    if isinstance(entry, dict):
+                        entry_key = next(iter(entry.keys()))
+                        expanded = entry_key.replace(
+                            f"{{{{{expansion_key}}}}}", expansion_var
+                        )
+                        entry[expanded] = entry.pop(entry_key)
+                    elif isinstance(entry, str):
+                        expanded = entry.replace(
+                            f"{{{{{expansion_key}}}}}", expansion_var
+                        )
+                        entry = expanded
+                    else:
+                        raise RepoStructureTemplateError(
+                            "only instances 'dict' and 'str' are"
+                            f" allowed, but found '{type(entry)}'"
+                        )
+                    structure_rule_list.append(_parse_entry_to_repo_entry(entry))
+        template_rule_name = "__template_rule_" + template_name
+        config.config.structure_rules[template_rule_name] = structure_rule_list
+        config.config.directory_map[directory].append(template_rule_name)
 
 
 def _parse_directory_map(
@@ -262,8 +300,8 @@ def _parse_templates_to_configuration(
     templates_yaml: dict, directory_map_yaml: dict, config: Configuration
 ) -> None:
     for directory, value in directory_map_yaml.items():
-        for dm in value:
-            _parse_use_template(dm, templates_yaml, config)
+        for use_map in value:
+            _parse_use_template(use_map, directory, templates_yaml, config)
 
 
 def _ensure_start_and_end_slashes(directory):
