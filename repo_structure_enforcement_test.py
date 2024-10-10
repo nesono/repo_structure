@@ -749,5 +749,43 @@ directory_map:
     _assert_repo_directory_structure(config, flags)
 
 
+@with_repo_structure_in_tmpdir(
+    """
+lidar/
+lidar/lidar_component.cpp
+lidar/lidar_component.h
+lidar/doc/
+lidar/doc/lidar.swreq.md
+lidar/doc/lidar.techspec.md
+lidar/BUILD
+driver/
+driver/driver_component.cpp
+driver/driver_component.h
+driver/doc/
+driver/doc/driver.swreq.md
+driver/doc/driver.techspec.md
+driver/BUILD"""
+)
+def test_succeed_template_rule():
+    """Test template with single parameter."""
+    config_yaml = r"""
+templates:
+  component:
+    - '{{component}}/'
+    - '{{component}}/{{component}}_component.cpp'
+    - '{{component}}/{{component}}_component.h'
+    - '{{component}}/doc/'
+    - '{{component}}/doc/{{component}}.swreq.md'
+    - '{{component}}/doc/{{component}}.techspec.md'
+    - '{{component}}/BUILD'
+directory_map:
+  /:
+    - use_template: component
+      component: ['lidar', 'driver']
+"""
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main(["-s", "-v", __file__]))
