@@ -809,5 +809,46 @@ directory_map:
         _assert_repo_directory_structure(config)
 
 
+@with_repo_structure_in_tmpdir(
+    """
+lidar/
+lidar/lidar_component.py
+lidar/doc/
+lidar/doc/lidar.techspec.md
+driver/
+driver/driver_component.py
+driver/doc/
+driver/doc/driver.techspec.md
+subdir/control/
+subdir/control/control_component.py
+subdir/control/doc/
+subdir/control/doc/control.techspec.md
+subdir/camera/
+subdir/camera/camera_component.py
+subdir/camera/doc/
+subdir/camera/doc/camera.techspec.md
+"""
+)
+def test_succeed_template_rule_subdirectory_map():
+    """Test template with single parameter and subdirectory map."""
+    config_yaml = r"""
+templates:
+  component:
+    - '{{component}}/'
+    - '{{component}}/{{component}}_component.py'
+    - '{{component}}/doc/'
+    - '{{component}}/doc/{{component}}.techspec.md'
+directory_map:
+  /:
+    - use_template: component
+      component: ['lidar', 'driver']
+  /subdir/:
+    - use_template: component
+      component: ['control', 'camera']
+"""
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main(["-s", "-v", __file__]))

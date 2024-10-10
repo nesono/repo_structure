@@ -16,6 +16,8 @@ from repo_structure_config import (
     StructureRuleList,
 )
 
+from repo_structure_lib import rel_dir_to_map_dir, map_dir_to_rel_dir
+
 
 @dataclass
 class Flags:
@@ -43,40 +45,8 @@ class EntryTypeMismatchError(Exception):
     """Exception raised when unspecified entry type is not matching the found entry."""
 
 
-def _rel_dir_to_map_dir(rel_dir: str):
-    """Convert a relative directory path to a mapped directory path.
-
-    This function ensures that a given relative directory path conforms to
-    a specific format required for mapping. It enforces that the path starts
-    and ends with a '/' character.
-    """
-    if not rel_dir or rel_dir == "/":
-        return "/"
-
-    if not rel_dir.startswith("/"):
-        rel_dir = "/" + rel_dir
-    if not rel_dir.endswith("/"):
-        rel_dir = rel_dir + "/"
-
-    return rel_dir
-
-
-def _map_dir_to_rel_dir(map_dir: str) -> str:
-    """Convert a mapped directory path to a relative directory path.
-
-    This function takes a mapped directory path and converts it back to
-    a relative directory path by removing the leading and trailing '/'
-    characters if they exist. If the input is the root directory or empty,
-    it returns an empty string.
-    """
-    if not map_dir or map_dir == "/":
-        return ""
-
-    return map_dir[1:-1]
-
-
 def _get_use_rules_for_directory(config: Configuration, directory: str) -> List[str]:
-    d = _rel_dir_to_map_dir(directory)
+    d = rel_dir_to_map_dir(directory)
 
     if d in config.directory_map:
         return config.directory_map[d]
@@ -233,7 +203,7 @@ def _skip_entry(
         (rel_path == ".gitignore" and entry.is_file()),
         (rel_path == ".git" and entry.is_dir()),
         (git_ignore and git_ignore(entry.path)),
-        (entry.is_dir() and _rel_dir_to_map_dir(rel_path) in config.directory_map),
+        (entry.is_dir() and rel_dir_to_map_dir(rel_path) in config.directory_map),
     ]
 
     for condition in skip_conditions:
@@ -261,7 +231,7 @@ def fail_if_invalid_repo_structure(
         raise MissingMappingError("Config does not have a root mapping")
 
     for map_dir in config.directory_map:
-        rel_dir = _map_dir_to_rel_dir(map_dir)
+        rel_dir = map_dir_to_rel_dir(map_dir)
         backlog = _map_dir_to_entry_backlog(config, rel_dir)
 
         # parse directory and burn down backlog

@@ -7,6 +7,8 @@ from typing import Dict, List, TextIO, Union
 
 from ruamel import yaml as YAML
 
+from repo_structure_lib import map_dir_to_rel_dir
+
 
 class StructureRuleError(Exception):
     """Structure rule related error."""
@@ -278,7 +280,9 @@ def _parse_use_template(
                 expanded = _expand_entry(entry, expansion_key, expansion_var)
                 structure_rule_list.append(_parse_entry_to_repo_entry(expanded))
 
-    template_rule_name = f"__template_rule_{template_name}"
+    template_rule_name = (
+        f"__template_rule_{map_dir_to_rel_dir(directory)}_{template_name}"
+    )
     config.config.structure_rules[template_rule_name] = structure_rule_list
     config.config.directory_map[directory].append(template_rule_name)
 
