@@ -172,6 +172,16 @@ def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
 
 
 def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
+
+    def _parse_directory_structure(
+        directory_structure_yaml: dict, structure_rule_list: StructureRuleList
+    ) -> None:
+        # if directory_structure is empty dict, return
+        if not directory_structure_yaml:
+            return
+        for item in directory_structure_yaml:
+            structure_rule_list.append(_parse_entry_to_repo_entry(item))
+
     rules: StructureRuleMap = {}
     if not structure_rules_yaml:
         return rules
@@ -183,26 +193,16 @@ def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
     return rules
 
 
-def _parse_directory_structure(
-    directory_structure_yaml: dict, structure_rule_list: StructureRuleList
-) -> None:
-    # if directory_structure is empty dict, return
-    if not directory_structure_yaml:
-        return
-    for item in directory_structure_yaml:
-        structure_rule_list.append(_parse_entry_to_repo_entry(item))
-
-
-def _validate_structure_rule_entry_keys(entry: dict, file: str) -> None:
-    allowed_keys = {file, "use_rule", "if_exists"}
-    if not entry.keys() <= allowed_keys:
-        raise StructureRuleError(
-            f"only 'use_rule' and file name is allowed"
-            f"as an entry key, but contains extra keys '{entry.keys() - allowed_keys}'"
-        )
-
-
 def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
+
+    def _validate_structure_rule_entry_keys(entry: dict, file: str) -> None:
+        allowed_keys = {file, "use_rule", "if_exists"}
+        if not entry.keys() <= allowed_keys:
+            raise StructureRuleError(
+                f"only 'use_rule' and file name is allowed"
+                f"as an entry key, but contains extra keys '{entry.keys() - allowed_keys}'"
+            )
+
     mode = True
     use_rule = ""
     if_exists = []
