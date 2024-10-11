@@ -131,6 +131,37 @@ def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
 
 
 def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
+
+    def _validate_yaml_dict(yaml_dict: dict) -> None:
+        if not isinstance(yaml_dict, dict):
+            raise StructureRuleError(
+                f"Structure rules must be a dictionary, but is '{type(yaml_dict)}'"
+            )
+        for key in yaml_dict:
+            if not isinstance(yaml_dict[key], list):
+                raise StructureRuleError(
+                    "Structure rules must be a dictionary of lists, "
+                    f"but is '{type(yaml_dict[key])}'"
+                )
+
+    def _validate_use_rule_not_dangling(rules: StructureRuleMap) -> None:
+        for rule_key in rules.keys():
+            for entry in rules[rule_key]:
+                if entry.use_rule and entry.use_rule not in rules:
+                    raise UseRuleError(
+                        f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
+                        "is not a valid rule key"
+                    )
+
+    def _validate_use_rule_only_recursive(rules: StructureRuleMap) -> None:
+        for rule_key in rules.keys():
+            for entry in rules[rule_key]:
+                if entry.use_rule and entry.use_rule != rule_key:
+                    raise UseRuleError(
+                        f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
+                        "is not recursive"
+                    )
+
     _validate_yaml_dict(structure_rules_yaml)
 
     rules = _build_rules(structure_rules_yaml)
@@ -206,87 +237,50 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     return result
 
 
-def _validate_yaml_dict(yaml_dict: dict) -> None:
-    if not isinstance(yaml_dict, dict):
-        raise StructureRuleError(
-            f"Structure rules must be a dictionary, but is '{type(yaml_dict)}'"
-        )
-    for key in yaml_dict:
-        if not isinstance(yaml_dict[key], list):
-            raise StructureRuleError(
-                f"Structure rules must be a dictionary of lists, but is '{type(yaml_dict[key])}'"
-            )
-
-
-def _validate_use_rule_not_dangling(rules: StructureRuleMap) -> None:
-    for rule_key in rules.keys():
-        for entry in rules[rule_key]:
-            if entry.use_rule and entry.use_rule not in rules:
-                raise UseRuleError(
-                    f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
-                    "is not a valid rule key"
-                )
-
-
-def _validate_use_rule_only_recursive(rules: StructureRuleMap) -> None:
-    for rule_key in rules.keys():
-        for entry in rules[rule_key]:
-            if entry.use_rule and entry.use_rule != rule_key:
-                raise UseRuleError(
-                    f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
-                    "is not recursive"
-                )
-
-
-def _build_expansion_map(dir_map_yaml: dict) -> Dict[str, List[str]]:
-    expansion_map = {}
-    for key in dir_map_yaml.keys():
-        if key != "use_template":
-            expansion_map[key] = dir_map_yaml[key]
-    return expansion_map
-
-
-def _max_values_length(expansion_map: Dict[str, List[str]]) -> int:
-    max_length = 0
-    for _, values in expansion_map.items():
-        max_length = max(max_length, len(values))
-    return max_length
-
-
-def _expand_entry(entry: Union[dict, str], expansion_key: str, expansion_var: str):
-    if isinstance(entry, dict):
-        entry_key = next(iter(entry.keys()))
-        return entry_key.replace(f"{{{{{expansion_key}}}}}", expansion_var)
-
-    if isinstance(entry, str):
-        return entry.replace(f"{{{{{expansion_key}}}}}", expansion_var)
-
-    raise RepoStructureTemplateError(
-        "only instances 'dict' and 'str' are" f" allowed, but found '{type(entry)}'"
-    )
-
-
 def _parse_use_template(
     dir_map_yaml: dict, directory: str, templates_yaml: dict, config: Configuration
 ):
     if "use_template" not in dir_map_yaml:
         return
 
-    template_name = dir_map_yaml["use_template"]
+    def _build_expansion_map(dir_map_yaml: dict) -> Dict[str, List[str]]:
+        expansion_map = {}
+        for key in dir_map_yaml.keys():
+            if key != "use_template":
+                expansion_map[key] = dir_map_yaml[key]
+        return expansion_map
+
+    def _max_values_length(expansion_map: Dict[str, List[str]]) -> int:
+        max_length = 0
+        for _, values in expansion_map.items():
+            max_length = max(max_length, len(values))
+        return max_length
+
+    def _expand_entry(entry: Union[dict, str], expansion_key: str, expansion_var: str):
+        if isinstance(entry, dict):
+            entry_key = next(iter(entry.keys()))
+            return entry_key.replace(f"{{{{{expansion_key}}}}}", expansion_var)
+
+        if isinstance(entry, str):
+            return entry.replace(f"{{{{{expansion_key}}}}}", expansion_var)
+
+        raise RepoStructureTemplateError(
+            "only instances 'dict' and 'str' are" f" allowed, but found '{type(entry)}'"
+        )
+
     expansion_map = _build_expansion_map(dir_map_yaml)
-    template_entries = templates_yaml[template_name]
 
     structure_rule_list: StructureRuleList = []
     for i in range(_max_values_length(expansion_map)):
-        for entry in template_entries:
+        for entry in templates_yaml[dir_map_yaml["use_template"]]:
             for expansion_key, expansion_vars in expansion_map.items():
                 index = i % len(expansion_vars)
                 entry = _expand_entry(entry, expansion_key, expansion_vars[index])
             structure_rule_list.append(_parse_entry_to_repo_entry(entry))
 
-    template_rule_name = (
-        f"__template_rule_{map_dir_to_rel_dir(directory)}_{template_name}"
-    )
+    # fmt: off
+    template_rule_name = \
+        f"__template_rule_{map_dir_to_rel_dir(directory)}_{dir_map_yaml['use_template']}"
     config.config.structure_rules[template_rule_name] = structure_rule_list
     config.config.directory_map[directory].append(template_rule_name)
 
