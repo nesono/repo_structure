@@ -238,17 +238,37 @@ def _validate_use_rule_only_recursive(rules: StructureRuleMap) -> None:
                 )
 
 
-def _parse_use_rule(rule: dict, dir_map: List[str]):
+def _parse_use_rule(rule: dict, dir_map: List[str]) -> None:
     if rule.keys() == {"use_rule"}:
         dir_map.append(rule["use_rule"])
 
 
-def _build_expansion_map(dir_map_yaml: dict):
+def _build_expansion_map(dir_map_yaml: dict) -> Dict[str, List[str]]:
     expansion_map = {}
     for key in dir_map_yaml.keys():
         if key != "use_template":
             expansion_map[key] = dir_map_yaml[key]
     return expansion_map
+
+
+def _max_values_length(expansion_map: Dict[str, List[str]]) -> int:
+    max_length = 0
+    for _, values in expansion_map.items():
+        max_length = max(max_length, len(values))
+    return max_length
+
+
+def _expand_entry(entry: Union[dict, str], expansion_key: str, expansion_var: str):
+    if isinstance(entry, dict):
+        entry_key = next(iter(entry.keys()))
+        return entry_key.replace(f"{{{{{expansion_key}}}}}", expansion_var)
+
+    if isinstance(entry, str):
+        return entry.replace(f"{{{{{expansion_key}}}}}", expansion_var)
+
+    raise RepoStructureTemplateError(
+        "only instances 'dict' and 'str' are" f" allowed, but found '{type(entry)}'"
+    )
 
 
 def _parse_use_template(
@@ -261,24 +281,13 @@ def _parse_use_template(
     expansion_map = _build_expansion_map(dir_map_yaml)
     template_entries = templates_yaml[template_name]
 
-    def _expand_entry(entry: Union[dict, str], expansion_key: str, expansion_var: str):
-        if isinstance(entry, dict):
-            entry_key = next(iter(entry.keys()))
-            return entry_key.replace(f"{{{{{expansion_key}}}}}", expansion_var)
-
-        if isinstance(entry, str):
-            return entry.replace(f"{{{{{expansion_key}}}}}", expansion_var)
-
-        raise RepoStructureTemplateError(
-            "only instances 'dict' and 'str' are" f" allowed, but found '{type(entry)}'"
-        )
-
     structure_rule_list: StructureRuleList = []
-    for expansion_key, expansion_vars in expansion_map.items():
-        for expansion_var in expansion_vars:
-            for entry in template_entries:
-                expanded = _expand_entry(entry, expansion_key, expansion_var)
-                structure_rule_list.append(_parse_entry_to_repo_entry(expanded))
+    for i in range(_max_values_length(expansion_map)):
+        for entry in template_entries:
+            for expansion_key, expansion_vars in expansion_map.items():
+                index = i % len(expansion_vars)
+                entry = _expand_entry(entry, expansion_key, expansion_vars[index])
+            structure_rule_list.append(_parse_entry_to_repo_entry(entry))
 
     template_rule_name = (
         f"__template_rule_{map_dir_to_rel_dir(directory)}_{template_name}"
