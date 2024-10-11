@@ -66,14 +66,6 @@ def _build_active_entry_backlog(
     return result
 
 
-def _map_dir_to_entry_backlog(
-    config: Configuration,
-    map_dir: str,
-) -> StructureRuleList:
-    use_rules = _get_use_rules_for_directory(config, map_dir)
-    return _build_active_entry_backlog(use_rules, map_dir, config)
-
-
 def _get_matching_item_index(
     backlog: StructureRuleList,
     entry_path: str,
@@ -221,6 +213,14 @@ def fail_if_invalid_repo_structure(
     flags: Optional[Flags] = Flags(),
 ) -> None:
     """Fail if the repo structure directory is invalid given the configuration."""
+
+    def _map_dir_to_entry_backlog(
+        config: Configuration,
+        map_dir: str,
+    ) -> StructureRuleList:
+        use_rules = _get_use_rules_for_directory(config, map_dir)
+        return _build_active_entry_backlog(use_rules, map_dir, config)
+
     if repo_root is None:
         if flags.verbose:
             print("repo_root is None, returning early")
