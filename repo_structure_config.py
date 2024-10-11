@@ -238,11 +238,6 @@ def _validate_use_rule_only_recursive(rules: StructureRuleMap) -> None:
                 )
 
 
-def _parse_use_rule(rule: dict, dir_map: List[str]) -> None:
-    if rule.keys() == {"use_rule"}:
-        dir_map.append(rule["use_rule"])
-
-
 def _build_expansion_map(dir_map_yaml: dict) -> Dict[str, List[str]]:
     expansion_map = {}
     for key in dir_map_yaml.keys():
@@ -299,6 +294,26 @@ def _parse_use_template(
 def _parse_directory_map(
     directory_map_yaml: dict,
 ) -> DirectoryMap:
+
+    def _ensure_start_and_end_slashes(directory):
+        if not (directory.startswith("/") and directory.endswith("/")):
+            raise DirectoryStructureError(
+                f"Directory mapping must start and end with '/', but is '{directory}'"
+            )
+
+    def _validate_directory_map_keys(r):
+        if r.keys() == {"use_rule"}:
+            return
+        if "use_template" not in r.keys():
+            raise ValueError(
+                "Only 'use_rule' or 'use_template' are allowed "
+                f"in directory mappings, but is '{r.keys()}'"
+            )
+
+    def _parse_use_rule(rule: dict, dir_map: List[str]) -> None:
+        if rule.keys() == {"use_rule"}:
+            dir_map.append(rule["use_rule"])
+
     mapping: DirectoryMap = {}
     for directory, value in directory_map_yaml.items():
         _ensure_start_and_end_slashes(directory)
@@ -317,20 +332,3 @@ def _parse_templates_to_configuration(
     for directory, value in directory_map_yaml.items():
         for use_map in value:
             _parse_use_template(use_map, directory, templates_yaml, config)
-
-
-def _ensure_start_and_end_slashes(directory):
-    if not (directory.startswith("/") and directory.endswith("/")):
-        raise DirectoryStructureError(
-            f"Directory mapping must start and end with '/', but is '{directory}'"
-        )
-
-
-def _validate_directory_map_keys(r):
-    if r.keys() == {"use_rule"}:
-        return
-    if "use_template" not in r.keys():
-        raise ValueError(
-            "Only 'use_rule' or 'use_template' are allowed "
-            f"in directory mappings, but is '{r.keys()}'"
-        )
