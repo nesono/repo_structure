@@ -817,6 +817,36 @@ lidar/doc/
 lidar/doc/lidar.techspec.md
 driver/
 driver/driver_component.py
+driver/
+"""
+)
+def test_succeed_template_rule_if_exists():
+    """Test template with if_exists clause and optional dir missing."""
+    config_yaml = r"""
+templates:
+  component:
+    - '{{component}}/'
+    - '{{component}}/{{component}}_component.py'
+    - '{{component}}/doc/': optional
+      if_exists:
+        - '{{component}}.techspec.md'
+directory_map:
+  /:
+    - use_template: component
+      component: ['lidar', 'driver']
+"""
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)
+
+
+@with_repo_structure_in_tmpdir(
+    """
+lidar/
+lidar/lidar_component.py
+lidar/doc/
+lidar/doc/lidar.techspec.md
+driver/
+driver/driver_component.py
 driver/doc/
 driver/doc/driver.techspec.md
 subdir/control/

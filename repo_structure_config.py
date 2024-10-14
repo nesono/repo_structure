@@ -1,6 +1,7 @@
 # pylint: disable=import-error
 
 """Library functions for repo structure config parsing."""
+import copy
 import re
 from dataclasses import dataclass, field
 from typing import Dict, List, TextIO, Union
@@ -193,13 +194,13 @@ def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
     return rules
 
 
-def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
+def _parse_entry_to_repo_entry(entry: Union[str, dict]) -> RepoEntry:
 
     def _validate_structure_rule_entry_keys(entry: dict, file: str) -> None:
         allowed_keys = {file, "use_rule", "if_exists"}
         if not entry.keys() <= allowed_keys:
             raise StructureRuleError(
-                f"only 'use_rule' and file name is allowed"
+                f"only 'use_rule' and file name is allowed "
                 f"as an entry key, but contains extra keys '{entry.keys() - allowed_keys}'"
             )
 
@@ -207,7 +208,7 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     use_rule = ""
     if_exists = []
     if isinstance(entry, dict):
-        file = next(iter(entry.keys()))
+        file = next(key for key in entry.keys() if key != "if_exists")
         _validate_structure_rule_entry_keys(entry, file)
         if entry[file] not in [None, "required", "optional"]:
             raise StructureRuleError(
@@ -237,6 +238,35 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     return result
 
 
+def _expand_template_yaml(
+    template_yaml: List[Union[str, dict]], expansion_key: str, expansion_var: str
+) -> List[Union[str, dict]]:
+
+    def _expand_entry(entry: Union[dict, str], expansion_key: str, expansion_var: str):
+        if isinstance(entry, dict):
+            entry_key = next(key for key in entry.keys() if key != "if_exists")
+            new_key = entry_key.replace(f"{{{{{expansion_key}}}}}", expansion_var)
+            entry[new_key] = entry.pop(entry_key)
+            return entry
+
+        if isinstance(entry, str):
+            return entry.replace(f"{{{{{expansion_key}}}}}", expansion_var)
+
+        raise RepoStructureTemplateError(
+            "only instances 'dict' and 'str' are" f" allowed, but found '{type(entry)}'"
+        )
+
+    expanded_yaml: List[Union[str, dict]] = []
+    for entry in template_yaml:
+        entry = _expand_entry(entry, expansion_key, expansion_var)
+        if isinstance(entry, dict) and "if_exists" in entry:
+            entry["if_exists"] = _expand_template_yaml(
+                entry["if_exists"], expansion_key, expansion_var
+            )
+        expanded_yaml.append(entry)
+    return expanded_yaml
+
+
 def _parse_use_template(
     dir_map_yaml: dict, directory: str, templates_yaml: dict, config: Configuration
 ):
@@ -256,27 +286,20 @@ def _parse_use_template(
             max_length = max(max_length, len(values))
         return max_length
 
-    def _expand_entry(entry: Union[dict, str], expansion_key: str, expansion_var: str):
-        if isinstance(entry, dict):
-            entry_key = next(iter(entry.keys()))
-            return entry_key.replace(f"{{{{{expansion_key}}}}}", expansion_var)
-
-        if isinstance(entry, str):
-            return entry.replace(f"{{{{{expansion_key}}}}}", expansion_var)
-
-        raise RepoStructureTemplateError(
-            "only instances 'dict' and 'str' are" f" allowed, but found '{type(entry)}'"
-        )
-
     expansion_map = _build_expansion_map(dir_map_yaml)
 
-    structure_rule_list: StructureRuleList = []
+    structure_rules_yaml: List[Union[str, dict]] = []
     for i in range(_max_values_length(expansion_map)):
-        for entry in templates_yaml[dir_map_yaml["use_template"]]:
-            for expansion_key, expansion_vars in expansion_map.items():
-                index = i % len(expansion_vars)
-                entry = _expand_entry(entry, expansion_key, expansion_vars[index])
-            structure_rule_list.append(_parse_entry_to_repo_entry(entry))
+        entries = copy.deepcopy(templates_yaml[dir_map_yaml["use_template"]])
+        for expansion_key, expansion_vars in expansion_map.items():
+            index = i % len(expansion_vars)
+            entries = _expand_template_yaml(
+                entries, expansion_key, expansion_vars[index]
+            )
+        structure_rules_yaml.extend(entries)
+    structure_rule_list = [
+        _parse_entry_to_repo_entry(entry) for entry in structure_rules_yaml
+    ]
 
     # fmt: off
     template_rule_name = \
