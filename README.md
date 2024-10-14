@@ -220,11 +220,6 @@ directory_map:
 
 ## Building from Source
 
-### Using Bazel
-
-- Install Bazelisk
-- Run `bazel test`
-
 ### Using Python Venv
 
 - `python3.11 -m venv .venv`
