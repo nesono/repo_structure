@@ -23,7 +23,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          pytest --cov-report xml:coverage.xml
+          pytest --cov --cov-report xml:coverage.xml
 
       - name: Get Cover
         uses: orgoro/coverage@v3.2
