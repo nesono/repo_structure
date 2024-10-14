@@ -123,7 +123,7 @@ def test_matching_regex():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - '.*\.md'
+    - p: '.*\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -145,10 +145,10 @@ def test_required_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - "LICENSE": required
-    - 'README\.md'
-    - 'python/'
-    - 'python/[^/]*'
+    - p: "LICENSE"
+    - p: 'README\.md'
+    - p: 'python/'
+    - p: 'python/[^/]*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -171,10 +171,10 @@ def test_unspecified_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - "LICENSE": required
-    - "README.md"
-    - "python/"
-    - 'python/[^/]*'
+    - p: "LICENSE"
+    - p: "README.md"
+    - p: "python/"
+    - p: 'python/[^/]*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -194,7 +194,7 @@ def test_missing_root_mapping():
     config_yaml = r"""
 structure_rules:
   base_structure:
-      - "irrelevant": required
+      - p: "irrelevant"
 directory_map:
   /some_dir/:
     - use_rule: base_structure
@@ -214,9 +214,9 @@ def test_missing_required_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - "LICENSE": required
-    - 'README\.md'
-        # mode: required is default
+    - p: "LICENSE"
+    - p: 'README\.md'
+      # required is default
 directory_map:
   /:
     - use_rule: base_structure
@@ -237,10 +237,10 @@ def test_missing_required_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - "LICENSE": required
-    - 'README\.md'
-    - 'python/'
-    - 'python/[^/]*'
+    - p: "LICENSE"
+    - p: 'README\.md'
+    - p: 'python/'
+    - p: 'python/[^/]*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -261,9 +261,9 @@ def test_multi_use_rule():
     config_yaml = r"""
 structure_rules:
   base_structure:
-      - 'README\.md'
+      - p: 'README\.md'
   python_package:
-      - '[^/]*\.py': required
+      - p: '[^/]*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -283,9 +283,9 @@ def test_multi_use_rule_missing_readme():
     config_yaml = r"""
 structure_rules:
   base_structure:
-      - 'README\.md'
+      - p: 'README\.md'
   python_package:
-      - '[^/]*\.py': required
+      - p: '[^/]*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -306,9 +306,9 @@ def test_multi_use_rule_missing_py_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
-      - 'README\.md'
+      - p: 'README\.md'
   python_package:
-      - '.*\.py': required
+      - p: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -330,8 +330,8 @@ def test_conflicting_file_and_dir_names():
     config_yaml = r"""
 structure_rules:
   base_structure:
-      - '[^/]*name[^/]*'
-      - '[^/]*name[^/]*/'
+      - p: '[^/]*name[^/]*'
+      - p: '[^/]*name[^/]*/'
 directory_map:
   /:
     - use_rule: base_structure
@@ -350,7 +350,7 @@ def test_conflicting_dir_name():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - '[^/]*name[^/]*'
+    - p: '[^/]*name[^/]*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -370,7 +370,7 @@ def test_conflicting_file_name():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - '[^/]*name[^/]*/'
+    - p: '[^/]*name[^/]*/'
 directory_map:
   /:
     - use_rule: base_structure
@@ -390,7 +390,7 @@ def test_filename_with_bad_substring_match():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - '[^/]*name'
+    - p: '[^/]*name'
 directory_map:
   /:
     - use_rule: base_structure
@@ -410,8 +410,8 @@ def test_succeed_overlapping_required_file_rules():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'README\.md'
-    - 'README\.[^/]*'
+    - p: 'README\.md'
+    - p: 'README\.[^/]*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -430,10 +430,11 @@ def test_required_file_in_optional_directory_no_entry():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'LICENSE'
-    - 'doc/': optional
+    - p: 'LICENSE'
+    - p: 'doc/'
+      required: False
       if_exists:
-        - 'README\.md': required
+        - p: 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -453,10 +454,11 @@ def test_required_file_in_optional_directory_with_entry():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'LICENSE'
-    - 'doc/': optional
+    - p: 'LICENSE'
+    - p: 'doc/'
+      required: False
       if_exists:
-        - 'README\.md': required
+        - p: 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -478,10 +480,11 @@ def test_required_file_in_optional_directory_with_entry_and_exists():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'LICENSE'
-    - 'doc/': optional
+    - p: 'LICENSE'
+    - p: 'doc/'
+      required: False
       if_exists:
-        - 'README\.md': required
+        - p: 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -503,10 +506,11 @@ def test_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'README\.md'
+    - p: 'README\.md'
   cpp_source:
-    - '[^/]*\.cpp': required
-    - '[^/]*/': optional
+    - p: '[^/]*\.cpp'
+    - p: '[^/]*/'
+      required: False
       use_rule: cpp_source
 directory_map:
   /:
@@ -530,10 +534,11 @@ def test_fail_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'README\.md'
+    - p: 'README\.md'
   python_package:
-    - '[^/]*\.py': required
-    - '[^/]*/': optional
+    - p: '[^/]*\.py'
+    - p: '[^/]*/'
+      required: False
       use_rule: python_package
 directory_map:
   /:
@@ -558,10 +563,11 @@ def test_fail_directory_mapping_precedence():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'README\.md'
+    - p: 'README\.md'
   python_package:
-    - '[^/]*\.py': required
-    - '[^/]*': optional
+    - p: '[^/]*\.py'
+    - p: '[^/]*'
+      required: False
       use_rule: python_package
 directory_map:
   /:
@@ -593,11 +599,13 @@ def test_succeed_elaborate_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'README\.md'
-    - app/: optional
+    - p: 'README\.md'
+    - p: app/
+      required: False
   python_package:
-    - '[^/]*\.py': required
-    - '[^/]*/': optional
+    - p: '[^/]*\.py'
+    - p: '[^/]*/'
+      required: False
       use_rule: python_package
 directory_map:
   /:
@@ -623,7 +631,7 @@ def test_succeed_ignored_hidden_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'README\.md'
+    - p: 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -644,8 +652,8 @@ def test_fail_hidden_file_required_despite_hidden_disabled():
     config_yaml = r"""
 structure_rules:
   base_structure:
-     - '\.hidden\.md'
-     - 'README\.md'
+     - p: '\.hidden\.md'
+     - p: 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -669,8 +677,8 @@ def test_fail_unspecified_hidden_files_when_hidden_enabled():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - '\.hidden.md'
-    - 'README\.md'
+    - p: '\.hidden.md'
+    - p: 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -694,7 +702,7 @@ def test_succeed_gitignored_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'README\.md'
+    - p: 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -714,7 +722,7 @@ def test_fail_unspecified_link():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'README\.md'
+    - p: 'README\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -737,8 +745,8 @@ def test_succeed_specified_link():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - 'README\.md'
-    - 'link'
+    - p: 'README\.md'
+    - p: 'link'
 directory_map:
   /:
     - use_rule: base_structure
@@ -766,10 +774,10 @@ def test_succeed_template_rule():
     config_yaml = r"""
 templates:
   component:
-    - '{{component}}/'
-    - '{{component}}/{{component}}_component.py'
-    - '{{component}}/doc/'
-    - '{{component}}/doc/{{component}}.techspec.md'
+    - p: '{{component}}/'
+    - p: '{{component}}/{{component}}_component.py'
+    - p: '{{component}}/doc/'
+    - p: '{{component}}/doc/{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component
@@ -795,10 +803,10 @@ def test_fail_template_rule_missing_file():
     config_yaml = r"""
 templates:
   component:
-    - '{{component}}/'
-    - '{{component}}/{{component}}_component.py'
-    - '{{component}}/doc/'
-    - '{{component}}/doc/{{component}}.techspec.md'
+    - p: '{{component}}/'
+    - p: '{{component}}/{{component}}_component.py'
+    - p: '{{component}}/doc/'
+    - p: '{{component}}/doc/{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component
@@ -825,11 +833,12 @@ def test_succeed_template_rule_if_exists():
     config_yaml = r"""
 templates:
   component:
-    - '{{component}}/'
-    - '{{component}}/{{component}}_component.py'
-    - '{{component}}/doc/': optional
+    - p: '{{component}}/'
+    - p: '{{component}}/{{component}}_component.py'
+    - p: '{{component}}/doc/'
+      required: False
       if_exists:
-        - '{{component}}.techspec.md'
+        - p: '{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component
@@ -864,10 +873,10 @@ def test_succeed_template_rule_subdirectory_map():
     config_yaml = r"""
 templates:
   component:
-    - '{{component}}/'
-    - '{{component}}/{{component}}_component.py'
-    - '{{component}}/doc/'
-    - '{{component}}/doc/{{component}}.techspec.md'
+    - p: '{{component}}/'
+    - p: '{{component}}/{{component}}_component.py'
+    - p: '{{component}}/doc/'
+    - p: '{{component}}/doc/{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component
@@ -904,10 +913,10 @@ def test_fail_template_rule_subdirectory_map_missing_file():
     config_yaml = r"""
 templates:
   component:
-    - '{{component}}/'
-    - '{{component}}/{{component}}_component.py'
-    - '{{component}}/doc/'
-    - '{{component}}/doc/{{component}}.techspec.md'
+    - p: '{{component}}/'
+    - p: '{{component}}/{{component}}_component.py'
+    - p: '{{component}}/doc/'
+    - p: '{{component}}/doc/{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component
@@ -946,10 +955,10 @@ def test_succeed_template_rule_multiple_expansions():
     config_yaml = r"""
 templates:
   example_template:
-    - '{{component}}/'
-    - '{{component}}/{{component}}_component.{{extension}}'
-    - '{{component}}/doc/'
-    - '{{component}}/doc/{{component}}.techspec.md'
+    - p: '{{component}}/'
+    - p: '{{component}}/{{component}}_component.{{extension}}'
+    - p: '{{component}}/doc/'
+    - p: '{{component}}/doc/{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: example_template

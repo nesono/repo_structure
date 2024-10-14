@@ -4,11 +4,13 @@
 import copy
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, TextIO, Union
+from typing import Dict, List, TextIO
 
 from ruamel import yaml as YAML
 
 from repo_structure_lib import map_dir_to_rel_dir
+
+ALLOWED_STRUCTURE_RULE_KEYS = {"p", "required", "use_rule", "if_exists"}
 
 
 class StructureRuleError(Exception):
@@ -194,34 +196,24 @@ def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
     return rules
 
 
-def _parse_entry_to_repo_entry(entry: Union[str, dict]) -> RepoEntry:
+def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
 
-    def _validate_structure_rule_entry_keys(entry: dict, file: str) -> None:
-        allowed_keys = {file, "use_rule", "if_exists"}
-        if not entry.keys() <= allowed_keys:
+    def _validate_structure_rule_entry_keys(entry: dict) -> None:
+        if not entry.keys() <= ALLOWED_STRUCTURE_RULE_KEYS:
             raise StructureRuleError(
-                f"only 'use_rule' and file name is allowed "
-                f"as an entry key, but contains extra keys '{entry.keys() - allowed_keys}'"
+                f"only {ALLOWED_STRUCTURE_RULE_KEYS} are allowed "
+                "as entry keys, but contains extra keys "
+                f"'{entry.keys() - ALLOWED_STRUCTURE_RULE_KEYS}'"
             )
 
-    mode = True
-    use_rule = ""
+    _validate_structure_rule_entry_keys(entry)
+
     if_exists = []
-    if isinstance(entry, dict):
-        file = next(key for key in entry.keys() if key != "if_exists")
-        _validate_structure_rule_entry_keys(entry, file)
-        if entry[file] not in [None, "required", "optional"]:
-            raise StructureRuleError(
-                f"mode must be either 'required' or 'optional'"
-                f"but is '{entry[file]}'"
-            )
-        mode = entry[file] != "optional"
-        if "use_rule" in entry:
-            use_rule = entry["use_rule"]
-        if "if_exists" in entry:
-            if_exists = entry["if_exists"]
-    else:
-        file = entry
+    file = entry["p"]
+    if "required" in entry and entry["required"] not in [True, False]:
+        raise StructureRuleError("mode must be either 'True' or 'False'")
+    if "if_exists" in entry:
+        if_exists = entry["if_exists"]
 
     is_dir = file.endswith("/")
     file = file[0:-1] if is_dir else file
@@ -229,8 +221,8 @@ def _parse_entry_to_repo_entry(entry: Union[str, dict]) -> RepoEntry:
     result = RepoEntry(
         path=re.compile(file),
         is_dir=is_dir,
-        is_required=mode,
-        use_rule=use_rule,
+        is_required=entry["required"] if "required" in entry else True,
+        use_rule=entry["use_rule"] if "use_rule" in entry else "",
     )
     for e in if_exists:
         result.if_exists.append(_parse_entry_to_repo_entry(e))
@@ -239,27 +231,17 @@ def _parse_entry_to_repo_entry(entry: Union[str, dict]) -> RepoEntry:
 
 
 def _expand_template_entry(
-    template_yaml: List[Union[str, dict]], expansion_key: str, expansion_var: str
-) -> List[Union[str, dict]]:
+    template_yaml: List[dict], expansion_key: str, expansion_var: str
+) -> List[dict]:
 
-    def _expand_entry(entry: Union[dict, str], expansion_key: str, expansion_var: str):
-        if isinstance(entry, dict):
-            file = next(key for key in entry.keys() if key != "if_exists")
-            new_key = file.replace(f"{{{{{expansion_key}}}}}", expansion_var)
-            entry[new_key] = entry.pop(file)
-            return entry
+    def _expand_entry(entry: dict, expansion_key: str, expansion_var: str):
+        entry["p"] = entry["p"].replace(f"{{{{{expansion_key}}}}}", expansion_var)
+        return entry
 
-        if isinstance(entry, str):
-            return entry.replace(f"{{{{{expansion_key}}}}}", expansion_var)
-
-        raise RepoStructureTemplateError(
-            "only instances 'dict' and 'str' are" f" allowed, but found '{type(entry)}'"
-        )
-
-    expanded_yaml: List[Union[str, dict]] = []
+    expanded_yaml: List[dict] = []
     for entry in template_yaml:
         entry = _expand_entry(entry, expansion_key, expansion_var)
-        if isinstance(entry, dict) and "if_exists" in entry:
+        if "if_exists" in entry:
             entry["if_exists"] = _expand_template_entry(
                 entry["if_exists"], expansion_key, expansion_var
             )
@@ -288,7 +270,7 @@ def _parse_use_template(
             return max_length
 
         expansion_map = _build_expansion_map(dir_map_yaml)
-        structure_rules_yaml: List[Union[str, dict]] = []
+        structure_rules_yaml: List[dict] = []
         for i in range(_max_values_length(expansion_map)):
             entries = copy.deepcopy(templates_yaml[dir_map_yaml["use_template"]])
             for expansion_key, expansion_vars in expansion_map.items():

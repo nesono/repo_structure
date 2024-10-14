@@ -1,6 +1,6 @@
 structure_rules:
   conflicting_test_config.yaml:
-    - "conflicting_test_config.yaml"
+    - p: "conflicting_test_config.yaml"
 
 directory_map:
   /:
