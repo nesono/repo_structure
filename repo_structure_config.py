@@ -238,15 +238,15 @@ def _parse_entry_to_repo_entry(entry: Union[str, dict]) -> RepoEntry:
     return result
 
 
-def _expand_template_yaml(
+def _expand_template_entry(
     template_yaml: List[Union[str, dict]], expansion_key: str, expansion_var: str
 ) -> List[Union[str, dict]]:
 
     def _expand_entry(entry: Union[dict, str], expansion_key: str, expansion_var: str):
         if isinstance(entry, dict):
-            entry_key = next(key for key in entry.keys() if key != "if_exists")
-            new_key = entry_key.replace(f"{{{{{expansion_key}}}}}", expansion_var)
-            entry[new_key] = entry.pop(entry_key)
+            file = next(key for key in entry.keys() if key != "if_exists")
+            new_key = file.replace(f"{{{{{expansion_key}}}}}", expansion_var)
+            entry[new_key] = entry.pop(file)
             return entry
 
         if isinstance(entry, str):
@@ -260,7 +260,7 @@ def _expand_template_yaml(
     for entry in template_yaml:
         entry = _expand_entry(entry, expansion_key, expansion_var)
         if isinstance(entry, dict) and "if_exists" in entry:
-            entry["if_exists"] = _expand_template_yaml(
+            entry["if_exists"] = _expand_template_entry(
                 entry["if_exists"], expansion_key, expansion_var
             )
         expanded_yaml.append(entry)
@@ -273,30 +273,34 @@ def _parse_use_template(
     if "use_template" not in dir_map_yaml:
         return
 
-    def _build_expansion_map(dir_map_yaml: dict) -> Dict[str, List[str]]:
-        expansion_map = {}
-        for key in dir_map_yaml.keys():
-            if key != "use_template":
-                expansion_map[key] = dir_map_yaml[key]
-        return expansion_map
+    def _expand_template(dir_map_yaml, templates_yaml):
+        def _build_expansion_map(dir_map_yaml: dict) -> Dict[str, List[str]]:
+            expansion_map = {}
+            for key in dir_map_yaml.keys():
+                if key != "use_template":
+                    expansion_map[key] = dir_map_yaml[key]
+            return expansion_map
 
-    def _max_values_length(expansion_map: Dict[str, List[str]]) -> int:
-        max_length = 0
-        for _, values in expansion_map.items():
-            max_length = max(max_length, len(values))
-        return max_length
+        def _max_values_length(expansion_map: Dict[str, List[str]]) -> int:
+            max_length = 0
+            for _, values in expansion_map.items():
+                max_length = max(max_length, len(values))
+            return max_length
 
-    expansion_map = _build_expansion_map(dir_map_yaml)
+        expansion_map = _build_expansion_map(dir_map_yaml)
+        structure_rules_yaml: List[Union[str, dict]] = []
+        for i in range(_max_values_length(expansion_map)):
+            entries = copy.deepcopy(templates_yaml[dir_map_yaml["use_template"]])
+            for expansion_key, expansion_vars in expansion_map.items():
+                index = i % len(expansion_vars)
+                entries = _expand_template_entry(
+                    entries, expansion_key, expansion_vars[index]
+                )
+            structure_rules_yaml.extend(entries)
+        return structure_rules_yaml
 
-    structure_rules_yaml: List[Union[str, dict]] = []
-    for i in range(_max_values_length(expansion_map)):
-        entries = copy.deepcopy(templates_yaml[dir_map_yaml["use_template"]])
-        for expansion_key, expansion_vars in expansion_map.items():
-            index = i % len(expansion_vars)
-            entries = _expand_template_yaml(
-                entries, expansion_key, expansion_vars[index]
-            )
-        structure_rules_yaml.extend(entries)
+    structure_rules_yaml = _expand_template(dir_map_yaml, templates_yaml)
+
     structure_rule_list = [
         _parse_entry_to_repo_entry(entry) for entry in structure_rules_yaml
     ]

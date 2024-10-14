@@ -155,6 +155,29 @@ driver/doc/
 driver/doc/driver.techspec.md
 ```
 
+Note that the expansion lists can have different lengths and the expansion
+will permutate through the expansion lists. For example:
+
+```yaml
+templates:
+  example_template:
+    - "{{component}}/"
+    - "{{component}}/{{component}}_component.{{extension}}"
+    - "{{component}}/doc/"
+    - "{{component}}/doc/{{component}}.techspec.md"
+directory_map:
+  /:
+    - use_template: example_template
+      component: ["lidar", "driver"]
+      extension: ["rs"]
+  /subdir/:
+    - use_template: example_template
+      component: ["control", "camera"]
+      extension: ["py"]
+```
+
+Here, the suffixes will be reused for both component extensions.
+
 ## Directory Map
 
 A directory map is a dictionary that maps directories (not patterns!) to
