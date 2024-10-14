@@ -1,26 +1,29 @@
 structure_rules:
   base_structure:
-    - 'README\.md': required
-      # mode: required is default
-    - '.*\.md': optional
-    - '\.pre-commit-config\.yaml'
-    - '[^/]*config\.yaml'
-    - "requirements(_lock.txt|.in)"
-    - "local_run.sh"
-    - "[^/]*.bazel"
-    - ".github/"
-    - ".github/workflows/"
-    - '.github/workflows/[^/]*\.yml'
+    - p: 'README\.md'
+    - p: '.*\.md'
+      required: False
+    - p: '\.pre-commit-config\.yaml'
+    - p: '[^/]*config\.yaml'
+    - p: "requirements.txt"
+    - p: "local_run.sh"
+    - p: "[^/]*.bazel"
+    - p: ".github/"
+    - p: ".github/workflows/"
+    - p: '.github/workflows/[^/]*\.yml'
   python_package:
-    - '[^/]*\.py': required
-    - "package/": optional
+    - p: '[^/]*\.py'
+    - p: "package/"
+      required: False
       use_rule: python_package
   software_component:
-    - "BUILD"
-    - "example/": optional
+    - p: "BUILD"
+    - p: "example/"
+      required: False
       if_exists:
-        - "example/doc/": required
-        - "example/[^/]*": optional
+        - p: "example/doc/"
+        - p: "example/[^/]*"
+          required: False
 
 directory_map:
   /:
