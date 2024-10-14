@@ -51,21 +51,21 @@ coexist in the same directory.
 ```yaml
 structure_rules:
   example_rule:
-    - "LICENSE":
-    - "BUILD": required
-    - 'main\.py'
-    - '[^/]*\.py': optional
+    - p: "LICENSE"
+    - p: "BUILD"
+      required: True
+    - p: 'main\.py'
+    - p: '[^/]*\.py'
+      required: False
 ```
 
-Note that each entry is either a regex pattern only, or a dictionary with a
-regex pattern as the key that contains a value that is one of the following
+Note that each entry requires a key 'p' which contains a regex pattern, for the
+directory entry it matches. An additional key 'required' can be used to specify
+if the entry is required (default) or optional.
 
-- `None`
-- "required"
-- "optional"
-
-So `LICENSE`, `BUILD`, and `main.py` files are required, whereas any Python
-file in the same directory is optional (allowed, but not necessary).
+Thus, in our example above, `LICENSE`, `BUILD`, and `main.py` files are
+required, whereas any Python file in the same directory is optional (allowed,
+but not necessary).
 
 ### Directories
 
@@ -75,13 +75,16 @@ instance
 ```yaml
 structure_rules:
   example_rule_with_directory:
-    - "LICENSE":
-    - "BUILD": required
-    - "main.py"
-    - "library/": optional
+    - p: "LICENSE"
+    - p: "BUILD"
+      required: True
+    - p: "main.py"
+    - p: "library/"
+      required: False
       if_exists:
-        - 'lib\.py'
-        - '[^/]*\.py': optional
+        - p: 'lib\.py'
+        - p: '[^/]*\.py'
+          required: False
 ```
 
 Here, we allow a subdirectory 'library' to exist. We require the file
@@ -96,24 +99,10 @@ key 'use_rule', for example:
 ```yaml
 structure_rules:
   example_rule_with_recursion:
-    - "main.py"
-    - '[^/]*\.py': optional
-    - "library/": # <- Need that colon here
-      use_rule: example_rule_with_recursion
-```
-
-Note that if you want to declare a 'use_rule' key to a directory, you will need
-to declare the directory as a dictionary. Using the shorthand without the colon
-':' would not work.
-
-For instance, this is invalid yaml.
-
-```yaml
-structure_rules:
-  example_rule_with_recursion:
-    - 'main.py'
-    - '[^/]*\.py': optional
-    - 'library/'
+    - p: "main.py"
+    - p: '[^/]*\.py'
+      required: False
+    - p: "library/"
       use_rule: example_rule_with_recursion
 ```
 
@@ -129,10 +118,10 @@ The following example shows a simple template specification
 ```yaml
 templates:
   example_template:
-    - "{{component}}/"
-    - "{{component}}/{{component}}_component.py"
-    - "{{component}}/doc/"
-    - "{{component}}/doc/{{component}}.techspec.md"
+    - p: "{{component}}/"
+    - p: "{{component}}/{{component}}_component.py"
+    - p: "{{component}}/doc/"
+    - p: "{{component}}/doc/{{component}}.techspec.md"
 directory_map:
   /:
     - use_template: example_template
@@ -161,10 +150,10 @@ will permutate through the expansion lists. For example:
 ```yaml
 templates:
   example_template:
-    - "{{component}}/"
-    - "{{component}}/{{component}}_component.{{extension}}"
-    - "{{component}}/doc/"
-    - "{{component}}/doc/{{component}}.techspec.md"
+    - p: "{{component}}/"
+    - p: "{{component}}/{{component}}_component.{{extension}}"
+    - p: "{{component}}/doc/"
+    - p: "{{component}}/doc/{{component}}.techspec.md"
 directory_map:
   /:
     - use_template: example_template
@@ -195,15 +184,19 @@ For example:
 ```yaml
 structure_rules:
   basic_rule:
-    - "LICENSE":
-    - "BUILD": required
+    - p: "LICENSE"
+    - p: "BUILD"
   python_main:
-    - 'main\.py'
-    - '[^/]*\.py': optional
+    - p: 'main\.py'
+    - p: '[^/]*\.py'
+      required: False
   python_library:
-    - 'lib\.py': required
-    - '[^/]*\.py': optional
-    - "[^/]*/": optional # allow library recursion
+    - p: 'lib\.py'
+    - p: '[^/]*\.py'
+      required: False
+    - p: "[^/]*/"
+      required: False
+      # allow library recursion
       use_rule: python_library
 directory_map:
 "/":

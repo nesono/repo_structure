@@ -20,30 +20,35 @@ def test_successful_parse():
     test_yaml = r"""
 structure_rules:
   basic_rule:
-    - 'README.md': required
-      # mode: required is default
-    - '[^/]*\.md': optional
-    - '.github/': optional
+    - p: 'README.md'
+      required: True
+    - p: '[^/]*\.md'
+      required: False
+    - p: '.github/'
+      required: False
       if_exists:
-      - 'CODEOWNERS'
+        - p: 'CODEOWNERS'
   recursive_rule:
-    - '[^/]*\.py'
-    - 'package/[^/]*':
+    - p: '[^/]*\.py'
+    - p: 'package/[^/]*'
       use_rule: recursive_rule
 templates:
   software_component:
-    - '{{component_name}}_component.cpp'
-    - '{{component_name}}_component.h'
-    - '{{component_name}}_config.h': optional
-    - '{{component_name}}_factory.cpp'
-    - '{{component_name}}_factory.h'
-    - 'BUILD'
-    - 'README.md'
-    - 'doc/'
-    - 'doc/{{component_name}}.swreq.md'
-    - 'doc/{{component_name}}.techspec.md'
-    - '[^/]*\_test.cpp': optional
-    - 'tests/[^/]*_test.cpp': optional
+    - p: '{{component_name}}_component.cpp'
+    - p: '{{component_name}}_component.h'
+    - p: '{{component_name}}_config.h'
+      required: False
+    - p: '{{component_name}}_factory.cpp'
+    - p: '{{component_name}}_factory.h'
+    - p: 'BUILD'
+    - p: 'README.md'
+    - p: 'doc/'
+    - p: 'doc/{{component_name}}.swreq.md'
+    - p: 'doc/{{component_name}}.techspec.md'
+    - p: '[^/]*\_test.cpp'
+      required: False
+    - p: 'tests/[^/]*_test.cpp'
+      required: False
 directory_map:
   /:
     - use_rule: basic_rule
@@ -66,7 +71,7 @@ def test_fail_parse_dangling_use_rule_in_directory_map():
     test_yaml = r"""
 structure_rules:
   base_structure:
-    - "README.md"
+    - p: "README.md"
 
 directory_map:
   /:
@@ -82,9 +87,10 @@ def test_fail_parse_dangling_use_rule_in_structure_rule():
     test_yaml = r"""
 structure_rules:
   base_structure:
-    - 'README.md'
+    - p: 'README.md'
     # if we use a use_rule, we need to add required/optional, too
-    - 'docs/': required
+    - p: 'docs/'
+      required: True
       use_rule: python_package
 
 directory_map:
@@ -100,10 +106,13 @@ def test_fail_directory_structure_mixing_use_rule_and_files():
     test_config = r"""
 structure_rules:
     package:
-      - "docs/": optional
+      - p: "docs/"
+        required: False
         use_rule: documentation
-      - "docs/[^/]*/": optional
-      - "docs/[^/]/[^/]*": optional
+      - p: "docs/[^/]*/"
+        required: False
+      - p: "docs/[^/]/[^/]*"
+        required: False
 directory_map:
 /:
     - use_rule: package
@@ -117,7 +126,7 @@ def test_fail_parse_bad_key_in_structure_rule():
     test_config = r"""
 structure_rules:
     bad_key_rule:
-      - "README.md": optional
+      - p: "README.md"
         bad_key: '.*\.py'
 directory_map:
 /:
@@ -132,7 +141,7 @@ def test_fail_directory_map_key_in_directory_map():
     test_config = """
 structure_rules:
     correct_rule:
-        - 'unused_file'
+        - p: 'unused_file'
 directory_map:
     /:
         - use_rule: correct_rule
@@ -147,9 +156,10 @@ def test_fail_use_rule_not_recursive():
     config_yaml = r"""
 structure_rules:
     license_rule:
-        - LICENSE
+        - p: 'LICENSE'
     bad_use_rule:
-        - '.*/': optional
+        - p: '.*/'
+          required: False
           use_rule: license_rule
 directory_map:
   /:
@@ -165,7 +175,7 @@ def test_fail_directory_map_missing_trailing_slash():
     config_yaml = r"""
 structure_rules:
     license_rule:
-        - LICENSE
+        - p: LICENSE
 directory_map:
   /:
     - use_rule: license_rule
@@ -181,7 +191,7 @@ def test_fail_directory_map_missing_starting_slash():
     config_yaml = r"""
 structure_rules:
     license_rule:
-        - LICENSE
+        - p: LICENSE
 directory_map:
   /:
     - use_rule: license_rule
