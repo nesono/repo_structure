@@ -217,12 +217,12 @@ directory_map:
 
 - `python3.11 -m venv .venv`
 - `source .venv/bin/activate`
-- `pip install -r requirements_lock.txt`
+- `pip install -r requirements.txt`
 - `pytest *_test.py`
 
 ### Using Conda
 
 - `conda create -n .conda_env python=3.11`
 - `conda activate .conda_env`
-- `pip install -r requirements_lock.txt`
+- `pip install -r requirements.txt`
 - `pytest *_test.py`
