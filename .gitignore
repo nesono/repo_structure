@@ -10,3 +10,5 @@ __pycache__/
 /.mypy_cache/
 /.venv/
 /.conda_env/
+/.coverage/
+/.coverage.*
