@@ -7,8 +7,10 @@ from dataclasses import dataclass, field
 from typing import Dict, List, TextIO
 
 from ruamel import yaml as YAML
+from jsonschema import validate, ValidationError
 
 from repo_structure_lib import map_dir_to_rel_dir
+from repo_structure_schema import yaml_schema
 
 ALLOWED_STRUCTURE_RULE_KEYS = {"p", "required", "use_rule", "if_exists"}
 
@@ -70,6 +72,13 @@ class Configuration:
 
         if not yaml_dict:
             raise ConfigurationParseError
+
+        try:
+            validate(instance=yaml_dict, schema=yaml_schema)
+        except ValidationError as e:
+            raise ConfigurationParseError(
+                f"Failed to validate config '{config_file}': {e.message}"
+            ) from e
 
         self.config = ConfigurationData(
             structure_rules=_parse_structure_rules(
