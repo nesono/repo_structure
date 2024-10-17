@@ -105,16 +105,16 @@ def test_fail_directory_structure_mixing_use_rule_and_files():
     """Test failing parsing of directory when use_rule and files are mixed."""
     test_config = r"""
 structure_rules:
-    package:
-      - p: "docs/"
-        required: False
-        use_rule: documentation
-      - p: "docs/[^/]*/"
-        required: False
-      - p: "docs/[^/]/[^/]*"
-        required: False
+  package:
+    - p: "docs/"
+      required: False
+      use_rule: documentation
+    - p: "docs/[^/]*/"
+      required: False
+    - p: "docs/[^/]/[^/]*"
+      required: False
 directory_map:
-/:
+  /:
     - use_rule: package
 """
     with pytest.raises(UseRuleError):
@@ -125,11 +125,11 @@ def test_fail_parse_bad_key_in_structure_rule():
     """Test failing parsing of file dependencies using bad key."""
     test_config = r"""
 structure_rules:
-    bad_key_rule:
-      - p: "README.md"
-        bad_key: '.*\.py'
+  bad_key_rule:
+    - p: "README.md"
+      bad_key: '.*\.py'
 directory_map:
-/:
+  /:
     - use_rule: bad_key_rule
     """
     with pytest.raises(StructureRuleError):
