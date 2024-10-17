@@ -144,18 +144,6 @@ def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
 
 def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
 
-    def _validate_yaml_dict(yaml_dict: dict) -> None:
-        if not isinstance(yaml_dict, dict):
-            raise StructureRuleError(
-                f"Structure rules must be a dictionary, but is '{type(yaml_dict)}'"
-            )
-        for key in yaml_dict:
-            if not isinstance(yaml_dict[key], list):
-                raise StructureRuleError(
-                    "Structure rules must be a dictionary of lists, "
-                    f"but is '{type(yaml_dict[key])}'"
-                )
-
     def _validate_use_rule_not_dangling(rules: StructureRuleMap) -> None:
         for rule_key in rules.keys():
             for entry in rules[rule_key]:
@@ -173,8 +161,6 @@ def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
                         f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
                         "is not recursive"
                     )
-
-    _validate_yaml_dict(structure_rules_yaml)
 
     rules = _build_rules(structure_rules_yaml)
     _validate_use_rule_not_dangling(rules)

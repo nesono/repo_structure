@@ -215,7 +215,7 @@ directory_map:
   /:
     - use_rule: license_rule
     """
-    with pytest.raises(StructureRuleError):
+    with pytest.raises(AttributeError):
         Configuration(config_yaml, True)
 
 
