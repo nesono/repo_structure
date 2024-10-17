@@ -34,9 +34,9 @@ yaml_schema = {
     "type": "object",
     "properties": {
         "structure_rules": {
-            "description": "Contains named structure rules specifying allowed and required "
-            "directory entries and are mapped to directories through the "
-            "directory_map",
+            "description": """Contains named structure rules specifying allowed and required
+                              directory entries and are mapped to directories through the
+                              directory_map""",
             "type": "object",
             "patternProperties": {
                 ".*": {
@@ -45,8 +45,8 @@ yaml_schema = {
             },
         },
         "templates": {
-            "description": "Contains named templates that are expanded by usage in the "
-            "directory_map into structure rules",
+            "description": """Contains named templates that are expanded by usage in the
+                              directory_map into structure rules""",
             "type": "object",
             "patternProperties": {
                 ".*": {
