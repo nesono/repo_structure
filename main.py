@@ -3,6 +3,7 @@
 # pylint: disable=no-value-for-parameter
 
 """Ensure clean repository structure for your projects."""
+import sys
 import time
 
 import click
@@ -33,13 +34,17 @@ def main(
 
     # record time how long the scanning takes
     start_time = time.time()
+    successful = True
     try:
         fail_if_invalid_repo_structure(repo_root, Configuration(config_path), flags)
         click.echo("Your Repo-structure is compliant")
     except Exception as err:
         click.echo(err, err=True)
+        successful = False
     duration = time.time() - start_time
     click.echo(f"Repo-Structure scan finished in {duration:.{3}f} seconds")
+    if not successful:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

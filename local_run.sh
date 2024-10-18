@@ -9,7 +9,7 @@ if [[ $($PY_BINARY --version) != "Python ${PY_VERSION}"* ]]; then
   exit 1
 fi
 
-trap 'echo "An error occurred. Exiting..." >&2; deactivate; exit 1' ERR
+trap 'deactivate; exit 1' ERR
 trap 'rm -rf .temp_venv; rm -f pip_install.log' EXIT
 
 $PY_BINARY -m venv .temp_venv

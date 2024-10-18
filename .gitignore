@@ -5,6 +5,7 @@ __pycache__/
 /.ruff_cache/
 /.mypy_cache/
 /.venv/
+/.temp_venv/
 /.conda_env/
 /bazel-*
 *.py[cod]

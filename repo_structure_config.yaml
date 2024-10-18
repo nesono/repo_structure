@@ -1,33 +1,19 @@
 structure_rules:
   base_structure:
-    - p: 'README\.md'
-    - p: '.*\.md'
-      required: False
     - p: '\.pre-commit-config\.yaml'
     - p: '[^/]*config\.yaml'
-    - p: "requirements.txt"
+    - p: "environment.yml"
     - p: "local_run.sh"
-    - p: "[^/]*.bazel"
+    - p: 'README\.md'
+    - p: "requirements.txt"
     - p: ".github/"
     - p: ".github/workflows/"
-    - p: '.github/workflows/[^/]*\.yml'
+    - p: '.github/workflows/[^/]*\.y(a)?ml'
   python_package:
+    - p: 'main\.py'
     - p: '[^/]*\.py'
-    - p: "package/"
-      required: False
-      use_rule: python_package
-  software_component:
-    - p: "BUILD"
-    - p: "example/"
-      required: False
-      if_exists:
-        - p: "example/doc/"
-        - p: "example/[^/]*"
-          required: False
 
 directory_map:
   /:
     - use_rule: base_structure
     - use_rule: python_package
-  /test_folder_structure/:
-    - use_rule: software_component
