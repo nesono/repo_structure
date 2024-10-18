@@ -231,7 +231,7 @@ directory_map:
 
 
 def test_fail_use_template_parameters_not_arrays():
-    """Test failing template without parameters."""
+    """Test failing template with parameters that are not arrays."""
     test_config = """
 templates:
     some_template::
