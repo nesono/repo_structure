@@ -7,12 +7,10 @@ from dataclasses import dataclass, field
 from typing import Dict, List, TextIO
 
 from ruamel import yaml as YAML
-from jsonschema import validate, ValidationError
+from jsonschema import validate, ValidationError, SchemaError
 
 from repo_structure_lib import map_dir_to_rel_dir
 from repo_structure_schema import yaml_schema
-
-ALLOWED_STRUCTURE_RULE_KEYS = {"p", "required", "use_rule", "if_exists"}
 
 
 class StructureRuleError(Exception):
@@ -76,9 +74,9 @@ class Configuration:
         try:
             validate(instance=yaml_dict, schema=yaml_schema)
         except ValidationError as e:
-            raise ConfigurationParseError(
-                f"Failed to validate config '{config_file}': {e.message}"
-            ) from e
+            raise ConfigurationParseError(f"Bad config: {e.message}") from e
+        except SchemaError as e:
+            raise ConfigurationParseError(f"Bad schema: {e.message}") from e
 
         self.config = ConfigurationData(
             structure_rules=_parse_structure_rules(
@@ -138,8 +136,7 @@ def _load_repo_structure_yaml(filename: str) -> dict:
 
 def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
     yaml = YAML.YAML(typ="safe")
-    result = yaml.load(yaml_string)
-    return result
+    return yaml.load(yaml_string)
 
 
 def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
@@ -193,20 +190,8 @@ def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
 
 def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
 
-    def _validate_structure_rule_entry_keys(entry: dict) -> None:
-        if not entry.keys() <= ALLOWED_STRUCTURE_RULE_KEYS:
-            raise StructureRuleError(
-                f"only {ALLOWED_STRUCTURE_RULE_KEYS} are allowed "
-                "as entry keys, but contains extra keys "
-                f"'{entry.keys() - ALLOWED_STRUCTURE_RULE_KEYS}'"
-            )
-
-    _validate_structure_rule_entry_keys(entry)
-
     if_exists = []
     file = entry["p"]
-    if "required" in entry and entry["required"] not in [True, False]:
-        raise StructureRuleError("mode must be either 'True' or 'False'")
     if "if_exists" in entry:
         if_exists = entry["if_exists"]
 
@@ -299,15 +284,6 @@ def _parse_directory_map(
                 f"Directory mapping must start and end with '/', but is '{directory}'"
             )
 
-    def _validate_directory_map_keys(r):
-        if r.keys() == {"use_rule"}:
-            return
-        if "use_template" not in r.keys():
-            raise ValueError(
-                "Only 'use_rule' or 'use_template' are allowed "
-                f"in directory mappings, but is '{r.keys()}'"
-            )
-
     def _parse_use_rule(rule: dict, dir_map: List[str]) -> None:
         if rule.keys() == {"use_rule"}:
             dir_map.append(rule["use_rule"])
@@ -316,7 +292,6 @@ def _parse_directory_map(
     for directory, value in directory_map_yaml.items():
         _ensure_start_and_end_slashes(directory)
         for r in value:
-            _validate_directory_map_keys(r)
             if mapping.get(directory) is None:
                 mapping[directory] = []
             _parse_use_rule(r, mapping[directory])

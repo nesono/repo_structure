@@ -11,9 +11,10 @@ yaml_schema = {
                 "properties": {
                     "p": {"type": "string"},
                     "required": {"type": "boolean"},
-                    "if_exists": {"ref": "#/$defs/directory_entry"},
+                    "if_exists": {"ref": "#/$defs/directory_entries"},
                     "use_rule": {"type": "string"},
                 },
+                "additionalProperties": False,
                 "required": ["p"],
             },
         },
@@ -24,7 +25,6 @@ yaml_schema = {
                 "properties": {
                     "use_rule": {"type": "string"},
                     "use_template": {"type": "string"},
-                    "component_name": {"type": "array", "items": {"type": "string"}},
                 },
                 "anyOf": [{"required": ["use_rule"]}, {"required": ["use_template"]}],
             },
@@ -39,9 +39,7 @@ yaml_schema = {
                               directory_map""",
             "type": "object",
             "patternProperties": {
-                ".*": {
-                    # "ref": "#/$defs/directory_entries"
-                }
+                ".*": {"$ref": "#/$defs/directory_entries"},
             },
         },
         "templates": {
@@ -49,17 +47,13 @@ yaml_schema = {
                               directory_map into structure rules""",
             "type": "object",
             "patternProperties": {
-                ".*": {
-                    # "ref": "#/$defs/directory_entries"
-                }
+                ".*": {"$ref": "#/$defs/directory_entries"},
             },
         },
         "directory_map": {
             "type": "object",
             "patternProperties": {
-                ".*": {
-                    # "ref": "#/$defs/directory_map"
-                }
+                ".*": {"$ref": "#/$defs/directory_map"},
             },
         },
     },

@@ -8,7 +8,6 @@ from repo_structure_config import (
     UseRuleError,
     ConfigurationParseError,
     DirectoryStructureError,
-    StructureRuleError,
 )
 
 
@@ -132,7 +131,7 @@ directory_map:
   /:
     - use_rule: bad_key_rule
     """
-    with pytest.raises(StructureRuleError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(test_config, True)
 
 
@@ -144,10 +143,9 @@ structure_rules:
         - p: 'unused_file'
 directory_map:
     /:
-        - use_rule: correct_rule
         - foo: documentation
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(test_config, True)
 
 
@@ -215,7 +213,7 @@ directory_map:
   /:
     - use_rule: license_rule
     """
-    with pytest.raises(AttributeError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(config_yaml, True)
 
 
