@@ -220,11 +220,11 @@ def test_fail_use_template_missing_parameters():
     """Test failing template without parameters."""
     test_config = """
 templates:
-    some_template::
+    some_template:
         - p: '{{parameter_name}}.md'
 directory_map:
     /:
-        - use_template: correct_rule
+        - use_template: some_template
     """
     with pytest.raises(ConfigurationParseError):
         Configuration(test_config, True)
@@ -234,12 +234,27 @@ def test_fail_use_template_parameters_not_arrays():
     """Test failing template with parameters that are not arrays."""
     test_config = """
 templates:
-    some_template::
+    some_template:
         - p: '{{parameter_name}}.md'
 directory_map:
     /:
-        - use_template: correct_rule
+        - use_template: some_template
           parameters: 'not_an_array'
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_config, True)
+
+
+def test_fail_use_template_parameters_with_use_rule():
+    """Test failing template with parameters and only have a use_rule."""
+    test_config = """
+structure_rules:
+    correct_rule:
+        - p: 'some_file.md'
+directory_map:
+    /:
+        - use_rule: correct_rule
+          parameters: ['item1', 'item2']
     """
     with pytest.raises(ConfigurationParseError):
         Configuration(test_config, True)
