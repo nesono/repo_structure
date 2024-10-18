@@ -25,8 +25,20 @@ yaml_schema = {
                 "properties": {
                     "use_rule": {"type": "string"},
                     "use_template": {"type": "string"},
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            ".*": {
+                                "type": "array",
+                            }
+                        },
+                    },
                 },
-                "anyOf": [{"required": ["use_rule"]}, {"required": ["use_template"]}],
+                "additionalProperties": False,
+                "anyOf": [
+                    {"required": ["use_rule"]},
+                    {"required": ["use_template", "parameters"]},
+                ],
             },
         },
     },

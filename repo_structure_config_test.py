@@ -54,7 +54,8 @@ directory_map:
     - use_rule: recursive_rule
   /software_components/:
     - use_template: software_component
-      component_name: ['lidar', 'camera', 'driver', 'control']
+      parameters:
+        component_name: ['lidar', 'camera', 'driver', 'control']
     """
     # parsing should not throw using the above yaml
     config = Configuration(test_yaml, True)
@@ -149,6 +150,21 @@ directory_map:
         Configuration(test_config, True)
 
 
+def test_fail_directory_map_additional_key_in_directory_map():
+    """Test failing parsing of file mappings using additional bad key."""
+    test_config = """
+structure_rules:
+    correct_rule:
+        - p: 'unused_file'
+directory_map:
+    /:
+        - use_rule: correct_rule
+        - foo: documentation
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_config, True)
+
+
 def test_fail_use_rule_not_recursive():
     """Test use rule usage not recursive."""
     config_yaml = r"""
@@ -198,6 +214,35 @@ directory_map:
     """
     with pytest.raises(DirectoryStructureError):
         Configuration(config_yaml, True)
+
+
+def test_fail_use_template_missing_parameters():
+    """Test failing template without parameters."""
+    test_config = """
+templates:
+    some_template::
+        - p: '{{parameter_name}}.md'
+directory_map:
+    /:
+        - use_template: correct_rule
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_config, True)
+
+
+def test_fail_use_template_parameters_not_arrays():
+    """Test failing template without parameters."""
+    test_config = """
+templates:
+    some_template::
+        - p: '{{parameter_name}}.md'
+directory_map:
+    /:
+        - use_template: correct_rule
+          parameters: 'not_an_array'
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_config, True)
 
 
 def test_fail_old_config_format():

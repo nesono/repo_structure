@@ -249,7 +249,7 @@ def _parse_use_template(
                 max_length = max(max_length, len(values))
             return max_length
 
-        expansion_map = _build_expansion_map(dir_map_yaml)
+        expansion_map = _build_expansion_map(dir_map_yaml["parameters"])
         structure_rules_yaml: List[dict] = []
         for i in range(_max_values_length(expansion_map)):
             entries = copy.deepcopy(templates_yaml[dir_map_yaml["use_template"]])

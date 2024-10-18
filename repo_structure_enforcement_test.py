@@ -781,7 +781,8 @@ templates:
 directory_map:
   /:
     - use_template: component
-      component: ['lidar', 'driver']
+      parameters:
+        component: ['lidar', 'driver']
 """
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config)
@@ -810,7 +811,8 @@ templates:
 directory_map:
   /:
     - use_template: component
-      component: ['lidar', 'driver']
+      parameters:
+        component: ['lidar', 'driver']
 """
     config = Configuration(config_yaml, True)
     with pytest.raises(MissingRequiredEntriesError):
@@ -842,7 +844,8 @@ templates:
 directory_map:
   /:
     - use_template: component
-      component: ['lidar', 'driver']
+      parameters:
+        component: ['lidar', 'driver']
 """
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config)
@@ -880,10 +883,12 @@ templates:
 directory_map:
   /:
     - use_template: component
-      component: ['lidar', 'driver']
+      parameters:
+        component: ['lidar', 'driver']
   /subdir/:
     - use_template: component
-      component: ['control', 'camera']
+      parameters:
+        component: ['control', 'camera']
 """
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config)
@@ -920,10 +925,12 @@ templates:
 directory_map:
   /:
     - use_template: component
-      component: ['lidar', 'driver']
+      parameters:
+        component: ['lidar', 'driver']
   /subdir/:
     - use_template: component
-      component: ['control', 'camera']
+      parameters:
+        component: ['control', 'camera']
 """
     config = Configuration(config_yaml, True)
     with pytest.raises(MissingRequiredEntriesError):
@@ -962,12 +969,14 @@ templates:
 directory_map:
   /:
     - use_template: example_template
-      component: ['lidar', 'driver']
-      extension: ['rs']
+      parameters:
+        component: ['lidar', 'driver']
+        extension: ['rs']
   /subdir/:
     - use_template: example_template
-      component: ['control', 'camera']
-      extension: ['py']
+      parameters:
+        component: ['control', 'camera']
+        extension: ['py']
 """
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config)
