@@ -8,7 +8,6 @@ from repo_structure_config import (
     UseRuleError,
     ConfigurationParseError,
     DirectoryStructureError,
-    StructureRuleError,
 )
 
 
@@ -55,7 +54,8 @@ directory_map:
     - use_rule: recursive_rule
   /software_components/:
     - use_template: software_component
-      component_name: ['lidar', 'camera', 'driver', 'control']
+      parameters:
+        component_name: ['lidar', 'camera', 'driver', 'control']
     """
     # parsing should not throw using the above yaml
     config = Configuration(test_yaml, True)
@@ -105,16 +105,16 @@ def test_fail_directory_structure_mixing_use_rule_and_files():
     """Test failing parsing of directory when use_rule and files are mixed."""
     test_config = r"""
 structure_rules:
-    package:
-      - p: "docs/"
-        required: False
-        use_rule: documentation
-      - p: "docs/[^/]*/"
-        required: False
-      - p: "docs/[^/]/[^/]*"
-        required: False
+  package:
+    - p: "docs/"
+      required: False
+      use_rule: documentation
+    - p: "docs/[^/]*/"
+      required: False
+    - p: "docs/[^/]/[^/]*"
+      required: False
 directory_map:
-/:
+  /:
     - use_rule: package
 """
     with pytest.raises(UseRuleError):
@@ -125,14 +125,14 @@ def test_fail_parse_bad_key_in_structure_rule():
     """Test failing parsing of file dependencies using bad key."""
     test_config = r"""
 structure_rules:
-    bad_key_rule:
-      - p: "README.md"
-        bad_key: '.*\.py'
+  bad_key_rule:
+    - p: "README.md"
+      bad_key: '.*\.py'
 directory_map:
-/:
+  /:
     - use_rule: bad_key_rule
     """
-    with pytest.raises(StructureRuleError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(test_config, True)
 
 
@@ -144,10 +144,24 @@ structure_rules:
         - p: 'unused_file'
 directory_map:
     /:
+        - foo: documentation
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_config, True)
+
+
+def test_fail_directory_map_additional_key_in_directory_map():
+    """Test failing parsing of file mappings using additional bad key."""
+    test_config = """
+structure_rules:
+    correct_rule:
+        - p: 'unused_file'
+directory_map:
+    /:
         - use_rule: correct_rule
         - foo: documentation
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(test_config, True)
 
 
@@ -202,6 +216,35 @@ directory_map:
         Configuration(config_yaml, True)
 
 
+def test_fail_use_template_missing_parameters():
+    """Test failing template without parameters."""
+    test_config = """
+templates:
+    some_template::
+        - p: '{{parameter_name}}.md'
+directory_map:
+    /:
+        - use_template: correct_rule
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_config, True)
+
+
+def test_fail_use_template_parameters_not_arrays():
+    """Test failing template with parameters that are not arrays."""
+    test_config = """
+templates:
+    some_template::
+        - p: '{{parameter_name}}.md'
+directory_map:
+    /:
+        - use_template: correct_rule
+          parameters: 'not_an_array'
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_config, True)
+
+
 def test_fail_old_config_format():
     """Test wrong config format."""
     config_yaml = r"""
@@ -215,7 +258,7 @@ directory_map:
   /:
     - use_rule: license_rule
     """
-    with pytest.raises(StructureRuleError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(config_yaml, True)
 
 

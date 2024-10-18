@@ -208,7 +208,7 @@ directory_map:
 
 ## System Requirements
 
-- Python 3.11
+- Python 3.11 or 3.12
 - [Pip requirements](requirements.txt)
 
 ## Building from Source
