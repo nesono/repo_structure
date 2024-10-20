@@ -82,6 +82,9 @@ def _get_matching_item_index(
             result.append(i)
     if len(result) != 0:
         return result
+
+    if is_dir:
+        entry_path += "/"
     raise UnspecifiedEntryError(f"Found unspecified entry: {entry_path}")
 
 

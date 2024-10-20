@@ -42,7 +42,8 @@ def main(
         click.echo(err, err=True)
         successful = False
     duration = time.time() - start_time
-    click.echo(f"Repo-Structure scan finished in {duration:.{3}f} seconds")
+    if verbose:
+        click.echo(f"Repo-Structure scan finished in {duration:.{3}f} seconds")
     if not successful:
         sys.exit(1)
 
