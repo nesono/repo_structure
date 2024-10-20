@@ -3,8 +3,17 @@ name = "repo-structure"
 version = "0.1.0"
 description = "Check the directory structure of your repository"
 authors = ["Jochen Issing <c.333+git@nesono.com>"]
-license = "3-Clause BSD License"
+repository = "https://github.com/nesono/repo_structure"
+license = "BSD-3-Clause"
 readme = "README.md"
+
+packages = [
+    { include = "repo_structure" }
+]
+exclude = ["repo_structure/*_test.py"]
+
+[tool.poetry.scripts]
+repo_structure = 'repo_structure:main'
 
 [tool.poetry.dependencies]
 python = ">=3.9"
