@@ -4,7 +4,7 @@
 import copy
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, TextIO
+from typing import Dict, List, TextIO, Union
 
 from ruamel import yaml as YAML
 from jsonschema import validate, ValidationError, SchemaError
@@ -134,7 +134,7 @@ def _load_repo_structure_yaml(filename: str) -> dict:
         return _load_repo_structure_yamls(file)
 
 
-def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
+def _load_repo_structure_yamls(yaml_string: Union[str, TextIO]) -> dict:
     yaml = YAML.YAML(typ="safe")
     return yaml.load(yaml_string)
 

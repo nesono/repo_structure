@@ -7,7 +7,7 @@ import re
 from os import DirEntry
 from dataclasses import dataclass, replace
 
-from typing import List, Callable, Optional
+from typing import List, Callable, Optional, Union
 from gitignore_parser import parse_gitignore
 
 from repo_structure_config import (
@@ -178,7 +178,7 @@ def _handle_if_exists(
             )
 
 
-def _get_git_ignore(repo_root: str) -> Callable[[str], bool] | None:
+def _get_git_ignore(repo_root: str) -> Union[Callable[[str], bool], None]:
     git_ignore_path = os.path.join(repo_root, ".gitignore")
     if os.path.isfile(git_ignore_path):
         return parse_gitignore(git_ignore_path)
@@ -189,7 +189,7 @@ def _skip_entry(
     entry: DirEntry[str],
     rel_path: str,
     config: Configuration,
-    git_ignore: Callable[[str], bool] | None = None,
+    git_ignore: Union[Callable[[str], bool], None] = None,
     flags: Flags = Flags(),
 ) -> bool:
     skip_conditions = [
