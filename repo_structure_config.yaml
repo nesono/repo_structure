@@ -13,7 +13,8 @@ structure_rules:
     - p: 'pyproject\.toml'
     - p: 'repo_structure\.iml'
   python_package:
-    - p: 'main\.py'
+    - p: '__main__\.py'
+    - p: '__init__\.py'
     - p: '[^/]*\.py'
 
 directory_map:

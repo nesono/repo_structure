@@ -3,7 +3,7 @@
 import sys
 
 import pytest
-from repo_structure_config import (
+from .repo_structure_config import (
     Configuration,
     UseRuleError,
     ConfigurationParseError,

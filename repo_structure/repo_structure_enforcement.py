@@ -10,13 +10,13 @@ from dataclasses import dataclass, replace
 from typing import List, Callable, Optional, Union
 from gitignore_parser import parse_gitignore
 
-from repo_structure_config import (
+from .repo_structure_config import (
     Configuration,
     RepoEntry,
     StructureRuleList,
 )
 
-from repo_structure_lib import rel_dir_to_map_dir, map_dir_to_rel_dir
+from .repo_structure_lib import rel_dir_to_map_dir, map_dir_to_rel_dir
 
 
 @dataclass

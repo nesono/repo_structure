@@ -8,8 +8,8 @@ import time
 
 import click
 
-from repo_structure_config import Configuration
-from repo_structure_enforcement import fail_if_invalid_repo_structure, Flags
+from .repo_structure_enforcement import fail_if_invalid_repo_structure, Flags
+from .repo_structure_config import Configuration
 
 
 @click.command()

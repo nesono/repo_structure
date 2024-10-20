@@ -9,8 +9,8 @@ from typing import Dict, List, TextIO, Union
 from ruamel import yaml as YAML
 from jsonschema import validate, ValidationError, SchemaError
 
-from repo_structure_lib import map_dir_to_rel_dir
-from repo_structure_schema import yaml_schema
+from .repo_structure_lib import map_dir_to_rel_dir
+from .repo_structure_schema import yaml_schema
 
 
 class StructureRuleError(Exception):
