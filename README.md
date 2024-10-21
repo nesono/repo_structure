@@ -213,6 +213,11 @@ directory_map:
 
 ## Building from Source
 
+### Using Poetry
+
+- `poetry install`
+- `poetry run pytest`
+
 ### Using Python Venv
 
 - `python3.11 -m venv .venv`

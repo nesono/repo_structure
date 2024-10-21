@@ -1,19 +1,24 @@
 structure_rules:
   base_structure:
-    - p: '\.pre-commit-config\.yaml'
-    - p: '[^/]*config\.yaml'
-    - p: "environment.yml"
-    - p: "local_run.sh"
-    - p: 'README\.md'
-    - p: "requirements.txt"
     - p: ".github/"
     - p: ".github/workflows/"
+    - p: "environment.yml"
+    - p: "local_run.sh"
+    - p: "requirements.txt"
     - p: '.github/workflows/[^/]*\.y(a)?ml'
+    - p: "LICENSE"
+    - p: 'README\.md'
+    - p: '[^/]*config\.yaml'
+    - p: '\.pre-commit-config\.yaml'
+    - p: 'pyproject\.toml'
+    - p: 'repo_structure\.iml'
   python_package:
-    - p: 'main\.py'
+    - p: '__main__\.py'
+    - p: '__init__\.py'
     - p: '[^/]*\.py'
 
 directory_map:
   /:
     - use_rule: base_structure
+  /repo_structure/:
     - use_rule: python_package

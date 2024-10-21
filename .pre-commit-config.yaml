@@ -15,14 +15,14 @@ repos:
         language: system
         pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: 2c9f875913ee60ca25ce70243dc24d5b6415598c # frozen: v4.6.0
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b # frozen: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "6f546f30c2b142ad5b3edcf20e3d27cf1789b932" # frozen: v1.10.1
+    rev: "102bbee94061ff02fd361ec29c27b7cb26582f5f" # frozen: v1.12.1
     hooks:
       - id: mypy
   - repo: https://github.com/pre-commit/mirrors-prettier
@@ -30,11 +30,11 @@ repos:
     hooks:
       - id: prettier
   - repo: https://github.com/psf/black
-    rev: 3702ba224ecffbcec30af640c149f231d90aebdb # frozen: 24.4.2
+    rev: 1b2427a2b785cc4aac97c19bb4b9a0de063f9547 # frozen: 24.10.0
     hooks:
       - id: black
   - repo: https://github.com/pylint-dev/pylint
-    rev: "425ad66da9467bac9074de3f2294f7851cb3320b" # frozen: v3.2.4
+    rev: "76bce72bc57cc8089e439cc9d22fed5806341ed4" # frozen: v3.3.1
     hooks:
       - id: pylint
         args: [--verbose]
@@ -45,7 +45,7 @@ repos:
         args: [-w]
         exclude: "MODULE.bazel.lock"
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: "f295829140d25717bc79368d3f966fc1f67a824f" # frozen: v0.41.0
+    rev: "aa975a18c9a869648007d33864034dbc7481fe5e" # frozen: v0.42.0
     hooks:
       - id: markdownlint-fix
   - repo: https://github.com/Yelp/detect-secrets
@@ -54,10 +54,17 @@ repos:
       - id: detect-secrets
         exclude: .pre-commit-config.yaml
   - repo: https://github.com/zricethezav/gitleaks
-    rev: "77c3c6a34b2577d71083442326c60b8fd58926ec" # frozen: v8.18.4
+    rev: "bdca2e2df71555f58d8ab30f05ef93c6bd91a5a4" # frozen: v8.21.1
     hooks:
       - id: gitleaks
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "1dc9eb131c2ea4816c708e4d85820d2cc8542683" # frozen: v0.5.0
+    rev: "8983acb92ee4b01924893632cf90af926fa608f0" # frozen: v0.7.0
     hooks:
       - id: ruff
+  - repo: https://github.com/python-poetry/poetry
+    rev: "c85477da8a610a87133299f996f8d8a593aa7bff" # frozen: 1.8.0
+    hooks:
+      - id: poetry-check
+      - id: poetry-lock
+      - id: poetry-export
+      - id: poetry-install

@@ -8,8 +8,8 @@ from typing import Optional, Callable, TypeVar
 
 import pytest
 
-from repo_structure_config import Configuration, ConfigurationParseError
-from repo_structure_enforcement import (
+from .repo_structure_config import Configuration, ConfigurationParseError
+from .repo_structure_enforcement import (
     MissingMappingError,
     MissingRequiredEntriesError,
     UnspecifiedEntryError,

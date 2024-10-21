@@ -8,8 +8,8 @@ import time
 
 import click
 
-from repo_structure_config import Configuration
-from repo_structure_enforcement import fail_if_invalid_repo_structure, Flags
+from .repo_structure_enforcement import fail_if_invalid_repo_structure, Flags
+from .repo_structure_config import Configuration
 
 
 @click.command()
@@ -42,7 +42,8 @@ def main(
         click.echo(err, err=True)
         successful = False
     duration = time.time() - start_time
-    click.echo(f"Repo-Structure scan finished in {duration:.{3}f} seconds")
+    if verbose:
+        click.echo(f"Repo-Structure scan finished in {duration:.{3}f} seconds")
     if not successful:
         sys.exit(1)
 

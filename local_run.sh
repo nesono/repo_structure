@@ -24,4 +24,4 @@ source .temp_venv/bin/activate
 }
 rm -f pip_install.log
 
-python main.py --repo-root=. --config-path=repo_structure_config.yaml
+python -m repo_structure --verbose --repo-root=. --config-path=repo_structure_config.yaml
