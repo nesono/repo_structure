@@ -7,7 +7,6 @@ from .repo_structure_config import (
     Configuration,
     UseRuleError,
     ConfigurationParseError,
-    DirectoryStructureError,
 )
 
 
@@ -196,7 +195,7 @@ directory_map:
   /missing_trailing_slash:
     - use_rule: license_rule
     """
-    with pytest.raises(DirectoryStructureError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(config_yaml, True)
 
 
@@ -212,7 +211,7 @@ directory_map:
   missing_starting_slash/:
     - use_rule: license_rule
     """
-    with pytest.raises(DirectoryStructureError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(config_yaml, True)
 
 
@@ -255,6 +254,36 @@ directory_map:
     /:
         - use_rule: correct_rule
           parameters: ['item1', 'item2']
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_config, True)
+
+
+def test_fail_double_underscore_prefix_structure_rule():
+    """Test failing template with parameters and only have a use_rule."""
+    test_config = """
+structure_rules:
+    __incorrect_rule:
+        - p: 'some_file.md'
+directory_map:
+    /:
+        - use_rule: __incorrect_rule
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_config, True)
+
+
+def test_fail_double_underscore_prefix_template():
+    """Test failing template with parameters and only have a use_rule."""
+    test_config = """
+templates:
+    __incorrect_template:
+        - p: '{{parameter}}_some_file.md'
+directory_map:
+    /:
+        - use_rule: __incorrect_template
+          parameters:
+            parameter: ['item1']
     """
     with pytest.raises(ConfigurationParseError):
         Configuration(test_config, True)

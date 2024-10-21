@@ -2,6 +2,7 @@
 
 """Library functions for repo structure config parsing."""
 import copy
+import json
 import re
 from dataclasses import dataclass, field
 from typing import Dict, List, TextIO, Union
@@ -10,7 +11,7 @@ from ruamel import yaml as YAML
 from jsonschema import validate, ValidationError, SchemaError
 
 from .repo_structure_lib import map_dir_to_rel_dir
-from .repo_structure_schema import yaml_schema
+from .repo_structure_schema import get_json_schema
 
 
 class StructureRuleError(Exception):
@@ -19,10 +20,6 @@ class StructureRuleError(Exception):
 
 class UseRuleError(Exception):
     """Use_rule related error."""
-
-
-class DirectoryStructureError(Exception):
-    """Directory structure related error."""
 
 
 class RepoStructureTemplateError(Exception):
@@ -62,7 +59,12 @@ class ConfigurationParseError(Exception):
 class Configuration:
     """Repo Structure configuration."""
 
-    def __init__(self, config_file: str, param1_is_yaml_string: bool = False):
+    def __init__(
+        self,
+        config_file: str,
+        param1_is_yaml_string: bool = False,
+        schema_file: str = "",
+    ):
         if param1_is_yaml_string:
             yaml_dict = _load_repo_structure_yamls(config_file)
         else:
@@ -71,8 +73,14 @@ class Configuration:
         if not yaml_dict:
             raise ConfigurationParseError
 
+        schema = get_json_schema()
+
+        if schema_file:
+            with open(schema_file, "r", encoding="utf-8") as file:
+                schema = json.load(file)
+
         try:
-            validate(instance=yaml_dict, schema=yaml_schema)
+            validate(instance=yaml_dict, schema=schema)
         except ValidationError as e:
             raise ConfigurationParseError(f"Bad config: {e.message}") from e
         except SchemaError as e:
@@ -278,19 +286,12 @@ def _parse_directory_map(
     directory_map_yaml: dict,
 ) -> DirectoryMap:
 
-    def _ensure_start_and_end_slashes(directory):
-        if not (directory.startswith("/") and directory.endswith("/")):
-            raise DirectoryStructureError(
-                f"Directory mapping must start and end with '/', but is '{directory}'"
-            )
-
     def _parse_use_rule(rule: dict, dir_map: List[str]) -> None:
         if rule.keys() == {"use_rule"}:
             dir_map.append(rule["use_rule"])
 
     mapping: DirectoryMap = {}
     for directory, value in directory_map_yaml.items():
-        _ensure_start_and_end_slashes(directory)
         for r in value:
             if mapping.get(directory) is None:
                 mapping[directory] = []

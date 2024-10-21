@@ -16,6 +16,7 @@ structure_rules:
     - p: '__main__\.py'
     - p: '__init__\.py'
     - p: '[^/]*\.py'
+    - p: 'config\.schema\.json'
 
 directory_map:
   /:
