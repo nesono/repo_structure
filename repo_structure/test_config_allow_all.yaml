@@ -1,0 +1,11 @@
+structure_rules:
+  allow_all:
+    - p: "[^/]*"
+      required: False
+    - p: "[^/]*/"
+      required: False
+      use_rule: allow_all
+
+directory_map:
+  /:
+    - use_rule: allow_all

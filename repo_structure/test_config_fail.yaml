@@ -1,0 +1,7 @@
+structure_rules:
+  fail_rule:
+    - p: "non_existent_file.txt"
+
+directory_map:
+  /:
+    - use_rule: fail_rule

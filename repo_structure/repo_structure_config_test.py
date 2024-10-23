@@ -1,6 +1,5 @@
 # pylint: disable=import-error
 """Tests for repo_structure library functions."""
-import sys
 
 import pytest
 from .repo_structure_config import (
@@ -63,6 +62,47 @@ directory_map:
     assert config is not None
     assert config.directory_map is not None
     assert config.structure_rules is not None
+
+
+def test_success_minimal_parse_with_config_file():
+    """Test successful parsing with minimal configuration file."""
+    config = Configuration("repo_structure/test_config_allow_all.yaml")
+    assert config is not None
+
+
+def test_fail_parse_bad_schema():
+    """Test failing parsing due to a bad schema string."""
+    test_yaml = r"""
+structure_rules:
+  base_structure:
+    - p: "README.md"
+
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+
+    bad_schema = {
+        "type": "object",
+        "properties": {"countryName": {"type": "stri"}},
+        "required": ["locality"],
+    }
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_yaml, True, bad_schema)
+
+
+def test_fail_parse_empty_structure_rule():
+    """Test failing parsing when structure rules is empty."""
+    test_yaml = r"""
+structure_rules:
+  base_structure:
+
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_yaml, True)
 
 
 def test_fail_parse_dangling_use_rule_in_directory_map():
@@ -314,7 +354,3 @@ def test_fail_config_file_structure_rule_conflict():
     """
     with pytest.raises(ConfigurationParseError):
         Configuration("conflicting_test_config.yaml")
-
-
-if __name__ == "__main__":
-    sys.exit(pytest.main(["-s", "-v", __file__]))

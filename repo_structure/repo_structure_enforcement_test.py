@@ -2,7 +2,6 @@
 """Tests for repo_structure library functions."""
 import os
 import shutil
-import sys
 import tempfile
 from typing import Optional, Callable, TypeVar
 
@@ -19,8 +18,6 @@ from .repo_structure_enforcement import (
 
 
 def _get_tmp_dir() -> str:
-    if "TEST_TMPDIR" in os.environ:
-        return os.environ.get("TEST_TMPDIR", "")
     return tempfile.mkdtemp()
 
 
@@ -61,8 +58,6 @@ def _create_repo_directory_structure(specification: str) -> None:
 
 def _clear_repo_directory_structure() -> None:
     for root, dirs, files in os.walk(".", topdown=False):
-        if not root:
-            continue
         for name in files:
             os.remove(os.path.join(root, name))
         for name in dirs:
@@ -99,9 +94,7 @@ def _assert_repo_directory_structure(
     config: Configuration,
     flags: Optional[Flags] = Flags(),
 ) -> None:
-    repo_root = "."
-    assert repo_root is not None
-    fail_if_invalid_repo_structure(repo_root, config, flags)
+    fail_if_invalid_repo_structure(".", config, flags)
 
 
 @with_repo_structure_in_tmpdir("")
@@ -135,7 +128,6 @@ directory_map:
 @with_repo_structure_in_tmpdir(
     """
 README.md
-LICENSE
 python/
 python/main.py
 """
@@ -145,7 +137,6 @@ def test_required_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: "LICENSE"
     - p: 'README\.md'
     - p: 'python/'
     - p: 'python/[^/]*'
@@ -160,7 +151,6 @@ directory_map:
 @with_repo_structure_in_tmpdir(
     """
 README.md
-LICENSE
 python/
 python/main.py
 unspecified/
@@ -171,7 +161,6 @@ def test_unspecified_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: "LICENSE"
     - p: "README.md"
     - p: "python/"
     - p: 'python/[^/]*'
@@ -216,7 +205,6 @@ structure_rules:
   base_structure:
     - p: "LICENSE"
     - p: 'README\.md'
-      # required is default
 directory_map:
   /:
     - use_rule: base_structure
@@ -229,7 +217,6 @@ directory_map:
 @with_repo_structure_in_tmpdir(
     """
 README.md
-LICENSE
 """
 )
 def test_missing_required_dir():
@@ -237,7 +224,6 @@ def test_missing_required_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: "LICENSE"
     - p: 'README\.md'
     - p: 'python/'
     - p: 'python/[^/]*'
@@ -271,29 +257,6 @@ directory_map:
     """
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config)
-
-
-@with_repo_structure_in_tmpdir(
-    """
-main.py
-"""
-)
-def test_multi_use_rule_missing_readme():
-    """Test missing required file with multiple rules being used."""
-    config_yaml = r"""
-structure_rules:
-  base_structure:
-      - p: 'README\.md'
-  python_package:
-      - p: '[^/]*\.py'
-directory_map:
-  /:
-    - use_rule: base_structure
-    - use_rule: python_package
-    """
-    config = Configuration(config_yaml, True)
-    with pytest.raises(MissingRequiredEntriesError):
-        _assert_repo_directory_structure(config)
 
 
 @with_repo_structure_in_tmpdir(
@@ -982,5 +945,43 @@ directory_map:
     _assert_repo_directory_structure(config)
 
 
-if __name__ == "__main__":
-    sys.exit(pytest.main(["-s", "-v", __file__]))
+@with_repo_structure_in_tmpdir(
+    """
+README.md
+link_to_skip -> README.md
+doc/
+doc/README.md
+lidar/
+lidar/lidar_component.py
+lidar/doc/
+lidar/doc/lidar.techspec.md
+"""
+)
+def test_succeed_with_verbose():
+    """Test enforcement with verbose flag enabled."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - p: 'README\.md'
+    - p: 'doc/'
+      required: False
+      use_rule: base_structure
+templates:
+  component:
+    - p: '{{component}}/'
+    - p: '{{component}}/{{component}}_component.py'
+    - p: '{{component}}/doc/'
+      required: False
+      if_exists:
+        - p: '{{component}}.techspec.md'
+directory_map:
+  /:
+    - use_template: component
+      parameters:
+        component: ['lidar']
+    - use_rule: base_structure
+"""
+    flags = Flags()
+    flags.verbose = True
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config, flags)

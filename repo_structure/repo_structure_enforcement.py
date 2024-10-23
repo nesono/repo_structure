@@ -45,15 +45,6 @@ class EntryTypeMismatchError(Exception):
     """Exception raised when unspecified entry type is not matching the found entry."""
 
 
-def _get_use_rules_for_directory(config: Configuration, directory: str) -> List[str]:
-    d = rel_dir_to_map_dir(directory)
-
-    if d in config.directory_map:
-        return config.directory_map[d]
-
-    raise MissingMappingError(f'Directory "{d}" does not have a directory mapping')
-
-
 def _build_active_entry_backlog(
     active_use_rules: List[str], rel_dir: str, config: Configuration
 ) -> StructureRuleList:
@@ -216,6 +207,13 @@ def fail_if_invalid_repo_structure(
     flags: Optional[Flags] = Flags(),
 ) -> None:
     """Fail if the repo structure directory is invalid given the configuration."""
+    assert repo_root is not None
+
+    def _get_use_rules_for_directory(
+        config: Configuration, directory: str
+    ) -> List[str]:
+        d = rel_dir_to_map_dir(directory)
+        return config.directory_map[d]
 
     def _map_dir_to_entry_backlog(
         config: Configuration,
@@ -223,11 +221,6 @@ def fail_if_invalid_repo_structure(
     ) -> StructureRuleList:
         use_rules = _get_use_rules_for_directory(config, map_dir)
         return _build_active_entry_backlog(use_rules, map_dir, config)
-
-    if repo_root is None:
-        if flags.verbose:
-            print("repo_root is None, returning early")
-        return
 
     # ensure root mapping is there
     if "/" not in config.directory_map:

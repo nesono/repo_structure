@@ -2,10 +2,9 @@
 
 """Library functions for repo structure config parsing."""
 import copy
-import json
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, TextIO, Union
+from typing import Dict, List, TextIO, Union, Any, Optional
 
 from ruamel import yaml as YAML
 from jsonschema import validate, ValidationError, SchemaError
@@ -57,14 +56,27 @@ class ConfigurationParseError(Exception):
 
 
 class Configuration:
-    """Repo Structure configuration."""
+    """Repo Structure configuration class."""
 
     def __init__(
         self,
         config_file: str,
         param1_is_yaml_string: bool = False,
-        schema_file: str = "",
+        schema: Optional[dict[Any, Any]] = None,
     ):
+        """Create new configuration object.
+
+        Args:
+              config_file (str): Path to the configuration file or configuration string.
+              param1_is_yaml_string (bool): If true interprets config_file as contents not path.
+              schema (dict[Any, Any]): An optional JSON schema file for schema verification.
+
+        Exceptions:
+            StructureRuleError: Raised for errors in structure rules.
+            UseRuleError: Raised for errors related to the use rule.
+            RepoStructureTemplateError: Raised for errors in repository structure templates.
+            ConfigurationParseError: Raised for errors during the configuration parsing process.
+        """
         if param1_is_yaml_string:
             yaml_dict = _load_repo_structure_yamls(config_file)
         else:
@@ -73,11 +85,8 @@ class Configuration:
         if not yaml_dict:
             raise ConfigurationParseError
 
-        schema = get_json_schema()
-
-        if schema_file:
-            with open(schema_file, "r", encoding="utf-8") as file:
-                schema = json.load(file)
+        if not schema:
+            schema = get_json_schema()
 
         try:
             validate(instance=yaml_dict, schema=schema)
@@ -179,9 +188,6 @@ def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
     def _parse_directory_structure(
         directory_structure_yaml: dict, structure_rule_list: StructureRuleList
     ) -> None:
-        # if directory_structure is empty dict, return
-        if not directory_structure_yaml:
-            return
         for item in directory_structure_yaml:
             structure_rule_list.append(_parse_entry_to_repo_entry(item))
 
