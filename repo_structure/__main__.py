@@ -48,5 +48,7 @@ def main(
         sys.exit(1)
 
 
+# The following main check is very hard to get into unit
+# testing and as long as it contains so little code, we'll skip it.
 if __name__ == "__main__":  # pragma: no cover
     main()
