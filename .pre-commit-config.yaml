@@ -22,7 +22,7 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "102bbee94061ff02fd361ec29c27b7cb26582f5f" # frozen: v1.12.1
+    rev: "f56614daa94d5cd733d3b7004c5df9caad267b4a" # frozen: v1.13.0
     hooks:
       - id: mypy
   - repo: https://github.com/pre-commit/mirrors-prettier
@@ -54,11 +54,11 @@ repos:
       - id: detect-secrets
         exclude: .pre-commit-config.yaml
   - repo: https://github.com/zricethezav/gitleaks
-    rev: "bdca2e2df71555f58d8ab30f05ef93c6bd91a5a4" # frozen: v8.21.1
+    rev: "77c3c6a34b2577d71083442326c60b8fd58926ec" # frozen: v8.18.4
     hooks:
       - id: gitleaks
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "8983acb92ee4b01924893632cf90af926fa608f0" # frozen: v0.7.0
+    rev: "4edcbde74af0cd9b38e8483828cd9c6cb0755276" # frozen: v0.7.1
     hooks:
       - id: ruff
   - repo: https://github.com/python-poetry/poetry
