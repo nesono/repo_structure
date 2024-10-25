@@ -8,8 +8,10 @@ structure_rules:
     - p: '.github/workflows/[^/]*\.y(a)?ml'
     - p: "LICENSE"
     - p: 'README\.md'
-    - p: '[^/]*config\.yaml'
+    - p: 'repo_structure\.yaml'
+    - p: 'conflicting_test_config\.yaml'
     - p: '\.pre-commit-config\.yaml'
+    - p: '\.pre-commit-hooks\.yaml'
     - p: 'pyproject\.toml'
     - p: 'repo_structure\.iml'
   python_package:
