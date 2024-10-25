@@ -1,0 +1,7 @@
+- id: repo_structure
+  name: Enforce Repository Structure
+  entry: repo_structure --repo-root .
+  description: Ensuring the repository structure matches the specification from the configuration file
+  language: python
+  pass_filenames: false
+  args: ["--config-path", "repo_structure.yaml"]

@@ -9,16 +9,18 @@ from .repo_structure_enforcement import (
     EntryTypeMismatchError,
     Flags,
 )
+from .__main__ import main
 
 __all__ = [
     "Configuration",
     "ConfigurationParseError",
-    "fail_if_invalid_repo_structure",
+    "EntryTypeMismatchError",
+    "Flags",
     "MissingMappingError",
     "MissingRequiredEntriesError",
     "UnspecifiedEntryError",
-    "EntryTypeMismatchError",
-    "Flags",
+    "fail_if_invalid_repo_structure",
+    "main",
 ]
 
 __version__ = "0.1.0"

@@ -12,7 +12,9 @@ You can control:
 - Template for structures with patterns (`templates`)
 
 Here is an example file that showcases all the supported features:
-[example YAML](repo_structure_config.yaml)
+[example YAML](repo_structure.yaml)
+
+Note that Windows clients are not supported at the moment.
 
 ## Integration
 
