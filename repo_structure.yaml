@@ -2,6 +2,7 @@ structure_rules:
   base_structure:
     - p: ".github/"
     - p: ".github/workflows/"
+    - p: '.github/dependabot\.yml'
     - p: "environment.yml"
     - p: "local_run.sh"
     - p: "requirements.txt"
