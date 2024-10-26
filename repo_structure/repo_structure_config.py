@@ -63,6 +63,7 @@ class Configuration:
         config_file: str,
         param1_is_yaml_string: bool = False,
         schema: Optional[dict[Any, Any]] = None,
+        verbose: bool = False,
     ):
         """Create new configuration object.
 
@@ -94,6 +95,8 @@ class Configuration:
             raise ConfigurationParseError(f"Bad config: {e.message}") from e
         except SchemaError as e:
             raise ConfigurationParseError(f"Bad schema: {e.message}") from e
+        if verbose:
+            print("Configuration validated successfully")
 
         self.config = ConfigurationData(
             structure_rules=_parse_structure_rules(
@@ -212,14 +215,19 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     is_dir = file.endswith("/")
     file = file[0:-1] if is_dir else file
 
+    try:
+        compiled_file = re.compile(file)
+    except re.error as e:
+        raise StructureRuleError(f"Bad pattern {file}, failed to compile: {e}") from e
+
     result = RepoEntry(
-        path=re.compile(file),
+        path=compiled_file,
         is_dir=is_dir,
         is_required=entry["required"] if "required" in entry else True,
         use_rule=entry["use_rule"] if "use_rule" in entry else "",
     )
-    for e in if_exists:
-        result.if_exists.append(_parse_entry_to_repo_entry(e))
+    for sub_entry in if_exists:
+        result.if_exists.append(_parse_entry_to_repo_entry(sub_entry))
 
     return result
 
