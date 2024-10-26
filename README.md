@@ -20,7 +20,15 @@ Note that Windows clients are not supported at the moment.
 
 ## Integration
 
-TBD (plan to use pre-commit.com)
+Using the Repo Structure tool through pre-commit.com.
+
+```yaml
+repos:
+  - repo: https://github.com/nesono/repo_structure
+    rev: "v0.1.0"
+    hooks:
+      - id: repo_structure
+```
 
 ## Configuration Overall structure
 
