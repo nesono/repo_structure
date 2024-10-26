@@ -1,5 +1,7 @@
 # Repo Structure
 
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
 A tool to maintain and enforce a clean and organized repository structure.
 
 You can control:
