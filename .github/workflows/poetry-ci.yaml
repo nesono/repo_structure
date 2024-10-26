@@ -26,7 +26,7 @@ jobs:
         uses: abatilo/actions-poetry@v2
         with:
           poetry-version: ${{ matrix.poetry-version }}
-      - name: View poetry --help
+      - name: Run poetry pytest
         run: |
           poetry install
           poetry run pytest --cov --cov-report xml:coverage.xml
@@ -35,3 +35,6 @@ jobs:
         with:
           coverageFile: coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run poetry main
+        run: |
+          poetry run python -m repo_structure --repo-root=. --config-path=repo_structure.yaml
