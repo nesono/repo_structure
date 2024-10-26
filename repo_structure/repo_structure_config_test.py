@@ -6,6 +6,7 @@ from .repo_structure_config import (
     Configuration,
     UseRuleError,
     ConfigurationParseError,
+    StructureRuleError,
 )
 
 
@@ -68,6 +69,22 @@ def test_success_minimal_parse_with_config_file():
     """Test successful parsing with minimal configuration file."""
     config = Configuration("repo_structure/test_config_allow_all.yaml")
     assert config is not None
+
+
+def test_fail_parse_bad_pattern():
+    """Test failing parsing due to a bad schema string."""
+    test_yaml = r"""
+structure_rules:
+  bad_pattern_rule:
+    - p: "[^]*.md"
+
+directory_map:
+  /:
+    - use_rule: bad_pattern_rule
+    """
+
+    with pytest.raises(StructureRuleError):
+        Configuration(test_yaml, True)
 
 
 def test_fail_parse_bad_schema():
