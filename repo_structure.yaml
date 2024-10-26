@@ -4,7 +4,6 @@ structure_rules:
     - p: ".github/workflows/"
     - p: '.github/dependabot\.yml'
     - p: "environment.yml"
-    - p: "local_run.sh"
     - p: "requirements.txt"
     - p: '.github/workflows/[^/]*\.y(a)?ml'
     - p: "LICENSE"
