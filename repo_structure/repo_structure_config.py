@@ -2,6 +2,7 @@
 
 """Library functions for repo structure config parsing."""
 import copy
+import pprint
 import re
 from dataclasses import dataclass, field
 from typing import Dict, List, TextIO, Union, Any, Optional
@@ -63,6 +64,7 @@ class Configuration:
         config_file: str,
         param1_is_yaml_string: bool = False,
         schema: Optional[dict[Any, Any]] = None,
+        verbose: bool = False,
     ):
         """Create new configuration object.
 
@@ -77,6 +79,8 @@ class Configuration:
             RepoStructureTemplateError: Raised for errors in repository structure templates.
             ConfigurationParseError: Raised for errors during the configuration parsing process.
         """
+        if verbose:
+            print("Loading configuration")
         if param1_is_yaml_string:
             yaml_dict = _load_repo_structure_yamls(config_file)
         else:
@@ -94,6 +98,11 @@ class Configuration:
             raise ConfigurationParseError(f"Bad config: {e.message}") from e
         except SchemaError as e:
             raise ConfigurationParseError(f"Bad schema: {e.message}") from e
+        if verbose:
+            print("Configuration validated successfully")
+
+        if verbose:
+            print("Parsing configuration data")
 
         self.config = ConfigurationData(
             structure_rules=_parse_structure_rules(
@@ -125,6 +134,10 @@ class Configuration:
                 )
             ]
             self.config.directory_map["/"].insert(0, config_file)
+
+        if verbose:
+            # Print the parsed configuration pretty
+            pprint.pprint(self.config)
 
     def _validate_directory_map_use_rules(self):
         existing_rules = self.config.structure_rules.keys()
@@ -212,14 +225,19 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     is_dir = file.endswith("/")
     file = file[0:-1] if is_dir else file
 
+    try:
+        compiled_file = re.compile(file)
+    except re.error as e:
+        raise StructureRuleError(f"Bad pattern {file}, failed to compile: {e}") from e
+
     result = RepoEntry(
-        path=re.compile(file),
+        path=compiled_file,
         is_dir=is_dir,
         is_required=entry["required"] if "required" in entry else True,
         use_rule=entry["use_rule"] if "use_rule" in entry else "",
     )
-    for e in if_exists:
-        result.if_exists.append(_parse_entry_to_repo_entry(e))
+    for sub_entry in if_exists:
+        result.if_exists.append(_parse_entry_to_repo_entry(sub_entry))
 
     return result
 
