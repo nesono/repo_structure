@@ -1,5 +1,7 @@
 # Repo Structure
 
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
 A tool to maintain and enforce a clean and organized repository structure.
 
 You can control:
@@ -18,7 +20,15 @@ Note that Windows clients are not supported at the moment.
 
 ## Integration
 
-TBD (plan to use pre-commit.com)
+Using the Repo Structure tool through pre-commit.com.
+
+```yaml
+repos:
+  - repo: https://github.com/nesono/repo_structure
+    rev: "v0.1.0"
+    hooks:
+      - id: repo_structure
+```
 
 ## Configuration Overall structure
 
