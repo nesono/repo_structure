@@ -2,6 +2,7 @@
 
 """Library functions for repo structure config parsing."""
 import copy
+import pprint
 import re
 from dataclasses import dataclass, field
 from typing import Dict, List, TextIO, Union, Any, Optional
@@ -78,6 +79,8 @@ class Configuration:
             RepoStructureTemplateError: Raised for errors in repository structure templates.
             ConfigurationParseError: Raised for errors during the configuration parsing process.
         """
+        if verbose:
+            print("Loading configuration")
         if param1_is_yaml_string:
             yaml_dict = _load_repo_structure_yamls(config_file)
         else:
@@ -97,6 +100,9 @@ class Configuration:
             raise ConfigurationParseError(f"Bad schema: {e.message}") from e
         if verbose:
             print("Configuration validated successfully")
+
+        if verbose:
+            print("Parsing configuration data")
 
         self.config = ConfigurationData(
             structure_rules=_parse_structure_rules(
@@ -128,6 +134,10 @@ class Configuration:
                 )
             ]
             self.config.directory_map["/"].insert(0, config_file)
+
+        if verbose:
+            # Print the parsed configuration pretty
+            pprint.pprint(self.config)
 
     def _validate_directory_map_use_rules(self):
         existing_rules = self.config.structure_rules.keys()
