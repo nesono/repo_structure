@@ -36,7 +36,11 @@ def main(
     start_time = time.time()
     successful = True
     try:
-        fail_if_invalid_repo_structure(repo_root, Configuration(config_path), flags)
+        fail_if_invalid_repo_structure(
+            repo_root,
+            Configuration(config_path, False, None, flags.verbose),
+            flags,
+        )
         click.echo("Your Repo-structure is compliant")
     except Exception as err:
         click.echo(err, err=True)
