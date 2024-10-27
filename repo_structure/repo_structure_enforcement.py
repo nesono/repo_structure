@@ -201,13 +201,10 @@ def _skip_entry(
     return False
 
 
-def fail_if_invalid_repo_structure(
-    repo_root: str,
+def _map_dir_to_entry_backlog(
     config: Configuration,
-    flags: Optional[Flags] = Flags(),
-) -> None:
-    """Fail if the repo structure directory is invalid given the configuration."""
-    assert repo_root is not None
+    map_dir: str,
+) -> StructureRuleList:
 
     def _get_use_rules_for_directory(
         config: Configuration, directory: str
@@ -215,12 +212,17 @@ def fail_if_invalid_repo_structure(
         d = rel_dir_to_map_dir(directory)
         return config.directory_map[d]
 
-    def _map_dir_to_entry_backlog(
-        config: Configuration,
-        map_dir: str,
-    ) -> StructureRuleList:
-        use_rules = _get_use_rules_for_directory(config, map_dir)
-        return _build_active_entry_backlog(use_rules, map_dir, config)
+    use_rules = _get_use_rules_for_directory(config, map_dir)
+    return _build_active_entry_backlog(use_rules, map_dir, config)
+
+
+def assert_full_repository_structure(
+    repo_root: str,
+    config: Configuration,
+    flags: Optional[Flags] = Flags(),
+) -> None:
+    """Fail if the repo structure directory is invalid given the configuration."""
+    assert repo_root is not None
 
     # ensure root mapping is there
     if "/" not in config.directory_map:
@@ -240,3 +242,55 @@ def fail_if_invalid_repo_structure(
         )
         # report non-empty backlog
         _fail_if_required_entries_missing(backlog)
+
+
+def assert_path(
+    repo_root: str,
+    config: Configuration,
+    path: str,
+    flags: Flags,
+) -> None:
+    """Fail if the given path is invalid according to the configuration.
+
+    Note that this function will not be able to ensure if all required
+    entries are present."""
+
+    def count_common_prefix_characters(str1: str, str2: str) -> int:
+        min_length = min(len(str1), len(str2))
+        common_char_count = 0
+
+        for i in range(min_length):
+            if str1[i] == str2[i]:
+                common_char_count += 1
+            else:
+                break
+        return common_char_count
+
+    overlap_max = -1
+    max_map_dir = None
+    for map_dir in config.directory_map:
+        overlap = count_common_prefix_characters(map_dir_to_rel_dir(map_dir), path)
+        if overlap > overlap_max:
+            overlap_max = overlap
+            max_map_dir = map_dir
+
+    if max_map_dir is None:
+        raise MissingMappingError(f"No mapping found for path {path}")
+
+    if flags.verbose:
+        print(f"Found max overlap between {path} and {max_map_dir}: {overlap_max}")
+
+    rel_dir = map_dir_to_rel_dir(max_map_dir)
+    backlog = _map_dir_to_entry_backlog(config, rel_dir)
+    path_is_dir = os.path.isdir(os.path.join(repo_root, path))
+
+    # find path in backlog
+    index = _get_matching_item_index(
+        backlog,
+        path,
+        path_is_dir,
+        flags.verbose,
+    )
+
+    if flags.verbose:
+        print(f"Found entry in backlog with index {index}")

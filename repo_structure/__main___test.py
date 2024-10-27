@@ -2,25 +2,72 @@
 """Main tests module."""
 
 from click.testing import CliRunner
-from repo_structure.__main__ import main
+from repo_structure.__main__ import repo_structure_main
 
 
-def test_main_success():
+def test_main_check_all_success():
     """Test successful main run."""
     runner = CliRunner()
     result = runner.invoke(
-        main,
-        ["-r", ".", "-c", "repo_structure/test_config_allow_all.yaml", "--verbose"],
+        repo_structure_main,
+        [
+            "-r",
+            ".",
+            "-c",
+            "repo_structure/test_config_allow_all.yaml",
+            "--check-all",
+            "--verbose",
+        ],
     )
 
     assert result.exit_code == 0
 
 
-def test_main_fail():
+def test_main_check_all_fail():
     """Test failing main run."""
     runner = CliRunner()
     result = runner.invoke(
-        main, ["-r", ".", "-c", "repo_structure/test_config_fail.yaml"]
+        repo_structure_main,
+        ["-r", ".", "-c", "repo_structure/test_config_fail.yaml", "--check-all"],
+    )
+
+    assert result.exit_code != 0
+
+
+def test_main_check_path_success():
+    """Test successful main run."""
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure_main,
+        [
+            "-r",
+            ".",
+            "-c",
+            "repo_structure/test_config_allow_all.yaml",
+            "--verbose",
+            "LICENSE",
+            "README.md",
+            "repo_structure/repo_structure_config.py",
+        ],
+    )
+
+    assert result.exit_code == 0
+
+
+def test_main_check_path_fail():
+    """Test failing main run."""
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure_main,
+        [
+            "-r",
+            ".",
+            "-c",
+            "repo_structure/test_config_fail.yaml",
+            "LICENSE",
+            "README.md",
+            "repo_structure/repo_structure_config.py",
+        ],
     )
 
     assert result.exit_code != 0

@@ -12,7 +12,7 @@ from .repo_structure_enforcement import (
     MissingMappingError,
     MissingRequiredEntriesError,
     UnspecifiedEntryError,
-    fail_if_invalid_repo_structure,
+    assert_full_repository_structure,
     Flags,
 )
 
@@ -94,7 +94,7 @@ def _assert_repo_directory_structure(
     config: Configuration,
     flags: Optional[Flags] = Flags(),
 ) -> None:
-    fail_if_invalid_repo_structure(".", config, flags)
+    assert_full_repository_structure(".", config, flags)
 
 
 @with_repo_structure_in_tmpdir("")

@@ -30,6 +30,19 @@ repos:
       - id: repo_structure
 ```
 
+The default configuration expects the file `repo_structure.yaml` in your
+repository root. If you want to customize that, you need to add an `args` key
+to the yaml, for instance:
+
+```yaml
+repos:
+  - repo: https://github.com/nesono/repo_structure
+    rev: "v0.1.0"
+    hooks:
+      - id: repo_structure
+        args: ["--config-path", "path/to/your_config_file.yaml"]
+```
+
 ## Configuration Overall structure
 
 The configuration files consists of three sections:

@@ -137,7 +137,13 @@ class Configuration:
 
         if verbose:
             # Print the parsed configuration pretty
-            pprint.pprint(self.config)
+            pprint.pprint(self.config.directory_map, indent=2)
+            pprint.pprint(self.config.structure_rules, indent=2)
+            print(
+                f"Structure rules count: {len(self.config.structure_rules.keys())}, "
+                f"Directory map count: {len(self.config.directory_map.keys())}"
+            )
+            print("Configuration parsed successfully")
 
     def _validate_directory_map_use_rules(self):
         existing_rules = self.config.structure_rules.keys()
