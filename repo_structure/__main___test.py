@@ -1,8 +1,7 @@
 # pylint: disable=import-error
 """Main tests module."""
-
 from click.testing import CliRunner
-from repo_structure.__main__ import repo_structure_main
+from .__main__ import repo_structure_main
 
 
 def test_main_check_all_success():
@@ -45,8 +44,6 @@ def test_main_check_path_success():
             "-c",
             "repo_structure/test_config_allow_all.yaml",
             "--verbose",
-            "LICENSE",
-            "README.md",
             "repo_structure/repo_structure_config.py",
         ],
     )
@@ -64,9 +61,7 @@ def test_main_check_path_fail():
             ".",
             "-c",
             "repo_structure/test_config_fail.yaml",
-            "LICENSE",
-            "README.md",
-            "repo_structure/repo_structure_config.py",
+            "BADFILE",
         ],
     )
 

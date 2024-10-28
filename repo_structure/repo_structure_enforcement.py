@@ -7,7 +7,7 @@ import re
 from os import DirEntry
 from dataclasses import dataclass, replace
 
-from typing import List, Callable, Optional, Union
+from typing import List, Callable, Optional, Union, Iterator, Tuple
 from gitignore_parser import parse_gitignore
 
 from .repo_structure_config import (
@@ -105,7 +105,6 @@ def _fail_if_invalid_repo_structure_recursive(
 ) -> None:
     git_ignore = _get_git_ignore(repo_root)
 
-    # go through all the files in the repository
     for entry in os.scandir(os.path.join(repo_root, rel_dir)):
         rel_path = os.path.join(rel_dir, entry.name)
         if flags.verbose:
@@ -114,7 +113,6 @@ def _fail_if_invalid_repo_structure_recursive(
         if _skip_entry(entry, rel_path, config, git_ignore, flags):
             continue
 
-        # go through all found matches in the entry_backlog
         for idx in _get_matching_item_index(
             backlog,
             rel_path,
@@ -132,7 +130,6 @@ def _fail_if_invalid_repo_structure_recursive(
                 )
                 _handle_if_exists(backlog, backlog_entry, rel_path, flags)
 
-                # enter the subdirectory recursively
                 _fail_if_invalid_repo_structure_recursive(
                     repo_root, rel_path, config, backlog, flags
                 )
@@ -224,7 +221,6 @@ def assert_full_repository_structure(
     """Fail if the repo structure directory is invalid given the configuration."""
     assert repo_root is not None
 
-    # ensure root mapping is there
     if "/" not in config.directory_map:
         raise MissingMappingError("Config does not have a root mapping")
 
@@ -232,7 +228,6 @@ def assert_full_repository_structure(
         rel_dir = map_dir_to_rel_dir(map_dir)
         backlog = _map_dir_to_entry_backlog(config, rel_dir)
 
-        # parse directory and burn down backlog
         _fail_if_invalid_repo_structure_recursive(
             repo_root,
             rel_dir,
@@ -240,12 +235,26 @@ def assert_full_repository_structure(
             backlog,
             flags or Flags(),
         )
-        # report non-empty backlog
         _fail_if_required_entries_missing(backlog)
 
 
+def split_path(path: str) -> Iterator[Tuple[str, bool]]:
+    """
+    Split a path into sub paths starting from the highest level directory and
+    expanding the path until the full path has been reached.
+
+    Yields:
+        sub_path (str): The sub path segment.
+        is_dir (bool): True if the sub path is a directory, False if it is the final file path.
+    """
+    parts = path.strip("/").split("/")
+    for i in range(len(parts)):
+        sub_path = "/".join(parts[: i + 1])
+        is_dir = i < len(parts) - 1
+        yield sub_path, is_dir
+
+
 def assert_path(
-    repo_root: str,
     config: Configuration,
     path: str,
     flags: Flags,
@@ -274,23 +283,30 @@ def assert_path(
             overlap_max = overlap
             max_map_dir = map_dir
 
-    if max_map_dir is None:
-        raise MissingMappingError(f"No mapping found for path {path}")
-
     if flags.verbose:
         print(f"Found max overlap between {path} and {max_map_dir}: {overlap_max}")
 
+    if max_map_dir is None:
+        raise MissingMappingError(f"No mapping found for path {path}")
+
     rel_dir = map_dir_to_rel_dir(max_map_dir)
     backlog = _map_dir_to_entry_backlog(config, rel_dir)
-    path_is_dir = os.path.isdir(os.path.join(repo_root, path))
 
-    # find path in backlog
-    index = _get_matching_item_index(
-        backlog,
-        path,
-        path_is_dir,
-        flags.verbose,
-    )
+    for sub_path, is_dir in split_path(path):
+        for idx in _get_matching_item_index(
+            backlog,
+            sub_path,
+            is_dir,
+            flags.verbose,
+        ):
+            if flags.verbose:
+                print(f"  Found match path {sub_path}")
 
-    if flags.verbose:
-        print(f"Found entry in backlog with index {index}")
+            if is_dir:
+                _handle_use_rule(
+                    backlog, backlog[idx].use_rule, config, flags, sub_path
+                )
+                _handle_if_exists(backlog, backlog[idx], sub_path, flags)
+
+            if flags.verbose:
+                print(f"Found entry in backlog with index {idx}")

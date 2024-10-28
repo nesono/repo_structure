@@ -121,7 +121,6 @@ def repo_structure_main(
         for path in paths:
             try:
                 assert_path(
-                    repo_root,
                     config,
                     path,
                     flags,
