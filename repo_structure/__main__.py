@@ -44,9 +44,6 @@ from .repo_structure_config import Configuration
     message="%(prog)s %(version)s",
 )
 @click.pass_context
-# the argument list of the following function is prescribed through the click API
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-positional-arguments
 def repo_structure(
     ctx: click.Context,
     follow_symlinks: bool,
