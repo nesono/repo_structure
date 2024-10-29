@@ -50,6 +50,7 @@ class ConfigurationData:
 
     structure_rules: StructureRuleMap = field(default_factory=dict)
     directory_map: DirectoryMap = field(default_factory=dict)
+    configuration_file_name: str = ""
 
 
 class ConfigurationParseError(Exception):
@@ -125,15 +126,7 @@ class Configuration:
                     "- do not add the config manually."
                 )
 
-            # add the config file to the config
-            self.config.structure_rules[config_file] = [
-                RepoEntry(
-                    path=re.compile(config_file),
-                    is_dir=False,
-                    is_required=True,
-                )
-            ]
-            self.config.directory_map["/"].insert(0, config_file)
+            self.config.configuration_file_name = config_file
 
         if verbose:
             # Print the parsed configuration pretty
@@ -163,6 +156,11 @@ class Configuration:
     def directory_map(self) -> DirectoryMap:
         """Property for directory mappings."""
         return self.config.directory_map
+
+    @property
+    def configuration_file_name(self) -> str:
+        """Property for configuration file name."""
+        return self.config.configuration_file_name
 
 
 def _load_repo_structure_yaml(filename: str) -> dict:

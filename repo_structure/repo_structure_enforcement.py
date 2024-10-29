@@ -96,6 +96,19 @@ def _fail_if_required_entries_missing(
         )
 
 
+@dataclass
+class Entry:
+    """Internal representation of a directory entry."""
+
+    path: str
+    is_dir: bool
+    is_symlink: bool
+
+
+def _to_entry(entry: DirEntry[str], rel_path) -> Entry:
+    return Entry(rel_path, entry.is_dir(), entry.is_symlink())
+
+
 def _fail_if_invalid_repo_structure_recursive(
     repo_root: str,
     rel_dir: str,
@@ -110,7 +123,7 @@ def _fail_if_invalid_repo_structure_recursive(
         if flags.verbose:
             print(f"Checking entry {rel_path}")
 
-        if _skip_entry(entry, rel_path, config, git_ignore, flags):
+        if _skip_entry(_to_entry(entry, rel_path), config, git_ignore, flags):
             continue
 
         for idx in _get_matching_item_index(
@@ -174,25 +187,25 @@ def _get_git_ignore(repo_root: str) -> Union[Callable[[str], bool], None]:
 
 
 def _skip_entry(
-    entry: DirEntry[str],
-    rel_path: str,
+    entry: Entry,
     config: Configuration,
     git_ignore: Union[Callable[[str], bool], None] = None,
     flags: Flags = Flags(),
 ) -> bool:
     skip_conditions = [
-        (not flags.follow_symlinks and entry.is_symlink()),
-        (not flags.include_hidden and entry.name.startswith(".")),
-        (rel_path == ".gitignore" and entry.is_file()),
-        (rel_path == ".git" and entry.is_dir()),
+        (not flags.follow_symlinks and entry.is_symlink),
+        (not flags.include_hidden and entry.path.startswith(".")),
+        (entry.path == ".gitignore" and not entry.is_dir),
+        (entry.path == ".git" and entry.is_dir),
         (git_ignore and git_ignore(entry.path)),
-        (entry.is_dir() and rel_dir_to_map_dir(rel_path) in config.directory_map),
+        (entry.is_dir and rel_dir_to_map_dir(entry.path) in config.directory_map),
+        (entry.path == config.configuration_file_name),
     ]
 
     for condition in skip_conditions:
         if condition:
             if flags.verbose:
-                print(f"Skipping {rel_path}")
+                print(f"Skipping {entry.path}")
             return True
 
     return False
@@ -238,31 +251,7 @@ def assert_full_repository_structure(
         _fail_if_required_entries_missing(backlog)
 
 
-def split_path(path: str) -> Iterator[Tuple[str, bool]]:
-    """
-    Split a path into sub paths starting from the highest level directory and
-    expanding the path until the full path has been reached.
-
-    Yields:
-        sub_path (str): The sub path segment.
-        is_dir (bool): True if the sub path is a directory, False if it is the final file path.
-    """
-    parts = path.strip("/").split("/")
-    for i in range(len(parts)):
-        sub_path = "/".join(parts[: i + 1])
-        is_dir = i < len(parts) - 1
-        yield sub_path, is_dir
-
-
-def assert_path(
-    config: Configuration,
-    path: str,
-    flags: Flags,
-) -> None:
-    """Fail if the given path is invalid according to the configuration.
-
-    Note that this function will not be able to ensure if all required
-    entries are present."""
+def _get_corresponding_map_dir(config: Configuration, flags: Flags, path: str):
 
     def count_common_prefix_characters(str1: str, str2: str) -> int:
         min_length = min(len(str1), len(str2))
@@ -278,21 +267,32 @@ def assert_path(
     overlap_max = -1
     max_map_dir = None
     for map_dir in config.directory_map:
-        overlap = count_common_prefix_characters(map_dir_to_rel_dir(map_dir), path)
+        overlap = count_common_prefix_characters(
+            map_dir_to_rel_dir(map_dir), os.path.dirname(path)
+        )
         if overlap > overlap_max:
             overlap_max = overlap
             max_map_dir = map_dir
-
     if flags.verbose:
         print(f"Found max overlap between {path} and {max_map_dir}: {overlap_max}")
+    return max_map_dir
 
-    if max_map_dir is None:
-        raise MissingMappingError(f"No mapping found for path {path}")
 
-    rel_dir = map_dir_to_rel_dir(max_map_dir)
-    backlog = _map_dir_to_entry_backlog(config, rel_dir)
+def _assert_path_in_backlog(
+    backlog: StructureRuleList, config: Configuration, flags: Flags, path: str
+):
 
-    for sub_path, is_dir in split_path(path):
+    def _split_path(path_to_split: str) -> Iterator[Tuple[str, bool]]:
+        parts = path_to_split.strip("/").split("/")
+        for i in range(len(parts)):
+            incremental_path = "/".join(parts[: i + 1])
+            is_directory = i < len(parts) - 1
+            yield incremental_path, is_directory
+
+    for sub_path, is_dir in _split_path(path):
+        if _skip_entry(Entry(sub_path, is_dir, is_symlink=False), config, flags=flags):
+            return
+
         for idx in _get_matching_item_index(
             backlog,
             sub_path,
@@ -310,3 +310,21 @@ def assert_path(
 
             if flags.verbose:
                 print(f"Found entry in backlog with index {idx}")
+
+
+def assert_path(
+    config: Configuration,
+    path: str,
+    flags: Flags,
+) -> None:
+    """Fail if the given path is invalid according to the configuration.
+
+    Note that this function will not be able to ensure if all required
+    entries are present."""
+
+    max_map_dir = _get_corresponding_map_dir(config, flags, path)
+
+    rel_dir = map_dir_to_rel_dir(max_map_dir)
+    backlog = _map_dir_to_entry_backlog(config, rel_dir)
+
+    _assert_path_in_backlog(backlog, config, flags, path)

@@ -1,0 +1,7 @@
+structure_rules:
+  some_rule:
+    - p: "LICENSE"
+
+directory_map:
+  /:
+    - use_rule: bad_rule

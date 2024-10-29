@@ -4,7 +4,7 @@ from click.testing import CliRunner
 from .__main__ import repo_structure
 
 
-def test_main_check_all_success():
+def test_main_full_scan_success():
     """Test successful main run."""
     runner = CliRunner()
     result = runner.invoke(
@@ -22,8 +22,19 @@ def test_main_check_all_success():
     assert result.exit_code == 0
 
 
-def test_main_check_all_fail():
-    """Test failing main run."""
+def test_main_full_scan_fail_bad_config():
+    """Test failing main run due to bad configuration file."""
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure,
+        ["full-scan", "-r", ".", "-c", "repo_structure/test_config_bad_config.yaml"],
+    )
+
+    assert result.exit_code != 0
+
+
+def test_main_full_scan_fail():
+    """Test failing main run due to missing file."""
     runner = CliRunner()
     result = runner.invoke(
         repo_structure,
@@ -33,7 +44,7 @@ def test_main_check_all_fail():
     assert result.exit_code != 0
 
 
-def test_main_check_path_success():
+def test_main_check_files_success():
     """Test successful main run."""
     runner = CliRunner()
     result = runner.invoke(
@@ -44,6 +55,8 @@ def test_main_check_path_success():
             "-c",
             "repo_structure/test_config_allow_all.yaml",
             "LICENSE",
+            "repo_structure.yaml",
+            "repo_struct",
             "repo_structure/repo_structure_config.py",
         ],
     )
@@ -51,8 +64,24 @@ def test_main_check_path_success():
     assert result.exit_code == 0
 
 
-def test_main_check_path_fail():
-    """Test failing main run."""
+def test_main_check_files_fail_bad_config():
+    """Test failing main run due to bad config."""
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure,
+        [
+            "check-files",
+            "-c",
+            "repo_structure/test_config_bad_config.yaml",
+            "LICENSE",
+        ],
+    )
+
+    assert result.exit_code != 0
+
+
+def test_main_check_files_fail():
+    """Test failing main run due to bad file."""
     runner = CliRunner()
     result = runner.invoke(
         repo_structure,
@@ -60,7 +89,7 @@ def test_main_check_path_fail():
             "check-files",
             "-c",
             "repo_structure/test_config_fail.yaml",
-            "BADFILE",
+            "LICENSE",
         ],
     )
 
