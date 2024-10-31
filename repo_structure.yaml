@@ -11,6 +11,7 @@ structure_rules:
     - p: 'conflicting_test_config\.yaml'
     - p: '\.pre-commit-config\.yaml'
     - p: '\.pre-commit-hooks\.yaml'
+    - p: '\.markdownlint\.yaml'
     - p: 'pyproject\.toml'
     - p: 'repo_structure\.iml'
   python_package:

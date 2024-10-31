@@ -5,6 +5,7 @@
   language: python
   pass_filenames: false
   args: ["--config-path", "repo_structure.yaml"]
+  stages: [pre-push, manual]
 - id: repo-structure-full-scan-debug
   name: Enforce Repository Structure
   entry: repo_structure --verbose full-scan --repo-root .
@@ -12,6 +13,7 @@
   language: python
   pass_filenames: false
   args: ["--config-path", "repo_structure.yaml"]
+  stages: [pre-push, manual]
 - id: repo-structure-diff-scan
   name: Enforce Repository Structure
   entry: repo_structure diff-scan --repo-root .

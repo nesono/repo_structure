@@ -1,0 +1,4 @@
+# See https://github.com/DavidAnson/markdownlint/blob/main/schema/.markdownlint.yaml for all config options
+
+default: true
+line-length: false
