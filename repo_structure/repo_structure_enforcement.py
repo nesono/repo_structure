@@ -251,45 +251,32 @@ def assert_full_repository_structure(
         _fail_if_required_entries_missing(backlog)
 
 
-def _get_corresponding_map_dir(config: Configuration, flags: Flags, path: str):
+def _incremental_path_split(path_to_split: str) -> Iterator[Tuple[str, bool]]:
+    """Split the path into incremental tokens.
 
-    def count_common_prefix_characters(str1: str, str2: str) -> int:
-        min_length = min(len(str1), len(str2))
-        common_char_count = 0
+    Each token starts with the top-level directory and grows the path by
+    one directory with each iteration.
 
-        for i in range(min_length):
-            if str1[i] == str2[i]:
-                common_char_count += 1
-            else:
-                break
-        return common_char_count
-
-    overlap_max = -1
-    max_map_dir = None
-    for map_dir in config.directory_map:
-        overlap = count_common_prefix_characters(
-            map_dir_to_rel_dir(map_dir), os.path.dirname(path)
-        )
-        if overlap > overlap_max:
-            overlap_max = overlap
-            max_map_dir = map_dir
-    if flags.verbose:
-        print(f"Found max overlap between {path} and {max_map_dir}: {overlap_max}")
-    return max_map_dir
+    For example:
+    path/to/file will return the following listing
+    [
+      ("path", true),
+      ("path/to", true),
+      ("path/to/file", false),
+    ]
+    """
+    parts = path_to_split.strip("/").split("/")
+    for i in range(len(parts)):
+        incremental_path = "/".join(parts[: i + 1])
+        is_directory = i < len(parts) - 1
+        yield incremental_path, is_directory
 
 
 def _assert_path_in_backlog(
     backlog: StructureRuleList, config: Configuration, flags: Flags, path: str
 ):
 
-    def _split_path(path_to_split: str) -> Iterator[Tuple[str, bool]]:
-        parts = path_to_split.strip("/").split("/")
-        for i in range(len(parts)):
-            incremental_path = "/".join(parts[: i + 1])
-            is_directory = i < len(parts) - 1
-            yield incremental_path, is_directory
-
-    for sub_path, is_dir in _split_path(path):
+    for sub_path, is_dir in _incremental_path_split(path):
         if _skip_entry(Entry(sub_path, is_dir, is_symlink=False), config, flags=flags):
             return
 
@@ -310,6 +297,19 @@ def _assert_path_in_backlog(
 
             if flags.verbose:
                 print(f"Found entry in backlog with index {idx}")
+
+
+def _get_corresponding_map_dir(config: Configuration, flags: Flags, path: str):
+
+    max_map_dir = ""
+    for sub_path, is_dir in _incremental_path_split(path):
+        if is_dir and sub_path in config.directory_map:
+            max_map_dir = sub_path
+
+    if flags.verbose:
+        print(f"Found corresponding map dir for {path}: {max_map_dir}")
+
+    return max_map_dir
 
 
 def assert_path(
