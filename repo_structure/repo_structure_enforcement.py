@@ -314,8 +314,9 @@ def assert_path(
 
         map_dir = ""
         for sub_path, is_dir in _incremental_path_split(p):
-            if is_dir and sub_path in c.directory_map:
-                map_dir = sub_path
+            map_sub_dir = rel_dir_to_map_dir(sub_path)
+            if is_dir and map_sub_dir in c.directory_map:
+                map_dir = map_sub_dir
 
         if f.verbose:
             print(f"Found corresponding map dir for {p}: {map_dir}")
