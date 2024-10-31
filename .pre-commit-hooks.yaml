@@ -1,6 +1,27 @@
-- id: repo_structure
+- id: repo-structure-full-scan
   name: Enforce Repository Structure
-  entry: repo_structure --repo-root .
+  entry: repo_structure full-scan --repo-root .
+  description: Ensuring the repository structure matches the specification from the configuration file
+  language: python
+  pass_filenames: false
+  args: ["--config-path", "repo_structure.yaml"]
+- id: repo-structure-full-scan-debug
+  name: Enforce Repository Structure
+  entry: repo_structure --verbose full-scan --repo-root .
+  description: Ensuring the repository structure matches the specification from the configuration file
+  language: python
+  pass_filenames: false
+  args: ["--config-path", "repo_structure.yaml"]
+- id: repo-structure-diff-scan
+  name: Enforce Repository Structure
+  entry: repo_structure diff-scan --repo-root .
+  description: Ensuring the repository structure matches the specification from the configuration file
+  language: python
+  pass_filenames: false
+  args: ["--config-path", "repo_structure.yaml"]
+- id: repo-structure-diff-scan-debug
+  name: Enforce Repository Structure
+  entry: repo_structure --verbose diff-scan --repo-root .
   description: Ensuring the repository structure matches the specification from the configuration file
   language: python
   pass_filenames: false

@@ -44,14 +44,14 @@ def test_main_full_scan_fail():
     assert result.exit_code != 0
 
 
-def test_main_check_files_success():
+def test_main_diff_scan_success():
     """Test successful main run."""
     runner = CliRunner()
     result = runner.invoke(
         repo_structure,
         [
             "--verbose",
-            "check-files",
+            "diff-scan",
             "-c",
             "repo_structure/test_config_allow_all.yaml",
             "LICENSE",
@@ -64,13 +64,13 @@ def test_main_check_files_success():
     assert result.exit_code == 0
 
 
-def test_main_check_files_fail_bad_config():
+def test_main_diff_scan_fail_bad_config():
     """Test failing main run due to bad config."""
     runner = CliRunner()
     result = runner.invoke(
         repo_structure,
         [
-            "check-files",
+            "diff-scan",
             "-c",
             "repo_structure/test_config_bad_config.yaml",
             "LICENSE",
@@ -80,13 +80,13 @@ def test_main_check_files_fail_bad_config():
     assert result.exit_code != 0
 
 
-def test_main_check_files_fail():
+def test_main_diff_scan_fail():
     """Test failing main run due to bad file."""
     runner = CliRunner()
     result = runner.invoke(
         repo_structure,
         [
-            "check-files",
+            "diff-scan",
             "-c",
             "repo_structure/test_config_fail.yaml",
             "LICENSE",

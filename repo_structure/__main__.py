@@ -51,7 +51,7 @@ def repo_structure(
     verbose: bool,
 ) -> None:
     """Ensure clean repository structure for your projects."""
-    click.echo("Repo-Structure started, parsing parsing config and repo")
+    click.echo("Repo-Structure started")
     flags = Flags()
     flags.follow_symlinks = follow_symlinks
     flags.include_hidden = include_hidden
@@ -89,6 +89,8 @@ def full_scan(ctx: click.Context, repo_root: str, config_path: str) -> None:
     Run this command to ensure that not only all files are allowed, but also
     that all files that are required are there.
     """
+    click.echo("Running full scan")
+
     successful = True
     flags = ctx.obj
 
@@ -143,7 +145,7 @@ def full_scan(ctx: click.Context, repo_root: str, config_path: str) -> None:
     required=False,
 )
 @click.pass_context
-def check_files(ctx: click.Context, config_path: str, paths: list[str]) -> None:
+def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
     """Run a check on a differential set of files.
 
     Options:
@@ -157,6 +159,7 @@ def check_files(ctx: click.Context, config_path: str, paths: list[str]) -> None:
     Note that this will not check if all files that are required are there.
     For that, please run the full-scan sub command instead.
     """
+    click.echo("Running diff scan")
     flags = ctx.obj
     successful = True
 
