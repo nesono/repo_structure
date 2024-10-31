@@ -13,7 +13,7 @@ packages = [
 exclude = ["repo_structure/*_test.py"]
 
 [tool.poetry.scripts]
-repo_structure = 'repo_structure.__main__:main'
+repo_structure = 'repo_structure.__main__:repo_structure'
 
 [tool.poetry.dependencies]
 python = ">=3.9"
