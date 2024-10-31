@@ -20,15 +20,42 @@ Note that Windows clients are not supported at the moment.
 
 ## Integration
 
-Using the Repo Structure tool through pre-commit.com.
+### Quick Start
+
+The Repo Structure tool is written to be consumed through [pre-commit.com](https://pre-commit.com/).
+A basic consumption looks like the following.
 
 ```yaml
 repos:
   - repo: https://github.com/nesono/repo_structure
     rev: "v0.1.0"
     hooks:
-      - id: repo_structure
+      - id: repo-structure-diff-scan
 ```
+
+The default configuration expects the file `repo_structure.yaml` in your
+repository root. If you want to customize that, you need to add an `args` key
+to the yaml, for instance:
+
+```yaml
+repos:
+  - repo: https://github.com/nesono/repo_structure
+    rev: "v0.1.0"
+    hooks:
+      - id: repo-structure-diff-scan
+        args: ["--config-path", "path/to/your_config_file.yaml"]
+```
+
+## Available Repo Check Modes
+
+The following modes are available with Repo Structure:
+
+| ID | Description | Default stages |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------ | |
+| `repo-structure-diff-scan` | Ensure that all added or modified files are allowed by the repo structure configuration | all |
+| `repo-structure-diff-scan-debug` | Ensure that all added or modified files are allowed by the repo structure configuration with tracing enabled | all |
+| `repo-structure-full-scan` | Run a full scan ensuring that all allowed and required files exist | `pre-push` |
+| `repo-structure-full-scan-debug` | Run a full scan ensuring that all allowed and required files exist with tracing enabled | `pre-push` |
 
 ## Configuration Overall structure
 

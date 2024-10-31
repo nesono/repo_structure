@@ -2,7 +2,8 @@
 
 from .repo_structure_config import Configuration, ConfigurationParseError
 from .repo_structure_enforcement import (
-    fail_if_invalid_repo_structure,
+    assert_full_repository_structure,
+    assert_path,
     MissingMappingError,
     MissingRequiredEntriesError,
     UnspecifiedEntryError,
@@ -18,7 +19,8 @@ __all__ = [
     "MissingMappingError",
     "MissingRequiredEntriesError",
     "UnspecifiedEntryError",
-    "fail_if_invalid_repo_structure",
+    "assert_full_repository_structure",
+    "assert_path",
 ]
 
 __version__ = "0.1.0"

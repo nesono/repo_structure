@@ -35,6 +35,6 @@ jobs:
         with:
           coverageFile: coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run poetry main
+      - name: Run repo_structure full-scan with poetry
         run: |
-          poetry run python -m repo_structure --repo-root=. --config-path=repo_structure.yaml
+          poetry run python -m repo_structure full-scan --repo-root=. --config-path=repo_structure.yaml

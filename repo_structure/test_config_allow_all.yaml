@@ -9,3 +9,5 @@ structure_rules:
 directory_map:
   /:
     - use_rule: allow_all
+  /repo_structure/:
+    - use_rule: allow_all
