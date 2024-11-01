@@ -82,18 +82,32 @@ def _get_matching_item_index(
 def _fail_if_required_entries_missing(
     entry_backlog: StructureRuleList,
 ) -> None:
+
+    def _report_missing_entries(
+        missing_files: List[str], missing_dirs: List[str]
+    ) -> str:
+        result = "Matching entries for required patterns missing:\n"
+        if missing_files:
+            result += "Files:\n"
+            result += "".join(f"  - '{file}'\n" for file in missing_files)
+        if missing_dirs:
+            result += "Directories:\n"
+            result += "".join(f"  - '{dir}'\n" for dir in missing_dirs)
+        return result
+
     missing_required: StructureRuleList = []
     for entry in entry_backlog:
         if entry.is_required and entry.count == 0:
             missing_required.append(entry)
 
     if missing_required:
-        missing_required_files = [f.path for f in missing_required if not f.is_dir]
-        missing_required_dirs = [d.path for d in missing_required if d.is_dir]
+        missing_required_files = [
+            f.path.pattern for f in missing_required if not f.is_dir
+        ]
+        missing_required_dirs = [d.path.pattern for d in missing_required if d.is_dir]
 
         raise MissingRequiredEntriesError(
-            f"Required entries missing:\nFiles: "
-            f"{missing_required_files}\nDirs: {missing_required_dirs}"
+            _report_missing_entries(missing_required_files, missing_required_dirs)
         )
 
 
