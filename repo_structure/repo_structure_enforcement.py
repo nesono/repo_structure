@@ -7,6 +7,7 @@ import re
 from os import DirEntry
 from dataclasses import dataclass, replace
 
+from concurrent.futures import ProcessPoolExecutor
 from typing import List, Callable, Optional, Union, Iterator, Tuple
 from gitignore_parser import parse_gitignore
 
@@ -146,6 +147,7 @@ def _handle_if_exists(
     backlog: StructureRuleList, backlog_entry: RepoEntry, rel_path: str, flags: Flags
 ):
     if backlog_entry.if_exists:
+        # TODO(nesono): move this to parsing instead
         if not backlog_entry.is_dir:
             raise EntryTypeMismatchError(
                 f"'if_exists' only allowed with files, but found with {backlog_entry.path.pattern}"
@@ -241,6 +243,23 @@ def _map_dir_to_entry_backlog(
     return _build_active_entry_backlog(use_rules, map_dir, config)
 
 
+def _process_map_dir(
+    map_dir: str, repo_root: str, config: Configuration, flags: Optional[Flags]
+):
+    """Process a single map directory entry."""
+    rel_dir = map_dir_to_rel_dir(map_dir)
+    backlog = _map_dir_to_entry_backlog(config, rel_dir)
+
+    _fail_if_invalid_repo_structure_recursive(
+        repo_root,
+        rel_dir,
+        config,
+        backlog,
+        flags or Flags(),
+    )
+    _fail_if_required_entries_missing(backlog)
+
+
 def assert_full_repository_structure(
     repo_root: str,
     config: Configuration,
@@ -252,18 +271,15 @@ def assert_full_repository_structure(
     if "/" not in config.directory_map:
         raise MissingMappingError("Config does not have a root mapping")
 
-    for map_dir in config.directory_map:
-        rel_dir = map_dir_to_rel_dir(map_dir)
-        backlog = _map_dir_to_entry_backlog(config, rel_dir)
+    with ProcessPoolExecutor() as executor:
+        futures = [
+            executor.submit(_process_map_dir, map_dir, repo_root, config, flags)
+            for map_dir in config.directory_map
+        ]
 
-        _fail_if_invalid_repo_structure_recursive(
-            repo_root,
-            rel_dir,
-            config,
-            backlog,
-            flags or Flags(),
-        )
-        _fail_if_required_entries_missing(backlog)
+        # Wait for all tasks to complete
+        for future in futures:
+            future.result()
 
 
 def _incremental_path_split(path_to_split: str) -> Iterator[Tuple[str, bool]]:
