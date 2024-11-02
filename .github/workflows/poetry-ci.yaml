@@ -26,6 +26,9 @@ jobs:
         uses: abatilo/actions-poetry@v2
         with:
           poetry-version: ${{ matrix.poetry-version }}
+      - name: Run repo_structure full-scan with poetry
+        run: |
+          poetry run python -m repo_structure full-scan --repo-root=. --config-path=repo_structure.yaml
       - name: Run poetry pytest
         run: |
           poetry install
@@ -35,6 +38,3 @@ jobs:
         with:
           coverageFile: coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run repo_structure full-scan with poetry
-        run: |
-          poetry run python -m repo_structure full-scan --repo-root=. --config-path=repo_structure.yaml

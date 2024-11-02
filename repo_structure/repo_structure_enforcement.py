@@ -147,6 +147,7 @@ def _handle_if_exists(
     backlog: StructureRuleList, backlog_entry: RepoEntry, rel_path: str, flags: Flags
 ):
     if backlog_entry.if_exists:
+        # TODO(nesono): move this to parsing instead
         if not backlog_entry.is_dir:
             raise EntryTypeMismatchError(
                 f"'if_exists' only allowed with files, but found with {backlog_entry.path.pattern}"
