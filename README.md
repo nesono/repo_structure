@@ -166,7 +166,8 @@ templates:
 directory_map:
   /:
     - use_template: example_template
-      component: ["lidar", "driver"]
+      parameters:
+        component: ["lidar", "driver"]
 ```
 
 During parsing, the template parameter `component` will be expanded to what
@@ -198,12 +199,14 @@ templates:
 directory_map:
   /:
     - use_template: example_template
-      component: ["lidar", "driver"]
-      extension: ["rs"]
+      parameters:
+        component: ["lidar", "driver"]
+        extension: ["rs"]
   /subdir/:
     - use_template: example_template
-      component: ["control", "camera"]
-      extension: ["py"]
+      parameters:
+        component: ["control", "camera"]
+        extension: ["py"]
 ```
 
 Here, the suffixes will be reused for both component extensions.
