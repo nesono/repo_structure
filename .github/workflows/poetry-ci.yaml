@@ -26,12 +26,14 @@ jobs:
         uses: abatilo/actions-poetry@v2
         with:
           poetry-version: ${{ matrix.poetry-version }}
+      - name: Run poetry install
+        run: |
+          poetry install
       - name: Run repo_structure full-scan with poetry
         run: |
           poetry run python -m repo_structure full-scan --repo-root=. --config-path=repo_structure.yaml
       - name: Run poetry pytest
         run: |
-          poetry install
           poetry run pytest --cov --cov-report xml:coverage.xml
       - name: Get Coverage
         uses: orgoro/coverage@v3.2
