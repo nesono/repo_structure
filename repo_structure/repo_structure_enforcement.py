@@ -65,11 +65,9 @@ def _get_matching_item_index(
 ) -> List[int]:
     result: List[int] = []
     for i, v in enumerate(backlog):
-        if verbose:
-            print(f"  Matching against {v.path}")
         if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
             if verbose:
-                print(f"  Found match at index {i}")
+                print(f"  Found match at index {i}: {v.path.pattern}")
             result.append(i)
     if len(result) != 0:
         return result
@@ -148,6 +146,10 @@ def _handle_if_exists(
     backlog: StructureRuleList, backlog_entry: RepoEntry, rel_path: str, flags: Flags
 ):
     if backlog_entry.if_exists:
+        if not backlog_entry.is_dir:
+            raise EntryTypeMismatchError(
+                f"'if_exists' only allowed with files, but found with {backlog_entry.path.pattern}"
+            )
         if flags.verbose:
             print(f"if_exists found for rel path {backlog_entry.path.pattern}")
         for e in backlog_entry.if_exists:
@@ -214,8 +216,6 @@ def _fail_if_invalid_repo_structure_recursive(
         ):
             backlog_entry = backlog[idx]
             backlog_entry.count += 1
-            if flags.verbose:
-                print(f"  Registered usage for path {entry.path}")
 
             if os_entry.is_dir():
                 _handle_use_rule(
@@ -302,16 +302,13 @@ def _assert_path_in_backlog(
             flags.verbose,
         ):
             if flags.verbose:
-                print(f"  Found match path {sub_path}")
+                print(f"  Found match for path {sub_path}")
 
             if is_dir:
                 _handle_use_rule(
                     backlog, backlog[idx].use_rule, config, flags, sub_path
                 )
                 _handle_if_exists(backlog, backlog[idx], sub_path, flags)
-
-            if flags.verbose:
-                print(f"Found entry in backlog with index {idx}")
 
 
 def assert_path(
