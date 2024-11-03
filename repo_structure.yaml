@@ -1,11 +1,13 @@
 structure_rules:
   base_structure:
     - p: ".github/"
-    - p: ".github/workflows/"
-    - p: '.github/dependabot\.yml'
+      if_exists:
+        - p: 'dependabot\.yml'
+        - p: "workflows/"
+          if_exists:
+            - p: '[^/]*\.y(a)?ml'
     - p: "environment.yml"
     - p: "requirements.txt"
-    - p: '.github/workflows/[^/]*\.y(a)?ml'
     - p: "LICENSE"
     - p: 'README\.md'
     - p: 'conflicting_test_config\.yaml'
