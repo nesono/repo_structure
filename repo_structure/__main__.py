@@ -63,16 +63,18 @@ def repo_structure(
 @click.option(
     "--repo-root",
     "-r",
-    required=True,
     type=click.Path(exists=True),
     help="The path to the repository root.",
+    default=".",
+    show_default=True,
 )
 @click.option(
     "--config-path",
     "-c",
-    required=True,
     type=click.Path(exists=True),
     help="The path to the configuration file.",
+    default="repo_structure.yaml",
+    show_default=True,
 )
 @click.pass_context
 def full_scan(ctx: click.Context, repo_root: str, config_path: str) -> None:
@@ -134,9 +136,10 @@ def full_scan(ctx: click.Context, repo_root: str, config_path: str) -> None:
 @click.option(
     "--config-path",
     "-c",
-    required=True,
     type=click.Path(exists=True),
     help="The path to the configuration file.",
+    default="repo_structure.yaml",
+    show_default=True,
 )
 @click.argument(
     "paths",
