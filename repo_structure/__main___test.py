@@ -11,6 +11,8 @@ def test_main_full_scan_success():
         repo_structure,
         [
             "--verbose",
+            "--jobs",
+            "0",
             "full-scan",
             "-r",
             ".",
@@ -27,7 +29,15 @@ def test_main_full_scan_fail_bad_config():
     runner = CliRunner()
     result = runner.invoke(
         repo_structure,
-        ["full-scan", "-r", ".", "-c", "repo_structure/test_config_bad_config.yaml"],
+        [
+            "--jobs",
+            "1",
+            "full-scan",
+            "-r",
+            ".",
+            "-c",
+            "repo_structure/test_config_bad_config.yaml",
+        ],
     )
 
     assert result.exit_code != 0
