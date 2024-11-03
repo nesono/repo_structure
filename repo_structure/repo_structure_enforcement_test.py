@@ -4,7 +4,7 @@
 import os
 import shutil
 import tempfile
-from typing import Optional, Callable, TypeVar
+from typing import Callable, TypeVar
 
 import pytest
 
@@ -93,7 +93,7 @@ def with_repo_structure_in_tmpdir(specification: str):
 
 def _assert_repo_directory_structure(
     config: Configuration,
-    flags: Optional[Flags] = Flags(),
+    flags: Flags = Flags(),
 ) -> None:
     assert_full_repository_structure(".", config, flags)
 
