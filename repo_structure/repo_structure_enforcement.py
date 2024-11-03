@@ -268,7 +268,7 @@ def assert_full_repository_structure(
     if "/" not in config.directory_map:
         raise MissingMappingError("Config does not have a root mapping")
 
-    if flags and flags.jobs == 0:
+    if flags.jobs == 0:
         flags.jobs = cpu_count()
 
     if flags.jobs > 1:

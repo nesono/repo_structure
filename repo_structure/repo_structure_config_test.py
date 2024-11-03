@@ -169,10 +169,10 @@ structure_rules:
       required: False
       use_rule: documentation
       if_exists:
-      - p: "[^/]*/"
+      - p: ".*/"
         required: False
         if_exists:
-        - p: "[^/]*"
+        - p: ".*"
           required: False
 directory_map:
   /:
