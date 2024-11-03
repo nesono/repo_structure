@@ -13,7 +13,35 @@
           "use_rule": { "type": "string" }
         },
         "additionalProperties": false,
-        "required": ["p"]
+        "required": ["p"],
+        "oneOf": [
+          {
+            "properties": {
+              "p": {
+                "pattern": "/$"
+              }
+            },
+            "anyOf": [
+              { "required": ["if_exists"] },
+              { "required": ["use_rule"] }
+            ]
+          },
+          {
+            "properties": {
+              "p": {
+                "not": {
+                  "pattern": "/$"
+                }
+              }
+            },
+            "not": {
+              "oneOf": [
+                { "required": ["if_exists"] },
+                { "required": ["use_rule"] }
+              ]
+            }
+          }
+        ]
       }
     },
     "directory_map": {

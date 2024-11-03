@@ -1,9 +1,10 @@
 # pylint: disable=import-error
+# pylint: disable=too-many-lines
 """Tests for repo_structure library functions."""
 import os
 import shutil
 import tempfile
-from typing import Optional, Callable, TypeVar
+from typing import Callable, TypeVar
 
 import pytest
 
@@ -92,7 +93,7 @@ def with_repo_structure_in_tmpdir(specification: str):
 
 def _assert_repo_directory_structure(
     config: Configuration,
-    flags: Optional[Flags] = Flags(),
+    flags: Flags = Flags(),
 ) -> None:
     assert_full_repository_structure(".", config, flags)
 
@@ -139,7 +140,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
     - p: 'python/'
-    - p: 'python/[^/]*'
+      if_exists:
+      - p: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -157,13 +159,14 @@ unspecified/
 """
 )
 def test_unspecified_dir():
-    """Test with required directory."""
+    """Test with unspecified directory in directory, where only files are allowed."""
     config_yaml = r"""
 structure_rules:
   base_structure:
     - p: "README.md"
     - p: "python/"
-    - p: 'python/[^/]*'
+      if_exists:
+      - p: '.*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -226,7 +229,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
     - p: 'python/'
-    - p: 'python/[^/]*'
+      if_exists:
+      - p: '.*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -249,7 +253,7 @@ structure_rules:
   base_structure:
       - p: 'README\.md'
   python_package:
-      - p: '[^/]*\.py'
+      - p: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -293,8 +297,11 @@ def test_conflicting_file_and_dir_names():
     config_yaml = r"""
 structure_rules:
   base_structure:
-      - p: '[^/]*name[^/]*'
-      - p: '[^/]*name[^/]*/'
+      - p: '.*name.*'
+      - p: '.*name.*/'
+        if_exists:
+        - p: '.*'
+          required: False
 directory_map:
   /:
     - use_rule: base_structure
@@ -313,7 +320,7 @@ def test_conflicting_dir_name():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: '[^/]*name[^/]*'
+    - p: '.*name.*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -333,7 +340,10 @@ def test_conflicting_file_name():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: '[^/]*name[^/]*/'
+    - p: '.*name.*/'
+      if_exists:
+      - p: '.*'
+      required: False
 directory_map:
   /:
     - use_rule: base_structure
@@ -353,7 +363,7 @@ def test_filename_with_bad_substring_match():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: '[^/]*name'
+    - p: '.*name'
 directory_map:
   /:
     - use_rule: base_structure
@@ -374,7 +384,7 @@ def test_succeed_overlapping_required_file_rules():
 structure_rules:
   base_structure:
     - p: 'README\.md'
-    - p: 'README\.[^/]*'
+    - p: 'README\..*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -471,8 +481,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
   cpp_source:
-    - p: '[^/]*\.cpp'
-    - p: '[^/]*/'
+    - p: '.*\.cpp'
+    - p: '.*/'
       required: False
       use_rule: cpp_source
 directory_map:
@@ -499,8 +509,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
   python_package:
-    - p: '[^/]*\.py'
-    - p: '[^/]*/'
+    - p: '.*\.py'
+    - p: '.*/'
       required: False
       use_rule: python_package
 directory_map:
@@ -528,8 +538,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
   python_package:
-    - p: '[^/]*\.py'
-    - p: '[^/]*'
+    - p: '.*\.py'
+    - p: '.*/'
       required: False
       use_rule: python_package
 directory_map:
@@ -563,11 +573,9 @@ def test_succeed_elaborate_use_rule_recursive():
 structure_rules:
   base_structure:
     - p: 'README\.md'
-    - p: app/
-      required: False
   python_package:
-    - p: '[^/]*\.py'
-    - p: '[^/]*/'
+    - p: '.*\.py'
+    - p: '.*/'
       required: False
       use_rule: python_package
 directory_map:
@@ -738,9 +746,11 @@ def test_succeed_template_rule():
 templates:
   component:
     - p: '{{component}}/'
-    - p: '{{component}}/{{component}}_component.py'
-    - p: '{{component}}/doc/'
-    - p: '{{component}}/doc/{{component}}.techspec.md'
+      if_exists:
+      - p: '{{component}}_component.py'
+      - p: 'doc/'
+        if_exists:
+        - p: '{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component
@@ -768,9 +778,11 @@ def test_fail_template_rule_missing_file():
 templates:
   component:
     - p: '{{component}}/'
-    - p: '{{component}}/{{component}}_component.py'
-    - p: '{{component}}/doc/'
-    - p: '{{component}}/doc/{{component}}.techspec.md'
+      if_exists:
+      - p: '{{component}}_component.py'
+      - p: 'doc/'
+        if_exists:
+        - p: '{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component
@@ -799,11 +811,12 @@ def test_succeed_template_rule_if_exists():
 templates:
   component:
     - p: '{{component}}/'
-    - p: '{{component}}/{{component}}_component.py'
-    - p: '{{component}}/doc/'
-      required: False
       if_exists:
-        - p: '{{component}}.techspec.md'
+      - p: '{{component}}_component.py'
+      - p: 'doc/'
+        required: False
+        if_exists:
+          - p: '{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component
@@ -840,9 +853,11 @@ def test_succeed_template_rule_subdirectory_map():
 templates:
   component:
     - p: '{{component}}/'
-    - p: '{{component}}/{{component}}_component.py'
-    - p: '{{component}}/doc/'
-    - p: '{{component}}/doc/{{component}}.techspec.md'
+      if_exists:
+      - p: '{{component}}_component.py'
+      - p: 'doc/'
+        if_exists:
+        - p: '{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component
@@ -882,9 +897,11 @@ def test_fail_template_rule_subdirectory_map_missing_file():
 templates:
   component:
     - p: '{{component}}/'
-    - p: '{{component}}/{{component}}_component.py'
-    - p: '{{component}}/doc/'
-    - p: '{{component}}/doc/{{component}}.techspec.md'
+      if_exists:
+      - p: '{{component}}_component.py'
+      - p: 'doc/'
+        if_exists:
+        - p: '{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component
@@ -926,9 +943,11 @@ def test_succeed_template_rule_multiple_expansions():
 templates:
   example_template:
     - p: '{{component}}/'
-    - p: '{{component}}/{{component}}_component.{{extension}}'
-    - p: '{{component}}/doc/'
-    - p: '{{component}}/doc/{{component}}.techspec.md'
+      if_exists:
+      - p: '{{component}}_component.{{extension}}'
+      - p: 'doc/'
+        if_exists:
+        - p: '{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: example_template
@@ -969,11 +988,12 @@ structure_rules:
 templates:
   component:
     - p: '{{component}}/'
-    - p: '{{component}}/{{component}}_component.py'
-    - p: '{{component}}/doc/'
-      required: False
       if_exists:
-        - p: '{{component}}.techspec.md'
+      - p: '{{component}}_component.py'
+      - p: 'doc/'
+        required: False
+        if_exists:
+          - p: '{{component}}.techspec.md'
 directory_map:
   /:
     - use_template: component

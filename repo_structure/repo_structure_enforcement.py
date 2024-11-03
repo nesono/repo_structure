@@ -8,6 +8,7 @@ from os import DirEntry
 from dataclasses import dataclass, replace
 
 from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import cpu_count
 from typing import List, Callable, Optional, Union, Iterator, Tuple
 from gitignore_parser import parse_gitignore
 
@@ -27,6 +28,7 @@ class Flags:
     follow_symlinks: bool = False
     include_hidden: bool = True
     verbose: bool = False
+    jobs: int = 1
 
 
 # Exception for missing mapping
@@ -147,11 +149,6 @@ def _handle_if_exists(
     backlog: StructureRuleList, backlog_entry: RepoEntry, rel_path: str, flags: Flags
 ):
     if backlog_entry.if_exists:
-        # TODO(nesono): move this to parsing instead
-        if not backlog_entry.is_dir:
-            raise EntryTypeMismatchError(
-                f"'if_exists' only allowed with files, but found with {backlog_entry.path.pattern}"
-            )
         if flags.verbose:
             print(f"if_exists found for rel path {backlog_entry.path.pattern}")
         for e in backlog_entry.if_exists:
@@ -263,7 +260,7 @@ def _process_map_dir(
 def assert_full_repository_structure(
     repo_root: str,
     config: Configuration,
-    flags: Optional[Flags] = Flags(),
+    flags: Flags = Flags(),
 ) -> None:
     """Fail if the repo structure directory is invalid given the configuration."""
     assert repo_root is not None
@@ -271,15 +268,22 @@ def assert_full_repository_structure(
     if "/" not in config.directory_map:
         raise MissingMappingError("Config does not have a root mapping")
 
-    with ProcessPoolExecutor() as executor:
-        futures = [
-            executor.submit(_process_map_dir, map_dir, repo_root, config, flags)
-            for map_dir in config.directory_map
-        ]
+    if flags.jobs == 0:
+        flags.jobs = cpu_count()
 
-        # Wait for all tasks to complete
-        for future in futures:
-            future.result()
+    if flags.jobs > 1:
+        with ProcessPoolExecutor() as executor:
+            futures = [
+                executor.submit(_process_map_dir, map_dir, repo_root, config, flags)
+                for map_dir in config.directory_map
+            ]
+
+            # Wait for all tasks to complete
+            for future in futures:
+                future.result()
+    else:
+        for map_dir in config.directory_map:
+            _process_map_dir(map_dir, repo_root, config, flags)
 
 
 def _incremental_path_split(path_to_split: str) -> Iterator[Tuple[str, bool]]:

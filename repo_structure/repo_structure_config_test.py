@@ -18,7 +18,7 @@ def test_successful_parse():
     test_yaml = r"""
 structure_rules:
   basic_rule:
-    - p: 'README.md'
+    - p: 'README\.md'
       required: True
     - p: '[^/]*\.md'
       required: False
@@ -28,8 +28,10 @@ structure_rules:
         - p: 'CODEOWNERS'
   recursive_rule:
     - p: '[^/]*\.py'
-    - p: 'package/[^/]*'
-      use_rule: recursive_rule
+    - p: 'package/'
+      if_exists:
+      - p: '[^/]*/'
+        use_rule: recursive_rule
 templates:
   software_component:
     - p: '{{component_name}}_component.cpp'
@@ -41,8 +43,9 @@ templates:
     - p: 'BUILD'
     - p: 'README.md'
     - p: 'doc/'
-    - p: 'doc/{{component_name}}.swreq.md'
-    - p: 'doc/{{component_name}}.techspec.md'
+      if_exists:
+      - p: '{{component_name}}.swreq.md'
+      - p: '{{component_name}}.techspec.md'
     - p: '[^/]*\_test.cpp'
       required: False
     - p: 'tests/[^/]*_test.cpp'
@@ -165,10 +168,12 @@ structure_rules:
     - p: "docs/"
       required: False
       use_rule: documentation
-    - p: "docs/[^/]*/"
-      required: False
-    - p: "docs/[^/]/[^/]*"
-      required: False
+      if_exists:
+      - p: ".*/"
+        required: False
+        if_exists:
+        - p: ".*"
+          required: False
 directory_map:
   /:
     - use_rule: package

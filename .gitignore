@@ -1,7 +1,7 @@
 *.lock
 *.py[cod]
 /.conda_env/
-/.coverage
+/.coverage*
 /.idea/
 /.mypy_cache/
 /.pytest_cache/

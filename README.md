@@ -28,7 +28,7 @@ A basic consumption looks like the following.
 ```yaml
 repos:
   - repo: https://github.com/nesono/repo_structure
-    rev: "v0.1.0"
+    rev: "v0.3.0"
     hooks:
       - id: repo-structure-diff-scan
 ```
@@ -42,7 +42,7 @@ to the yaml, for instance:
 ```yaml
 repos:
   - repo: https://github.com/nesono/repo_structure
-    rev: "v0.1.0"
+    rev: "v0.3.0"
     hooks:
       - id: repo-structure-diff-scan
         args: ["--config-path", "path/to/your_config_file.yaml"]
@@ -96,7 +96,7 @@ structure_rules:
     - p: "BUILD"
       required: True
     - p: 'main\.py'
-    - p: '[^/]*\.py'
+    - p: '.*\.py'
       required: False
 ```
 
@@ -118,13 +118,13 @@ structure_rules:
   example_rule_with_directory:
     - p: "LICENSE"
     - p: "BUILD"
-      required: True
-    - p: "main.py"
+      required: True     # required 'True' is default
+    - p: "main\.py"
     - p: "library/"
       required: False
       if_exists:
         - p: 'lib\.py'
-        - p: '[^/]*\.py'
+        - p: '.*\.py'
           required: False
 ```
 
@@ -140,8 +140,8 @@ key 'use_rule', for example:
 ```yaml
 structure_rules:
   example_rule_with_recursion:
-    - p: "main.py"
-    - p: '[^/]*\.py'
+    - p: "main\.py"
+    - p: '.*\.py'
       required: False
     - p: "library/"
       use_rule: example_rule_with_recursion
@@ -160,9 +160,11 @@ The following example shows a simple template specification
 templates:
   example_template:
     - p: "{{component}}/"
-    - p: "{{component}}/{{component}}_component.py"
-    - p: "{{component}}/doc/"
-    - p: "{{component}}/doc/{{component}}.techspec.md"
+      if_exists:
+        - p: "{{component}}_component.py"
+        - p: "doc/"
+          if_exists:
+            - p: "{{component}}.techspec.md"
 directory_map:
   /:
     - use_template: example_template
@@ -193,9 +195,11 @@ will permutate through the expansion lists. For example:
 templates:
   example_template:
     - p: "{{component}}/"
-    - p: "{{component}}/{{component}}_component.{{extension}}"
-    - p: "{{component}}/doc/"
-    - p: "{{component}}/doc/{{component}}.techspec.md"
+      if_exists:
+        - p: "{{component}}_component.{{extension}}"
+        - p: "doc/"
+          if_exists:
+            - p: "{{component}}.techspec.md"
 directory_map:
   /:
     - use_template: example_template
@@ -232,13 +236,13 @@ structure_rules:
     - p: "BUILD"
   python_main:
     - p: 'main\.py'
-    - p: '[^/]*\.py'
+    - p: '.*\.py'
       required: False
   python_library:
     - p: 'lib\.py'
-    - p: '[^/]*\.py'
+    - p: '.*\.py'
       required: False
-    - p: "[^/]*/"
+    - p: ".*/"
       required: False
       # allow library recursion
       use_rule: python_library
@@ -252,8 +256,9 @@ directory_map:
 
 ## System Requirements
 
-- Python 3.11 or 3.12
+- Tested with Python versions ["3.8", "3.9", "3.10", "3.11"]
 - [Pip requirements](requirements.txt)
+- Does not work on Windows
 
 ## Building from Source
 
