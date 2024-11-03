@@ -5,7 +5,7 @@ structure_rules:
         - p: 'dependabot\.yml'
         - p: "workflows/"
           if_exists:
-            - p: '[^/]*\.y(a)?ml'
+            - p: '.*\.y(a)?ml'
     - p: "environment.yml"
     - p: "requirements.txt"
     - p: "LICENSE"
@@ -19,7 +19,7 @@ structure_rules:
   python_package:
     - p: '__main__\.py'
     - p: '__init__\.py'
-    - p: '[^/]*\.py'
+    - p: '.*\.py'
     - p: 'config\.schema\.json'
     - p: 'test_config_.*\.yaml'
   test_dir:

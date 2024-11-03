@@ -1,8 +1,8 @@
 structure_rules:
   allow_all:
-    - p: "[^/]*"
+    - p: ".*"
       required: False
-    - p: "[^/]*/"
+    - p: ".*/"
       required: False
       use_rule: allow_all
 
