@@ -8,34 +8,102 @@
         "type": "object",
         "properties": {
           "p": { "type": "string" },
+          "require": { "type": "string" },
+          "allow": { "type": "string" },
+          "forbid": { "type": "string" },
           "required": { "type": "boolean" },
           "if_exists": { "$ref": "#/$defs/directory_entries" },
           "use_rule": { "type": "string" }
         },
         "additionalProperties": false,
-        "required": ["p"],
+        "anyOf": [
+          { "required": ["p"] },
+          { "required": ["require"] },
+          { "required": ["allow"] },
+          { "required": ["forbid"] }
+        ],
         "oneOf": [
           {
-            "properties": {
-              "p": {
-                "pattern": "/$"
-              }
-            },
             "anyOf": [
-              { "required": ["if_exists"] },
-              { "required": ["use_rule"] }
+              {
+                "properties": {
+                  "p": {
+                    "pattern": "/$"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "require": {
+                    "pattern": "/$"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "allow": {
+                    "pattern": "/$"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "forbid": {
+                    "pattern": "/$"
+                  }
+                }
+              }
+            ],
+            "oneOf": [
+              {
+                "required": ["if_exists"]
+              },
+              {
+                "required": ["use_rule"]
+              }
             ]
           },
           {
-            "properties": {
-              "p": {
-                "not": {
-                  "pattern": "/$"
+            "anyOf": [
+              {
+                "properties": {
+                  "p": {
+                    "not": {
+                      "pattern": "/$"
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "require": {
+                    "not": {
+                      "pattern": "/$"
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "allow": {
+                    "not": {
+                      "pattern": "/$"
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "forbid": {
+                    "not": {
+                      "pattern": "/$"
+                    }
+                  }
                 }
               }
-            },
+            ],
             "not": {
-              "oneOf": [
+              "anyOf": [
                 { "required": ["if_exists"] },
                 { "required": ["use_rule"] }
               ]
