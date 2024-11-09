@@ -169,10 +169,10 @@ structure_rules:
       required: False
       use_rule: documentation
       if_exists:
-      - p: ".*/"
+      - p: "[^/]*?/"
         required: False
         if_exists:
-        - p: ".*"
+        - p: "[^/]*?"
           required: False
 directory_map:
   /:
@@ -188,7 +188,7 @@ def test_fail_parse_bad_key_in_structure_rule():
 structure_rules:
   bad_key_rule:
     - p: "README.md"
-      bad_key: '.*\.py'
+      bad_key: '[^/]*?\.py'
 directory_map:
   /:
     - use_rule: bad_key_rule
@@ -233,7 +233,7 @@ structure_rules:
     license_rule:
         - p: 'LICENSE'
     bad_use_rule:
-        - p: '.*/'
+        - p: '[^/]*?/'
           required: False
           use_rule: license_rule
 directory_map:
