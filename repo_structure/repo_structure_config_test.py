@@ -18,38 +18,33 @@ def test_successful_parse():
     test_yaml = r"""
 structure_rules:
   basic_rule:
-    - p: 'README\.md'
-      required: True
-    - p: '[^/]*\.md'
-      required: False
-    - p: '.github/'
-      required: False
+    - require: 'README\.md'
+    - allow: '[^/]*\.md'
+    - forbid: 'CMakeLists\.txt'
+    - allow: '.github/'
       if_exists:
         - p: 'CODEOWNERS'
   recursive_rule:
-    - p: '[^/]*\.py'
-    - p: 'package/'
+    - require: '[^/]*\.py'
+    - require: 'package/'
       if_exists:
       - p: '[^/]*/'
         use_rule: recursive_rule
 templates:
   software_component:
-    - p: '{{component_name}}_component.cpp'
-    - p: '{{component_name}}_component.h'
-    - p: '{{component_name}}_config.h'
-      required: False
-    - p: '{{component_name}}_factory.cpp'
-    - p: '{{component_name}}_factory.h'
-    - p: 'BUILD'
-    - p: 'README.md'
-    - p: 'doc/'
+    - require: '{{component_name}}_component.cpp'
+    - require: '{{component_name}}_component.h'
+    - allow: '{{component_name}}_config.h'
+    - require: '{{component_name}}_factory.cpp'
+    - require: '{{component_name}}_factory.h'
+    - require: 'BUILD'
+    - require: 'README.md'
+    - require: 'doc/'
       if_exists:
       - p: '{{component_name}}.swreq.md'
       - p: '{{component_name}}.techspec.md'
-    - p: '[^/]*\_test.cpp'
-      required: False
-    - p: 'tests/[^/]*_test.cpp'
-      required: False
+    - allow: '[^/]*\_test.cpp'
+    - allow: 'tests/[^/]*_test.cpp'
 directory_map:
   /:
     - use_rule: basic_rule
@@ -178,7 +173,7 @@ directory_map:
   /:
     - use_rule: package
 """
-    with pytest.raises(UseRuleError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(test_config, True)
 
 

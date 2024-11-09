@@ -34,6 +34,7 @@ class RepoEntry:
     path: re.Pattern
     is_dir: bool
     is_required: bool
+    is_forbidden: bool
     use_rule: str = ""
     if_exists: List["RepoEntry"] = field(default_factory=list)
     count: int = 0
@@ -219,25 +220,54 @@ def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
     return rules
 
 
-def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
+def _get_pattern(entry: dict) -> str:
+    if "p" in entry:
+        return entry["p"]
+    if "require" in entry:
+        return entry["require"]
+    if "allow" in entry:
+        return entry["allow"]
+    if "forbid" in entry:
+        return entry["forbid"]
+    return ""
 
+
+def _get_is_required(entry: dict) -> bool:
+    if "required" in entry:
+        return entry["required"]
+    if "require" in entry:
+        return True
+    if "allow" in entry:
+        return False
+    if "forbid" in entry:
+        return False
+    return True
+
+
+def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     if_exists = []
-    file = entry["p"]
+    entry_pattern = _get_pattern(entry)
+
+    is_required = _get_is_required(entry)
+
     if "if_exists" in entry:
         if_exists = entry["if_exists"]
 
-    is_dir = file.endswith("/")
-    file = file[0:-1] if is_dir else file
+    is_dir = entry_pattern.endswith("/")
+    entry_pattern = entry_pattern[0:-1] if is_dir else entry_pattern
 
     try:
-        compiled_file = re.compile(file)
+        compiled_pattern = re.compile(entry_pattern)
     except re.error as e:
-        raise StructureRuleError(f"Bad pattern {file}, failed to compile: {e}") from e
+        raise StructureRuleError(
+            f"Bad pattern {entry_pattern}, failed to compile: {e}"
+        ) from e
 
     result = RepoEntry(
-        path=compiled_file,
+        path=compiled_pattern,
         is_dir=is_dir,
-        is_required=entry["required"] if "required" in entry else True,
+        is_required=is_required,
+        is_forbidden="forbid" in entry,
         use_rule=entry["use_rule"] if "use_rule" in entry else "",
     )
     for sub_entry in if_exists:
@@ -246,12 +276,25 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     return result
 
 
+def _get_pattern_key(entry: dict) -> str:
+    if "p" in entry:
+        return "p"
+    if "require" in entry:
+        return "require"
+    if "allow" in entry:
+        return "allow"
+    if "forbid" in entry:
+        return "forbid"
+    return ""
+
+
 def _expand_template_entry(
     template_yaml: List[dict], expansion_key: str, expansion_var: str
 ) -> List[dict]:
 
     def _expand_entry(entry: dict, expansion_key: str, expansion_var: str):
-        entry["p"] = entry["p"].replace(f"{{{{{expansion_key}}}}}", expansion_var)
+        k = _get_pattern_key(entry)
+        entry[k] = entry[k].replace(f"{{{{{expansion_key}}}}}", expansion_var)
         return entry
 
     expanded_yaml: List[dict] = []
