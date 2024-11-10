@@ -348,7 +348,7 @@ def _assert_path_in_backlog(
 def assert_path(
     config: Configuration,
     path: str,
-    flags: Flags,
+    flags: Flags = Flags(),
 ) -> None:
     """Fail if the given path is invalid according to the configuration.
 

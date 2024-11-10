@@ -14,6 +14,7 @@ from .repo_structure_enforcement import (
     MissingRequiredEntriesError,
     UnspecifiedEntryError,
     assert_full_repository_structure,
+    assert_path,
     Flags,
 )
 
@@ -247,7 +248,7 @@ main.py
 """
 )
 def test_multi_use_rule():
-    """Test missing required file."""
+    """Test using multiple rules."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -1005,3 +1006,96 @@ directory_map:
     flags.verbose = True
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config, flags)
+
+
+def test_matching_regex_diff_scan():
+    """Test with required file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - require: 'README\.md'
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    assert_path(config, "README.md")
+    with pytest.raises(UnspecifiedEntryError):
+        assert_path(config, "bad_filename.md")
+
+
+def test_matching_regex_dir_diff_scan():
+    """Test with required file."""
+    config_yaml = r"""
+structure_rules:
+  recursive_rule:
+    - require: 'main\.py'
+    - require: 'python/'
+      use_rule: recursive_rule
+directory_map:
+  /:
+    - use_rule: recursive_rule
+    """
+    config = Configuration(config_yaml, True)
+    assert_path(config, "python/main.py")
+    with pytest.raises(UnspecifiedEntryError):
+        assert_path(config, "python/bad_filename.py")
+
+
+def test_multi_use_rule_diff_scan():
+    """Test multiple use rules."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+      - p: 'README\.md'
+  python_package:
+      - p: '[^/]*?\.py'
+directory_map:
+  /:
+    - use_rule: base_structure
+    - use_rule: python_package
+    """
+    config = Configuration(config_yaml, True)
+    assert_path(config, "README.md")
+    assert_path(config, "main.py")
+
+
+def test_multi_use_rule_diff_scan_fail():
+    """Test multi use rule diff scan fail."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+      - p: 'README\.md'
+  python_package:
+      - p: '[^/]*?\.py'
+directory_map:
+  /:
+    - use_rule: base_structure
+    - use_rule: python_package
+    """
+    config = Configuration(config_yaml, True)
+    assert_path(config, "README.md")
+    with pytest.raises(UnspecifiedEntryError):
+        assert_path(config, "main.cpp")  # bad file name
+
+
+def test_use_rule_recursive_diff_scan():
+    """Test self-recursion from a use rule."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - p: 'README\.md'
+  cpp_source:
+    - p: '[^/]*?\.cpp'
+    - p: '[^/]*?/'
+      required: False
+      use_rule: cpp_source
+directory_map:
+  /:
+    - use_rule: base_structure
+    - use_rule: cpp_source
+    """
+    config = Configuration(config_yaml, True)
+    assert_path(config, "main/main.cpp")
+    with pytest.raises(UnspecifiedEntryError):
+        assert_path(config, "main/main.rs")
