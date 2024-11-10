@@ -49,14 +49,12 @@ class EntryTypeMismatchError(Exception):
 
 
 def _build_active_entry_backlog(
-    active_use_rules: List[str], rel_dir: str, config: Configuration
+    active_use_rules: List[str], config: Configuration
 ) -> StructureRuleList:
     result: StructureRuleList = []
     for rule in active_use_rules:
         for e in config.structure_rules[rule]:
-            result.append(
-                replace(e, path=re.compile(os.path.join(rel_dir, e.path.pattern)))
-            )
+            result.append(replace(e, path=re.compile(e.path.pattern)))
     return result
 
 
@@ -117,13 +115,18 @@ class Entry:
     """Internal representation of a directory entry."""
 
     path: str
+    rel_dir: str
     is_dir: bool
     is_symlink: bool
 
 
 def _to_entry(os_entry: DirEntry[str], rel_dir: str) -> Entry:
-    rel_path = os.path.join(rel_dir, os_entry.name)
-    return Entry(rel_path, os_entry.is_dir(), os_entry.is_symlink())
+    return Entry(
+        path=os_entry.name,
+        rel_dir=rel_dir,
+        is_dir=os_entry.is_dir(),
+        is_symlink=os_entry.is_symlink(),
+    )
 
 
 def _handle_use_rule(
@@ -139,22 +142,19 @@ def _handle_use_rule(
         backlog.extend(
             _build_active_entry_backlog(
                 [use_rule],
-                rel_path,
                 config,
             )
         )
 
 
 def _handle_if_exists(
-    backlog: StructureRuleList, backlog_entry: RepoEntry, rel_path: str, flags: Flags
+    backlog: StructureRuleList, backlog_entry: RepoEntry, flags: Flags
 ):
     if backlog_entry.if_exists:
         if flags.verbose:
             print(f"if_exists found for rel path {backlog_entry.path.pattern}")
         for e in backlog_entry.if_exists:
-            backlog.append(
-                replace(e, path=re.compile(os.path.join(rel_path, e.path.pattern)))
-            )
+            backlog.append(replace(e, path=re.compile(e.path.pattern)))
 
 
 def _skip_entry(
@@ -169,7 +169,11 @@ def _skip_entry(
         (entry.path == ".gitignore" and not entry.is_dir),
         (entry.path == ".git" and entry.is_dir),
         (git_ignore and git_ignore(entry.path)),
-        (entry.is_dir and rel_dir_to_map_dir(entry.path) in config.directory_map),
+        (
+            entry.is_dir
+            and rel_dir_to_map_dir(os.path.join(entry.rel_dir, entry.path))
+            in config.directory_map
+        ),
         (entry.path == config.configuration_file_name),
     ]
 
@@ -217,14 +221,20 @@ def _fail_if_invalid_repo_structure_recursive(
             backlog_entry.count += 1
 
             if os_entry.is_dir():
+                new_backlog: StructureRuleList = []
                 _handle_use_rule(
-                    backlog, backlog_entry.use_rule, config, flags, entry.path
+                    new_backlog, backlog_entry.use_rule, config, flags, entry.path
                 )
-                _handle_if_exists(backlog, backlog_entry, entry.path, flags)
+                _handle_if_exists(new_backlog, backlog_entry, flags)
 
                 _fail_if_invalid_repo_structure_recursive(
-                    repo_root, entry.path, config, backlog, flags
+                    repo_root,
+                    os.path.join(rel_dir, entry.path),
+                    config,
+                    new_backlog,
+                    flags,
                 )
+                _fail_if_required_entries_missing(new_backlog)
 
 
 def _map_dir_to_entry_backlog(
@@ -237,7 +247,7 @@ def _map_dir_to_entry_backlog(
         return c.directory_map[d]
 
     use_rules = _get_use_rules_for_directory(config, map_dir)
-    return _build_active_entry_backlog(use_rules, map_dir, config)
+    return _build_active_entry_backlog(use_rules, config)
 
 
 def _process_map_dir(
@@ -286,7 +296,7 @@ def assert_full_repository_structure(
             _process_map_dir(map_dir, repo_root, config, flags)
 
 
-def _incremental_path_split(path_to_split: str) -> Iterator[Tuple[str, bool]]:
+def _incremental_path_split(path_to_split: str) -> Iterator[Tuple[str, str, bool]]:
     """Split the path into incremental tokens.
 
     Each token starts with the top-level directory and grows the path by
@@ -295,46 +305,50 @@ def _incremental_path_split(path_to_split: str) -> Iterator[Tuple[str, bool]]:
     For example:
     path/to/file will return the following listing
     [
-      ("path", true),
-      ("path/to", true),
-      ("path/to/file", false),
+      ("", "path", true),
+      ("path", "to", true),
+      ("path/to", "file" false),
     ]
     """
     parts = path_to_split.strip("/").split("/")
-    for i in range(len(parts)):
-        incremental_path = "/".join(parts[: i + 1])
+    for i, part in enumerate(parts):
+        rel_dir = "/".join(parts[:i])
         is_directory = i < len(parts) - 1
-        yield incremental_path, is_directory
+        yield rel_dir, part, is_directory
 
 
 def _assert_path_in_backlog(
     backlog: StructureRuleList, config: Configuration, flags: Flags, path: str
 ):
 
-    for sub_path, is_dir in _incremental_path_split(path):
-        if _skip_entry(Entry(sub_path, is_dir, is_symlink=False), config, flags=flags):
+    for rel_dir, entry_name, is_dir in _incremental_path_split(path):
+        if _skip_entry(
+            Entry(path=entry_name, rel_dir=rel_dir, is_dir=is_dir, is_symlink=False),
+            config,
+            flags=flags,
+        ):
             return
 
         for idx in _get_matching_item_index(
             backlog,
-            sub_path,
+            entry_name,
             is_dir,
             flags.verbose,
         ):
             if flags.verbose:
-                print(f"  Found match for path {sub_path}")
+                print(f"  Found match for path {entry_name}")
 
             if is_dir:
                 _handle_use_rule(
-                    backlog, backlog[idx].use_rule, config, flags, sub_path
+                    backlog, backlog[idx].use_rule, config, flags, entry_name
                 )
-                _handle_if_exists(backlog, backlog[idx], sub_path, flags)
+                _handle_if_exists(backlog, backlog[idx], flags)
 
 
 def assert_path(
     config: Configuration,
     path: str,
-    flags: Flags,
+    flags: Flags = Flags(),
 ) -> None:
     """Fail if the given path is invalid according to the configuration.
 
@@ -344,8 +358,8 @@ def assert_path(
     def _get_corresponding_map_dir(c: Configuration, f: Flags, p: str):
 
         map_dir = ""
-        for sub_path, is_dir in _incremental_path_split(p):
-            map_sub_dir = rel_dir_to_map_dir(sub_path)
+        for rel_dir, entry_name, is_dir in _incremental_path_split(p):
+            map_sub_dir = rel_dir_to_map_dir(os.path.join(rel_dir, entry_name))
             if is_dir and map_sub_dir in c.directory_map:
                 map_dir = map_sub_dir
 
