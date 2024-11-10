@@ -135,3 +135,10 @@ directory_map:
         assert_path(config, "app/README.md")
     with pytest.raises(UnspecifiedEntryError):
         assert_path(config, "app/lib/sub_lib/README.md")
+
+
+def test_skip_file():
+    """Test skipping file for diff scan."""
+    config_filname = "repo_structure.yaml"
+    config = Configuration(config_filname)
+    assert_path(config, "repo_structure.yaml")

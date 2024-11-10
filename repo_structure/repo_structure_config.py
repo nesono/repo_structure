@@ -201,9 +201,8 @@ def _get_pattern(entry: dict) -> str:
         return entry["require"]
     if "allow" in entry:
         return entry["allow"]
-    if "forbid" in entry:
-        return entry["forbid"]
-    return ""
+    # if "forbid" in entry:
+    return entry["forbid"]
 
 
 def _get_is_required(entry: dict) -> bool:
@@ -257,9 +256,8 @@ def _get_pattern_key(entry: dict) -> str:
         return "require"
     if "allow" in entry:
         return "allow"
-    if "forbid" in entry:
-        return "forbid"
-    return ""
+    # if "forbid" in entry:
+    return "forbid"
 
 
 def _expand_template_entry(
