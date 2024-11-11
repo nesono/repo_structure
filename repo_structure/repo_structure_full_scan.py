@@ -7,7 +7,7 @@ import os
 from typing import List, Callable, Optional, Union
 from gitignore_parser import parse_gitignore
 
-from .repo_structure_lib import Flags
+from .repo_structure_lib import Flags, UnspecifiedEntryError
 from .repo_structure_config import (
     Configuration,
 )
@@ -100,12 +100,19 @@ def _fail_if_invalid_repo_structure_recursive(
         ):
             continue
 
-        for idx in _get_matching_item_index(
-            backlog,
-            entry.path,
-            os_entry.is_dir(),
-            flags.verbose,
-        ):
+        try:
+            indices = _get_matching_item_index(
+                backlog,
+                entry.path,
+                os_entry.is_dir(),
+                flags.verbose,
+            )
+        except UnspecifiedEntryError as err:
+            raise UnspecifiedEntryError(
+                f"Unspecified entry found: '{entry.rel_dir}/{entry.path}'"
+            ) from err
+
+        for idx in indices:
             backlog_entry = backlog[idx]
             backlog_entry.count += 1
 

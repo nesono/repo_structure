@@ -112,5 +112,5 @@ def assert_path(
         _assert_path_in_backlog(backlog, config, flags, rel_path)
     except UnspecifiedEntryError as err:
         raise UnspecifiedEntryError(
-            f"Entry {path} is not specified in the configuration"
+            f"Unspecified entry {path} found. Map dir: {map_dir}"
         ) from err
