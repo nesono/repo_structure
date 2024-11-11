@@ -10,39 +10,17 @@ from typing import Dict, List, TextIO, Union, Any, Optional
 from ruamel import yaml as YAML
 from jsonschema import validate, ValidationError, SchemaError
 
-from .repo_structure_lib import map_dir_to_rel_dir
+from .repo_structure_lib import (
+    map_dir_to_rel_dir,
+    RepoEntry,
+    ConfigurationParseError,
+    StructureRuleError,
+    UseRuleError,
+    DirectoryMap,
+    StructureRuleList,
+    StructureRuleMap,
+)
 from .repo_structure_schema import get_json_schema
-
-
-class StructureRuleError(Exception):
-    """Structure rule related error."""
-
-
-class UseRuleError(Exception):
-    """Use_rule related error."""
-
-
-class RepoStructureTemplateError(Exception):
-    """Repo structure template related error."""
-
-
-@dataclass
-class RepoEntry:
-    """Wrapper for entries in the directory structure, that store the path
-    as a string together with the entry type."""
-
-    path: re.Pattern
-    is_dir: bool
-    is_required: bool
-    is_forbidden: bool
-    use_rule: str = ""
-    if_exists: List["RepoEntry"] = field(default_factory=list)
-    count: int = 0
-
-
-DirectoryMap = Dict[str, List[str]]
-StructureRuleList = List[RepoEntry]
-StructureRuleMap = Dict[str, StructureRuleList]
 
 
 @dataclass
@@ -52,10 +30,6 @@ class ConfigurationData:
     structure_rules: StructureRuleMap = field(default_factory=dict)
     directory_map: DirectoryMap = field(default_factory=dict)
     configuration_file_name: str = ""
-
-
-class ConfigurationParseError(Exception):
-    """Thrown when configuration could not be parsed."""
 
 
 class Configuration:
@@ -227,9 +201,8 @@ def _get_pattern(entry: dict) -> str:
         return entry["require"]
     if "allow" in entry:
         return entry["allow"]
-    if "forbid" in entry:
-        return entry["forbid"]
-    return ""
+    # if "forbid" in entry:
+    return entry["forbid"]
 
 
 def _get_is_required(entry: dict) -> bool:
@@ -283,9 +256,8 @@ def _get_pattern_key(entry: dict) -> str:
         return "require"
     if "allow" in entry:
         return "allow"
-    if "forbid" in entry:
-        return "forbid"
-    return ""
+    # if "forbid" in entry:
+    return "forbid"
 
 
 def _expand_template_entry(

@@ -4,10 +4,9 @@
 import pytest
 from .repo_structure_config import (
     Configuration,
-    UseRuleError,
-    ConfigurationParseError,
-    StructureRuleError,
 )
+from . import ConfigurationParseError
+from .repo_structure_lib import StructureRuleError, UseRuleError
 
 
 def test_successful_parse():

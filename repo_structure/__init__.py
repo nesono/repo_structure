@@ -1,26 +1,25 @@
 """Check the repository directory strucgure against your configuration."""
 
-from .repo_structure_config import Configuration, ConfigurationParseError
-from .repo_structure_enforcement import (
+from .repo_structure_config import Configuration
+from .repo_structure_full_scan import (
     assert_full_repository_structure,
-    assert_path,
     MissingMappingError,
     MissingRequiredEntriesError,
-    UnspecifiedEntryError,
     EntryTypeMismatchError,
-    Flags,
 )
+from .repo_structure_diff_scan import assert_path
+from .repo_structure_lib import Flags, UnspecifiedEntryError, ConfigurationParseError
 
 __all__ = [
     "Configuration",
-    "ConfigurationParseError",
     "EntryTypeMismatchError",
-    "Flags",
     "MissingMappingError",
     "MissingRequiredEntriesError",
     "UnspecifiedEntryError",
+    "ConfigurationParseError",
     "assert_full_repository_structure",
     "assert_path",
+    "Flags",
 ]
 
 __version__ = "0.1.0"

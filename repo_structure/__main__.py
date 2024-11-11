@@ -8,11 +8,9 @@ import time
 
 import click
 
-from .repo_structure_enforcement import (
-    assert_full_repository_structure,
-    assert_path,
-    Flags,
-)
+from .repo_structure_lib import Flags
+from .repo_structure_full_scan import assert_full_repository_structure
+from .repo_structure_diff_scan import assert_path
 from .repo_structure_config import Configuration
 
 
