@@ -96,7 +96,7 @@ structure_rules:
     - p: "BUILD"
       required: True
     - p: 'main\.py'
-    - p: '[^/]*?\.py'
+    - p: '.*\.py'
       required: False
 ```
 
@@ -124,25 +124,13 @@ structure_rules:
       required: False
       if_exists:
         - p: 'lib\.py'
-        - p: '[^/]*?\.py'
+        - p: '.*\.py'
           required: False
 ```
 
 Here, we allow a subdirectory 'library' to exist. We require the file
 'library/lib.py' if the folder 'library' exists. Any other file ending on '.py'
 is allowed in it as well, but not required.
-
-### Important Note on Patterns
-
-It's very important to note that the patterns have a very strong effect on the
-overall execution time of the tool. Therefore, make sure to use minimal
-patterns, i.e. that are not greedy.
-
-For example, do NOT use `.*` as a wildcard pattern to match any file or
-directory name, but instead use `[^/]*?`.
-
-Make sure you keep this in mind, since using the wrong patterns can result
-in a tool **that does not seem to finish processing**.
 
 ### Recursion
 
@@ -153,7 +141,7 @@ key 'use_rule', for example:
 structure_rules:
   example_rule_with_recursion:
     - p: "main\.py"
-    - p: '[^/]*?\.py'
+    - p: '.*\.py'
       required: False
     - p: "library/"
       use_rule: example_rule_with_recursion
@@ -248,13 +236,13 @@ structure_rules:
     - p: "BUILD"
   python_main:
     - p: 'main\.py'
-    - p: '[^/]*?\.py'
+    - p: '.*\.py'
       required: False
   python_library:
     - p: 'lib\.py'
-    - p: '[^/]*?\.py'
+    - p: '.*\.py'
       required: False
-    - p: "[^/]*?/"
+    - p: ".*/"
       required: False
       # allow library recursion
       use_rule: python_library

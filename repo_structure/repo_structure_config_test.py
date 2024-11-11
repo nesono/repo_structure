@@ -18,16 +18,16 @@ def test_successful_parse():
 structure_rules:
   basic_rule:
     - require: 'README\.md'
-    - allow: '[^/]*\.md'
+    - allow: '.*\.md'
     - forbid: 'CMakeLists\.txt'
     - allow: '.github/'
       if_exists:
         - p: 'CODEOWNERS'
   recursive_rule:
-    - require: '[^/]*\.py'
+    - require: '.*\.py'
     - require: 'package/'
       if_exists:
-      - p: '[^/]*/'
+      - p: '.*/'
         use_rule: recursive_rule
 templates:
   software_component:
@@ -42,8 +42,8 @@ templates:
       if_exists:
       - p: '{{component_name}}.swreq.md'
       - p: '{{component_name}}.techspec.md'
-    - allow: '[^/]*\_test.cpp'
-    - allow: 'tests/[^/]*_test.cpp'
+    - allow: '.*\_test.cpp'
+    - allow: 'tests/.*_test.cpp'
 directory_map:
   /:
     - use_rule: basic_rule
@@ -163,10 +163,10 @@ structure_rules:
       required: False
       use_rule: documentation
       if_exists:
-      - p: "[^/]*?/"
+      - p: ".*/"
         required: False
         if_exists:
-        - p: "[^/]*?"
+        - p: ".*"
           required: False
 directory_map:
   /:
@@ -182,7 +182,7 @@ def test_fail_parse_bad_key_in_structure_rule():
 structure_rules:
   bad_key_rule:
     - p: "README.md"
-      bad_key: '[^/]*?\.py'
+      bad_key: '.*\.py'
 directory_map:
   /:
     - use_rule: bad_key_rule
@@ -227,7 +227,7 @@ structure_rules:
     license_rule:
         - p: 'LICENSE'
     bad_use_rule:
-        - p: '[^/]*?/'
+        - p: '.*/'
           required: False
           use_rule: license_rule
 directory_map:
