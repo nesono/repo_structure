@@ -7,7 +7,7 @@ import os
 from typing import List, Callable, Optional, Union
 from gitignore_parser import parse_gitignore
 
-from .repo_structure_lib import Flags, UnspecifiedEntryError
+from .repo_structure_lib import Flags, UnspecifiedEntryError, ForbiddenEntryError
 from .repo_structure_config import (
     Configuration,
 )
@@ -110,6 +110,10 @@ def _fail_if_invalid_repo_structure_recursive(
         except UnspecifiedEntryError as err:
             raise UnspecifiedEntryError(
                 f"Unspecified entry found: '{entry.rel_dir}/{entry.path}'"
+            ) from err
+        except ForbiddenEntryError as err:
+            raise ForbiddenEntryError(
+                f"Forbidden entry found: '{entry.rel_dir}/{entry.path}'"
             ) from err
 
         for idx in indices:

@@ -15,8 +15,12 @@ from .repo_structure_full_scan import (
     MissingRequiredEntriesError,
     assert_full_repository_structure,
 )
-from . import UnspecifiedEntryError, ConfigurationParseError
-from .repo_structure_lib import Flags
+from .repo_structure_lib import (
+    Flags,
+    UnspecifiedEntryError,
+    ConfigurationParseError,
+    ForbiddenEntryError,
+)
 
 
 def _get_tmp_dir() -> str:
@@ -1006,3 +1010,30 @@ directory_map:
     flags.verbose = True
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config, flags)
+
+
+@with_repo_structure_in_tmpdir(
+    """
+README.md
+CMakeLists.txt
+python/
+python/main.py
+"""
+)
+def test_forbid_file():
+    """Test with required directory."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - p: 'README\.md'
+    - forbid: 'CMakeLists\.txt'
+    - p: 'python/'
+      if_exists:
+      - p: '.*\.py'
+directory_map:
+  /:
+    - use_rule: base_structure
+        """
+    config = Configuration(config_yaml, True)
+    with pytest.raises(ForbiddenEntryError):
+        _assert_repo_directory_structure(config)

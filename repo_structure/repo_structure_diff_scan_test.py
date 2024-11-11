@@ -5,7 +5,7 @@
 import pytest
 
 
-from .repo_structure_lib import UnspecifiedEntryError, Flags
+from .repo_structure_lib import UnspecifiedEntryError, Flags, ForbiddenEntryError
 from .repo_structure_config import Configuration
 from .repo_structure_diff_scan import assert_path
 
@@ -24,6 +24,21 @@ directory_map:
     assert_path(config, "README.md")
     with pytest.raises(UnspecifiedEntryError):
         assert_path(config, "bad_filename.md")
+
+
+def test_forbidden_entry():
+    """Test with forbidden file."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - forbid: 'CMakeLists\.txt'
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    with pytest.raises(ForbiddenEntryError):
+        assert_path(config, "CMakeLists.txt")
 
 
 def test_matching_regex_dir():

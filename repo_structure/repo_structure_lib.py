@@ -27,6 +27,10 @@ class ConfigurationParseError(Exception):
     """Thrown when configuration could not be parsed."""
 
 
+class ForbiddenEntryError(Exception):
+    """Thrown when a forbidden entry is found."""
+
+
 @dataclass
 class RepoEntry:
     """Wrapper for entries in the directory structure, that store the path
@@ -147,6 +151,8 @@ def _get_matching_item_index(
         if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
             if verbose:
                 print(f"  Found match at index {i}: {v.path.pattern}")
+            if v.is_forbidden:
+                raise ForbiddenEntryError(f"Found forbidden entry: {entry_path}")
             result.append(i)
     if len(result) != 0:
         return result
