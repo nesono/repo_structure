@@ -21,6 +21,7 @@ from .repo_structure_lib import (
     Flags,
     _map_dir_to_entry_backlog,
     StructureRuleList,
+    UnspecifiedEntryError,
 )
 
 
@@ -106,5 +107,10 @@ def assert_path(
         config.directory_map, config.structure_rules, map_dir_to_rel_dir(map_dir)
     )
 
-    path = os.path.relpath(path, map_dir_to_rel_dir(map_dir))
-    _assert_path_in_backlog(backlog, config, flags, path)
+    rel_path = os.path.relpath(path, map_dir_to_rel_dir(map_dir))
+    try:
+        _assert_path_in_backlog(backlog, config, flags, rel_path)
+    except UnspecifiedEntryError as err:
+        raise UnspecifiedEntryError(
+            f"Entry {path} is not specified in the configuration"
+        ) from err
