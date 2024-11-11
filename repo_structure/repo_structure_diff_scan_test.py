@@ -51,7 +51,7 @@ structure_rules:
   base_structure:
       - p: 'README\.md'
   python_package:
-      - p: '[^/]*?\.py'
+      - p: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -69,7 +69,7 @@ structure_rules:
   base_structure:
       - p: 'README\.md'
   python_package:
-      - p: '[^/]*?\.py'
+      - p: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -88,8 +88,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
   cpp_source:
-    - p: '[^/]*?\.cpp'
-    - p: '[^/]*?/'
+    - p: '.*\.cpp'
+    - p: '.*/'
       required: False
       use_rule: cpp_source
 directory_map:
@@ -112,8 +112,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
   python_package:
-    - p: '[^/]*?\.py'
-    - p: '[^/]*?/'
+    - p: '.*\.py'
+    - p: '.*/'
       required: False
       use_rule: python_package
 directory_map:

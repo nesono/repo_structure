@@ -58,7 +58,6 @@ class Flags:
     follow_symlinks: bool = False
     include_hidden: bool = True
     verbose: bool = False
-    jobs: int = 1
 
 
 DirectoryMap = Dict[str, List[str]]

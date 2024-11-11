@@ -4,12 +4,10 @@
 
 import os
 
-from concurrent.futures import ProcessPoolExecutor
-from multiprocessing import cpu_count
 from typing import List, Callable, Optional, Union
 from gitignore_parser import parse_gitignore
 
-from .repo_structure_lib import Flags
+from .repo_structure_lib import Flags, UnspecifiedEntryError
 from .repo_structure_config import (
     Configuration,
 )
@@ -102,12 +100,19 @@ def _fail_if_invalid_repo_structure_recursive(
         ):
             continue
 
-        for idx in _get_matching_item_index(
-            backlog,
-            entry.path,
-            os_entry.is_dir(),
-            flags.verbose,
-        ):
+        try:
+            indices = _get_matching_item_index(
+                backlog,
+                entry.path,
+                os_entry.is_dir(),
+                flags.verbose,
+            )
+        except UnspecifiedEntryError as err:
+            raise UnspecifiedEntryError(
+                f"Unspecified entry found: '{entry.rel_dir}/{entry.path}'"
+            ) from err
+
+        for idx in indices:
             backlog_entry = backlog[idx]
             backlog_entry.count += 1
 
@@ -162,19 +167,5 @@ def assert_full_repository_structure(
     if "/" not in config.directory_map:
         raise MissingMappingError("Config does not have a root mapping")
 
-    if flags.jobs == 0:
-        flags.jobs = cpu_count()
-
-    if flags.jobs > 1:
-        with ProcessPoolExecutor() as executor:
-            futures = [
-                executor.submit(_process_map_dir, map_dir, repo_root, config, flags)
-                for map_dir in config.directory_map
-            ]
-
-            # Wait for all tasks to complete
-            for future in futures:
-                future.result()
-    else:
-        for map_dir in config.directory_map:
-            _process_map_dir(map_dir, repo_root, config, flags)
+    for map_dir in config.directory_map:
+        _process_map_dir(map_dir, repo_root, config, flags)

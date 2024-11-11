@@ -36,14 +36,6 @@ from .repo_structure_config import Configuration
     default=False,
     help="Enable verbose messages for debugging and tracing.",
 )
-@click.option(
-    "--jobs",
-    "-j",
-    type=int,
-    default=0,
-    show_default=True,
-    help="Number of jobs to run in parallel (0 to autodetect).",
-)
 @click.version_option(
     version="v0.1.0",
     prog_name="Repo-Structure",
@@ -55,7 +47,6 @@ def repo_structure(
     follow_symlinks: bool,
     include_hidden: bool,
     verbose: bool,
-    jobs: int,
 ) -> None:
     """Ensure clean repository structure for your projects."""
     click.echo("Repo-Structure started")
@@ -63,7 +54,6 @@ def repo_structure(
     flags.follow_symlinks = follow_symlinks
     flags.include_hidden = include_hidden
     flags.verbose = verbose
-    flags.jobs = jobs
     ctx.obj = flags
 
 

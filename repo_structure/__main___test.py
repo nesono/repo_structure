@@ -11,8 +11,6 @@ def test_main_full_scan_success():
         repo_structure,
         [
             "--verbose",
-            "--jobs",
-            "0",
             "full-scan",
             "-r",
             ".",
@@ -30,8 +28,6 @@ def test_main_full_scan_fail_bad_config():
     result = runner.invoke(
         repo_structure,
         [
-            "--jobs",
-            "1",
             "full-scan",
             "-r",
             ".",

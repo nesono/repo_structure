@@ -118,7 +118,7 @@ def test_matching_regex():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: '[^/]*?\.md'
+    - p: '.*\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -142,7 +142,7 @@ structure_rules:
     - p: 'README\.md'
     - p: 'python/'
       if_exists:
-      - p: '[^/]*?\.py'
+      - p: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -167,7 +167,7 @@ structure_rules:
     - p: "README.md"
     - p: "python/"
       if_exists:
-      - p: '[^/]*?'
+      - p: '.*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -231,7 +231,7 @@ structure_rules:
     - p: 'README\.md'
     - p: 'python/'
       if_exists:
-      - p: '[^/]*?'
+      - p: '.*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -254,7 +254,7 @@ structure_rules:
   base_structure:
       - p: 'README\.md'
   python_package:
-      - p: '[^/]*?\.py'
+      - p: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -276,7 +276,7 @@ structure_rules:
   base_structure:
       - p: 'README\.md'
   python_package:
-      - p: '[^/]*?\.py'
+      - p: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -298,10 +298,10 @@ def test_conflicting_file_and_dir_names():
     config_yaml = r"""
 structure_rules:
   base_structure:
-      - p: '[^/]*?name[^/]*?'
-      - p: '[^/]*?name[^/]*?/'
+      - p: '.*name.*'
+      - p: '.*name.*/'
         if_exists:
-        - p: '[^/]*?'
+        - p: '.*'
           required: False
 directory_map:
   /:
@@ -321,7 +321,7 @@ def test_conflicting_dir_name():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: '[^/]*?name[^/]*?'
+    - p: '.*name.*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -341,9 +341,9 @@ def test_conflicting_file_name():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: '[^/]*?name[^/]*?/'
+    - p: '.*name.*/'
       if_exists:
-      - p: '[^/]*?'
+      - p: '.*'
       required: False
 directory_map:
   /:
@@ -364,7 +364,7 @@ def test_filename_with_bad_substring_match():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: '[^/]*?name'
+    - p: '.*name'
 directory_map:
   /:
     - use_rule: base_structure
@@ -385,7 +385,7 @@ def test_succeed_overlapping_required_file_rules():
 structure_rules:
   base_structure:
     - p: 'README\.md'
-    - p: 'README\.[^/]*?'
+    - p: 'README\..*'
 directory_map:
   /:
     - use_rule: base_structure
@@ -482,8 +482,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
   cpp_source:
-    - p: '[^/]*?\.cpp'
-    - p: '[^/]*?/'
+    - p: '.*\.cpp'
+    - p: '.*/'
       required: False
       use_rule: cpp_source
 directory_map:
@@ -510,8 +510,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
   python_package:
-    - p: '[^/]*?\.py'
-    - p: '[^/]*?/'
+    - p: '.*\.py'
+    - p: '.*/'
       required: False
       use_rule: python_package
 directory_map:
@@ -539,8 +539,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
   python_package:
-    - p: '[^/]*?\.py'
-    - p: '[^/]*?/'
+    - p: '.*\.py'
+    - p: '.*/'
       required: False
       use_rule: python_package
 directory_map:
@@ -575,8 +575,8 @@ structure_rules:
   base_structure:
     - p: 'README\.md'
   python_package:
-    - p: '[^/]*?\.py'
-    - p: '[^/]*?/'
+    - p: '.*\.py'
+    - p: '.*/'
       required: False
       use_rule: python_package
 directory_map:
