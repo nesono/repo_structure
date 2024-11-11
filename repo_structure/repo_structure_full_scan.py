@@ -4,8 +4,6 @@
 
 import os
 
-from concurrent.futures import ProcessPoolExecutor
-from multiprocessing import cpu_count
 from typing import List, Callable, Optional, Union
 from gitignore_parser import parse_gitignore
 
@@ -162,19 +160,5 @@ def assert_full_repository_structure(
     if "/" not in config.directory_map:
         raise MissingMappingError("Config does not have a root mapping")
 
-    if flags.jobs == 0:
-        flags.jobs = cpu_count()
-
-    if flags.jobs > 1:
-        with ProcessPoolExecutor() as executor:
-            futures = [
-                executor.submit(_process_map_dir, map_dir, repo_root, config, flags)
-                for map_dir in config.directory_map
-            ]
-
-            # Wait for all tasks to complete
-            for future in futures:
-                future.result()
-    else:
-        for map_dir in config.directory_map:
-            _process_map_dir(map_dir, repo_root, config, flags)
+    for map_dir in config.directory_map:
+        _process_map_dir(map_dir, repo_root, config, flags)
