@@ -40,8 +40,8 @@ templates:
     - require: 'README.md'
     - require: 'doc/'
       if_exists:
-      - p: '{{component_name}}.swreq.md'
-      - p: '{{component_name}}.techspec.md'
+      - require: '{{component_name}}.swreq.md'
+      - require: '{{component_name}}.techspec.md'
     - allow: '.*\_test.cpp'
     - allow: 'tests/.*_test.cpp'
 directory_map:
@@ -73,7 +73,7 @@ def test_fail_parse_bad_pattern():
     test_yaml = r"""
 structure_rules:
   bad_pattern_rule:
-    - p: "[^]*.md"
+    - require: "[^]*.md"
 
 directory_map:
   /:
@@ -89,7 +89,7 @@ def test_fail_parse_bad_schema():
     test_yaml = r"""
 structure_rules:
   base_structure:
-    - p: "README.md"
+    - require: "README.md"
 
 directory_map:
   /:
@@ -124,7 +124,7 @@ def test_fail_parse_dangling_use_rule_in_directory_map():
     test_yaml = r"""
 structure_rules:
   base_structure:
-    - p: "README.md"
+    - require: "README.md"
 
 directory_map:
   /:
@@ -140,10 +140,8 @@ def test_fail_parse_dangling_use_rule_in_structure_rule():
     test_yaml = r"""
 structure_rules:
   base_structure:
-    - p: 'README.md'
-    # if we use a use_rule, we need to add required/optional, too
-    - p: 'docs/'
-      required: True
+    - require: 'README.md'
+    - allow: 'docs/'
       use_rule: python_package
 
 directory_map:
@@ -159,15 +157,12 @@ def test_fail_directory_structure_mixing_use_rule_and_files():
     test_config = r"""
 structure_rules:
   package:
-    - p: "docs/"
-      required: False
+    - allow: "docs/"
       use_rule: documentation
       if_exists:
-      - p: ".*/"
-        required: False
+      - allow: ".*/"
         if_exists:
-        - p: ".*"
-          required: False
+        - allow: ".*"
 directory_map:
   /:
     - use_rule: package
@@ -181,7 +176,7 @@ def test_fail_parse_bad_key_in_structure_rule():
     test_config = r"""
 structure_rules:
   bad_key_rule:
-    - p: "README.md"
+    - require: "README.md"
       bad_key: '.*\.py'
 directory_map:
   /:
@@ -196,7 +191,7 @@ def test_fail_directory_map_key_in_directory_map():
     test_config = """
 structure_rules:
     correct_rule:
-        - p: 'unused_file'
+        - require: 'unused_file'
 directory_map:
     /:
         - foo: documentation
@@ -210,7 +205,7 @@ def test_fail_directory_map_additional_key_in_directory_map():
     test_config = """
 structure_rules:
     correct_rule:
-        - p: 'unused_file'
+        - require: 'unused_file'
 directory_map:
     /:
         - use_rule: correct_rule
@@ -225,10 +220,9 @@ def test_fail_use_rule_not_recursive():
     config_yaml = r"""
 structure_rules:
     license_rule:
-        - p: 'LICENSE'
+        - require: 'LICENSE'
     bad_use_rule:
-        - p: '.*/'
-          required: False
+        - allow: '.*/'
           use_rule: license_rule
 directory_map:
   /:
@@ -244,7 +238,7 @@ def test_fail_directory_map_missing_trailing_slash():
     config_yaml = r"""
 structure_rules:
     license_rule:
-        - p: LICENSE
+        - require: LICENSE
 directory_map:
   /:
     - use_rule: license_rule
@@ -260,7 +254,7 @@ def test_fail_directory_map_missing_starting_slash():
     config_yaml = r"""
 structure_rules:
     license_rule:
-        - p: LICENSE
+        - require: LICENSE
 directory_map:
   /:
     - use_rule: license_rule
@@ -276,7 +270,7 @@ def test_fail_use_template_missing_parameters():
     test_config = """
 templates:
     some_template:
-        - p: '{{parameter_name}}.md'
+        - require: '{{parameter_name}}.md'
 directory_map:
     /:
         - use_template: some_template
@@ -290,7 +284,7 @@ def test_fail_use_template_parameters_not_arrays():
     test_config = """
 templates:
     some_template:
-        - p: '{{parameter_name}}.md'
+        - require: '{{parameter_name}}.md'
 directory_map:
     /:
         - use_template: some_template
@@ -305,7 +299,7 @@ def test_fail_use_template_parameters_with_use_rule():
     test_config = """
 structure_rules:
     correct_rule:
-        - p: 'some_file.md'
+        - require: 'some_file.md'
 directory_map:
     /:
         - use_rule: correct_rule
@@ -320,7 +314,7 @@ def test_fail_double_underscore_prefix_structure_rule():
     test_config = """
 structure_rules:
     __incorrect_rule:
-        - p: 'some_file.md'
+        - require: 'some_file.md'
 directory_map:
     /:
         - use_rule: __incorrect_rule
@@ -334,7 +328,7 @@ def test_fail_double_underscore_prefix_template():
     test_config = """
 templates:
     __incorrect_template:
-        - p: '{{parameter}}_some_file.md'
+        - require: '{{parameter}}_some_file.md'
 directory_map:
     /:
         - use_rule: __incorrect_template

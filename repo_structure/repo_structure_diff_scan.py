@@ -22,6 +22,7 @@ from .repo_structure_lib import (
     _map_dir_to_entry_backlog,
     StructureRuleList,
     UnspecifiedEntryError,
+    ForbiddenEntryError,
 )
 
 
@@ -113,4 +114,8 @@ def assert_path(
     except UnspecifiedEntryError as err:
         raise UnspecifiedEntryError(
             f"Unspecified entry {path} found. Map dir: {map_dir}"
+        ) from err
+    except ForbiddenEntryError as err:
+        raise ForbiddenEntryError(
+            f"Forbidden entry {path} found. Map dir: {map_dir}"
         ) from err
