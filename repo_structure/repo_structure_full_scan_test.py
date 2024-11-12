@@ -28,9 +28,7 @@ def _get_tmp_dir() -> str:
 
 
 def _remove_tmp_dir(tmpdir: str) -> None:
-    # if TEST_TMPDIR is there, bazel will take care of it, otherwise:
-    if "TEST_TMPDIR" not in os.environ:
-        shutil.rmtree(tmpdir)
+    shutil.rmtree(tmpdir)
 
 
 def _create_repo_directory_structure(specification: str) -> None:
