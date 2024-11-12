@@ -7,7 +7,7 @@ A tool to maintain and enforce a clean and organized repository structure.
 You can control:
 
 - Specify which files and directories must be part of the repository
-- Support required or optional entries (`required` vs `optional`)
+- Support required, allowed, or forbidden entries (`require`, `allow`, `forbid`)
 - Specifications using Python regular expressions
 - Mapping directory structure rules to specific directories (`directory_map`)
 - Reusing directory structure rules recursively (`use_rule` in `structure_rules`)
@@ -92,21 +92,14 @@ coexist in the same directory.
 ```yaml
 structure_rules:
   example_rule:
-    - p: "LICENSE"
-    - p: "BUILD"
-      required: True
-    - p: 'main\.py'
-    - p: '.*\.py'
-      required: False
+    - require: "BUILD"
+    - require: 'main\.py'
+    - allow: '.*\.py'
 ```
 
-Note that each entry requires a key 'p' which contains a regex pattern, for the
-directory entry it matches. An additional key 'required' can be used to specify
-if the entry is required (default) or optional.
-
-Thus, in our example above, `LICENSE`, `BUILD`, and `main.py` files are
-required, whereas any Python file in the same directory is optional (allowed,
-but not necessary).
+Note that each entry requires one the following keys: `require`, `allow`, or
+`forbid`. The key needs to contains a regex pattern, for the directory
+entry it matches.
 
 ### Directories
 
@@ -116,16 +109,13 @@ instance
 ```yaml
 structure_rules:
   example_rule_with_directory:
-    - p: "LICENSE"
-    - p: "BUILD"
-      required: True     # required 'True' is default
-    - p: "main\.py"
-    - p: "library/"
-      required: False
+    - require: "LICENSE"
+    - require: "BUILD"
+    - require: "main\.py"
+    - allow: "library/"
       if_exists:
-        - p: 'lib\.py'
-        - p: '.*\.py'
-          required: False
+        - require: 'lib\.py'
+        - allow: '.*\.py'
 ```
 
 Here, we allow a subdirectory 'library' to exist. We require the file
@@ -140,10 +130,20 @@ key 'use_rule', for example:
 ```yaml
 structure_rules:
   example_rule_with_recursion:
-    - p: "main\.py"
-    - p: '.*\.py'
-      required: False
-    - p: "library/"
+    - require: "main\.py"
+    - allow: "library/"
+      use_rule: example_rule_with_recursion
+```
+
+Note that if you require a directory that uses the structure rule that in turn
+requires entries the structure rule is not fulfillable. For instance, the
+following would cause an error:
+
+```yaml
+structure_rules:
+  example_rule_with_recursion:
+    - require: "main\.py"
+    - require: "library/"
       use_rule: example_rule_with_recursion
 ```
 
@@ -159,12 +159,12 @@ The following example shows a simple template specification
 ```yaml
 templates:
   example_template:
-    - p: "{{component}}/"
+    - require: "{{component}}/"
       if_exists:
-        - p: "{{component}}_component.py"
-        - p: "doc/"
+        - require: "{{component}}_component.py"
+        - require: "doc/"
           if_exists:
-            - p: "{{component}}.techspec.md"
+            - require: "{{component}}.techspec.md"
 directory_map:
   /:
     - use_template: example_template
@@ -194,12 +194,12 @@ will permutate through the expansion lists. For example:
 ```yaml
 templates:
   example_template:
-    - p: "{{component}}/"
+    - require: "{{component}}/"
       if_exists:
-        - p: "{{component}}_component.{{extension}}"
-        - p: "doc/"
+        - require: "{{component}}_component.{{extension}}"
+        - require: "doc/"
           if_exists:
-            - p: "{{component}}.techspec.md"
+            - require: "{{component}}.techspec.md"
 directory_map:
   /:
     - use_template: example_template
@@ -232,18 +232,15 @@ For example:
 ```yaml
 structure_rules:
   basic_rule:
-    - p: "LICENSE"
-    - p: "BUILD"
+    - require: "LICENSE"
+    - require: "BUILD"
   python_main:
-    - p: 'main\.py'
-    - p: '.*\.py'
-      required: False
+    - require: 'main\.py'
+    - allow: '.*\.py'
   python_library:
-    - p: 'lib\.py'
-    - p: '.*\.py'
-      required: False
-    - p: ".*/"
-      required: False
+    - require: 'lib\.py'
+    - allow: '.*\.py'
+    - allow: ".*/"
       # allow library recursion
       use_rule: python_library
 directory_map:

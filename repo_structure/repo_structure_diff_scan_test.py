@@ -64,9 +64,9 @@ def test_multi_use_rule():
     config_yaml = r"""
 structure_rules:
   base_structure:
-      - p: 'README\.md'
+      - require: 'README\.md'
   python_package:
-      - p: '.*\.py'
+      - require: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -82,9 +82,9 @@ def test_multi_use_rule_fail():
     config_yaml = r"""
 structure_rules:
   base_structure:
-      - p: 'README\.md'
+      - require: 'README\.md'
   python_package:
-      - p: '.*\.py'
+      - require: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -101,11 +101,10 @@ def test_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: 'README\.md'
+    - require: 'README\.md'
   cpp_source:
-    - p: '.*\.cpp'
-    - p: '.*/'
-      required: False
+    - require: '.*\.cpp'
+    - allow: '.*/'
       use_rule: cpp_source
 directory_map:
   /:
@@ -125,11 +124,10 @@ def test_succeed_elaborate_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - p: 'README\.md'
+    - require: 'README\.md'
   python_package:
-    - p: '.*\.py'
-    - p: '.*/'
-      required: False
+    - require: '.*\.py'
+    - allow: '.*/'
       use_rule: python_package
 directory_map:
   /:
