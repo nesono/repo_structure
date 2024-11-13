@@ -150,6 +150,11 @@ def _process_map_dir(
         config.directory_map, config.structure_rules, rel_dir
     )
 
+    if not backlog:
+        if flags and flags.verbose:
+            print("backlog empty - returning success")
+        return
+
     _fail_if_invalid_repo_structure_recursive(
         repo_root,
         rel_dir,

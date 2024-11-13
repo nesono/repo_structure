@@ -1023,3 +1023,27 @@ directory_map:
     config = Configuration(config_yaml, True)
     with pytest.raises(ForbiddenEntryError):
         _assert_repo_directory_structure(config)
+
+
+@with_repo_structure_in_tmpdir(
+    """
+README.md
+python/
+python/whatever.py
+python/this_is_ignored.py
+"""
+)
+def test_ignore_rule():
+    """Test with ignored directory."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - require: 'README\.md'
+directory_map:
+  /:
+    - use_rule: base_structure
+  /python/:
+    - use_rule: ignore
+        """
+    config = Configuration(config_yaml, True)
+    _assert_repo_directory_structure(config)

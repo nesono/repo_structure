@@ -142,7 +142,7 @@ def full_scan(ctx: click.Context, repo_root: str, config_path: str) -> None:
 @click.argument(
     "paths",
     nargs=-1,
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
     required=False,
 )
 @click.pass_context
