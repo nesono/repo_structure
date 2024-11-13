@@ -20,6 +20,14 @@ structure_rules:
     - p: "repo_struct/"
       if_exists:
         - p: "README.md"
+  ignore:
+    - p: ".*"
+      required: False
+    - p: ".*/"
+      required: False
+      if_exists:
+        - p: ".*"
+          required: False
 
 directory_map:
   /:

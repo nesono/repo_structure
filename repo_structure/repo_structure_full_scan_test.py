@@ -985,6 +985,7 @@ templates:
       - allow: 'doc/'
         if_exists:
           - require: '{{component}}.techspec.md'
+          - forbid: 'CMakeLists\.txt'
 directory_map:
   /:
     - use_template: component
@@ -1045,5 +1046,7 @@ directory_map:
   /python/:
     - use_rule: ignore
         """
+    flags = Flags()
+    flags.verbose = True
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    _assert_repo_directory_structure(config, flags)
