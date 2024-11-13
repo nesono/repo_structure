@@ -19,6 +19,7 @@ from .repo_structure_lib import (
     DirectoryMap,
     StructureRuleList,
     StructureRuleMap,
+    BUILTIN_DIRECTORY_RULES,
 )
 from .repo_structure_schema import get_json_schema
 
@@ -117,7 +118,7 @@ class Configuration:
         existing_rules = self.config.structure_rules.keys()
         for directory, rule in self.config.directory_map.items():
             for r in rule:
-                if r not in existing_rules:
+                if r not in existing_rules and r not in BUILTIN_DIRECTORY_RULES:
                     raise UseRuleError(
                         f"Directory mapping '{directory}' uses non-existing rule '{r}'"
                     )

@@ -155,3 +155,22 @@ def test_skip_file():
     config_filname = "repo_structure.yaml"
     config = Configuration(config_filname)
     assert_path(config, "repo_structure.yaml")
+
+
+def test_ignore_rule():
+    """Test with ignored directory."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - require: 'README\.md'
+directory_map:
+  /:
+    - use_rule: base_structure
+  /python/:
+    - use_rule: ignore
+        """
+    config = Configuration(config_yaml, True)
+    flags = Flags()
+    flags.verbose = True
+    assert_path(config, "README.md", flags)
+    assert_path(config, "python/main.py", flags)

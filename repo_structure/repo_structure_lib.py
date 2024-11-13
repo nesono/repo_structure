@@ -4,7 +4,9 @@ import os
 import re
 from dataclasses import dataclass, field, replace
 from os import DirEntry
-from typing import List, Union, Callable, Dict
+from typing import List, Union, Callable, Dict, Final
+
+BUILTIN_DIRECTORY_RULES: Final = ["ignore"]
 
 
 class UnspecifiedEntryError(Exception):
@@ -211,6 +213,8 @@ def _build_active_entry_backlog(
 ) -> StructureRuleList:
     result: StructureRuleList = []
     for rule in active_use_rules:
+        if rule == "ignore":
+            continue
         for e in structure_rules[rule]:
             result.append(replace(e, path=re.compile(e.path.pattern)))
     return result

@@ -107,6 +107,10 @@ def assert_path(
     backlog = _map_dir_to_entry_backlog(
         config.directory_map, config.structure_rules, map_dir_to_rel_dir(map_dir)
     )
+    if not backlog:
+        if flags.verbose:
+            print("backlog empty - returning success")
+        return
 
     rel_path = os.path.relpath(path, map_dir_to_rel_dir(map_dir))
     try:

@@ -1,11 +1,5 @@
 structure_rules:
   base_structure:
-    - p: ".github/"
-      if_exists:
-        - p: 'dependabot\.yml'
-        - p: "workflows/"
-          if_exists:
-            - p: '.*\.y(a)?ml'
     - p: "environment.yml"
     - p: "requirements.txt"
     - p: "LICENSE"
@@ -26,6 +20,14 @@ structure_rules:
     - p: "repo_struct/"
       if_exists:
         - p: "README.md"
+  ignore:
+    - p: ".*"
+      required: False
+    - p: ".*/"
+      required: False
+      if_exists:
+        - p: ".*"
+          required: False
 
 directory_map:
   /:
@@ -33,3 +35,5 @@ directory_map:
     - use_rule: test_dir
   /repo_structure/:
     - use_rule: python_package
+  /.github/:
+    - use_rule: ignore

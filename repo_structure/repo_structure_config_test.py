@@ -52,6 +52,8 @@ directory_map:
     - use_template: software_component
       parameters:
         component_name: ['lidar', 'camera', 'driver', 'control']
+  /repo_struct/:
+    - use_rule: ignore
     """
     # parsing should not throw using the above yaml
     config = Configuration(test_yaml, True)

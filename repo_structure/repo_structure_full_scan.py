@@ -4,7 +4,7 @@
 
 import os
 
-from typing import List, Callable, Optional, Union
+from typing import List, Callable, Union
 from gitignore_parser import parse_gitignore
 
 from .repo_structure_lib import Flags, UnspecifiedEntryError, ForbiddenEntryError
@@ -142,7 +142,7 @@ def _fail_if_invalid_repo_structure_recursive(
 
 
 def _process_map_dir(
-    map_dir: str, repo_root: str, config: Configuration, flags: Optional[Flags]
+    map_dir: str, repo_root: str, config: Configuration, flags: Flags = Flags()
 ):
     """Process a single map directory entry."""
     rel_dir = map_dir_to_rel_dir(map_dir)
@@ -150,12 +150,17 @@ def _process_map_dir(
         config.directory_map, config.structure_rules, rel_dir
     )
 
+    if not backlog:
+        if flags.verbose:
+            print("backlog empty - returning success")
+        return
+
     _fail_if_invalid_repo_structure_recursive(
         repo_root,
         rel_dir,
         config,
         backlog,
-        flags or Flags(),
+        flags,
     )
     _fail_if_required_entries_missing(backlog)
 

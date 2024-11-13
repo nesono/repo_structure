@@ -244,12 +244,29 @@ structure_rules:
       # allow library recursion
       use_rule: python_library
 directory_map:
-"/":
+/:
   - use_rule: basic_rule
-"/python/":
+/python/:
   - use_rule: python_main
   - use_rule: python_library
 ```
+
+Ignoring a directory can be done using the built-in rule `ignore`. For example:
+
+```yaml
+tructure_rules:
+  basic_rule:
+    - require: "LICENSE"
+    - require: "BUILD"
+  python_main:
+directory_map:
+/:
+  - use_rule: basic_rule
+/python/:
+  - use_rule: ignore
+```
+
+The rule can
 
 ## System Requirements
 
