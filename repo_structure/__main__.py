@@ -37,7 +37,7 @@ from .repo_structure_config import Configuration
     help="Enable verbose messages for debugging and tracing.",
 )
 @click.version_option(
-    version="v0.3.2",
+    version="v0.3.3",
     prog_name="Repo-Structure",
     message="%(prog)s %(version)s",
 )
