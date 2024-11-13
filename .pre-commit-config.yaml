@@ -8,9 +8,9 @@ exclude: |
 
 repos:
   - repo: https://github.com/nesono/repo_structure
-    rev: "v0.1.0"
+    rev: "v0.3.3"
     hooks:
-      - id: repo_structure
+      - id: repo-structure-diff-scan
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -51,11 +51,11 @@ repos:
       - id: detect-secrets
         exclude: .pre-commit-config.yaml
   - repo: https://github.com/zricethezav/gitleaks
-    rev: "v8.18.4"
+    rev: "v8.21.2"
     hooks:
       - id: gitleaks
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.7.1"
+    rev: "v0.7.3"
     hooks:
       - id: ruff
   - repo: https://github.com/python-poetry/poetry

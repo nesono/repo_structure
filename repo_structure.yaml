@@ -1,33 +1,25 @@
 structure_rules:
   base_structure:
-    - p: "environment.yml"
-    - p: "requirements.txt"
-    - p: "LICENSE"
-    - p: 'README\.md'
-    - p: 'conflicting_test_config\.yaml'
-    - p: '\.pre-commit-config\.yaml'
-    - p: '\.pre-commit-hooks\.yaml'
-    - p: '\.markdownlint\.yaml'
-    - p: 'pyproject\.toml'
-    - p: 'repo_structure\.iml'
+    - require: "environment.yml"
+    - require: "requirements.txt"
+    - require: "LICENSE"
+    - require: 'README\.md'
+    - require: 'conflicting_test_config\.yaml'
+    - require: '\.pre-commit-config\.yaml'
+    - require: '\.pre-commit-hooks\.yaml'
+    - require: '\.markdownlint\.yaml'
+    - require: 'pyproject\.toml'
+    - require: 'repo_structure\.iml'
   python_package:
-    - p: '__main__\.py'
-    - p: '__init__\.py'
-    - p: '.*\.py'
-    - p: 'config\.schema\.json'
-    - p: 'test_config_.*\.yaml'
+    - require: '__main__\.py'
+    - require: '__init__\.py'
+    - require: '.*\.py'
+    - require: 'config\.schema\.json'
+    - require: 'test_config_.*\.yaml'
   test_dir:
-    - p: "repo_struct/"
+    - require: "repo_struct/"
       if_exists:
-        - p: "README.md"
-  ignore:
-    - p: ".*"
-      required: False
-    - p: ".*/"
-      required: False
-      if_exists:
-        - p: ".*"
-          required: False
+        - require: "README.md"
 
 directory_map:
   /:
