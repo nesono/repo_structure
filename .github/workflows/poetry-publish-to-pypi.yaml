@@ -1,0 +1,26 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers the workflow for version tags matching vX.X.X
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.8.4
+      - name: Run poetry install
+        run: |
+          poetry install
+      - name: Publish to PyPI
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        run: poetry publish --build --username __token__ --password $POETRY_PYPI_TOKEN_PYPI
