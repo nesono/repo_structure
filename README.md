@@ -22,8 +22,14 @@ Note that Windows clients are not supported at the moment.
 
 ### Quick Start
 
-The Repo Structure tool is written to be consumed through [pre-commit.com](https://pre-commit.com/).
-A basic consumption looks like the following.
+The Repo Structure tool is written to be consumed through [pre-commit.com](https://pre-commit.com/) and via pip for running locally.
+Installation with pip:
+
+```bash
+pip install repo-structure
+```
+
+A basic consumption with pre-commit looks like the following.
 
 ```yaml
 repos:
