@@ -6,7 +6,7 @@ from .repo_structure_config import (
     Configuration,
 )
 from . import ConfigurationParseError
-from .repo_structure_lib import StructureRuleError, UseRuleError
+from .repo_structure_lib import StructureRuleError, UseRuleError, TemplateError
 
 
 def test_successful_parse():
@@ -290,9 +290,26 @@ templates:
 directory_map:
     /:
         - use_template: some_template
-          parameters: 'not_an_array'
+          parameters:
+            param_1: 'not_an_array'
     """
     with pytest.raises(ConfigurationParseError):
+        Configuration(test_config, True)
+
+
+def test_fail_use_template_bad_template_reference():
+    """Test failing template with bad template reference."""
+    test_config = """
+templates:
+    some_template:
+        - require: '{{parameter_name}}.md'
+directory_map:
+    /:
+        - use_template: bad_reference
+          parameters:
+            param_1: ['some_param']
+    """
+    with pytest.raises(TemplateError):
         Configuration(test_config, True)
 
 
@@ -305,7 +322,8 @@ structure_rules:
 directory_map:
     /:
         - use_rule: correct_rule
-          parameters: ['item1', 'item2']
+          parameters:
+            param_1: ['item1', 'item2']
     """
     with pytest.raises(ConfigurationParseError):
         Configuration(test_config, True)

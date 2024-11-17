@@ -112,7 +112,7 @@
         ]
       }
     },
-    "directory_map": {
+    "directory_map_entry": {
       "type": "array",
       "items": {
         "type": "object",
@@ -121,10 +121,9 @@
           "use_template": { "type": "string" },
           "parameters": {
             "type": "object",
-            "properties": {
-              ".*": {
-                "type": "array"
-              }
+            "additionalProperties": {
+              "type": "array",
+              "items": { "type": "string" }
             }
           }
         },
@@ -132,7 +131,19 @@
         "anyOf": [
           { "required": ["use_rule"] },
           { "required": ["use_template", "parameters"] }
-        ]
+        ],
+        "dependentSchemas": {
+          "use_rule": {
+            "properties": {
+              "parameters": { "type": "null" }
+            }
+          },
+          "use_template": {
+            "properties": {
+              "parameters": { "type": "object" }
+            }
+          }
+        }
       }
     }
   },
@@ -158,7 +169,7 @@
     "directory_map": {
       "type": "object",
       "patternProperties": {
-        "^/.*/$|^/$": { "$ref": "#/$defs/directory_map" }
+        "^/.*/$|^/$": { "$ref": "#/$defs/directory_map_entry" }
       },
       "additionalProperties": false
     }
