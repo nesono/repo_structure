@@ -20,6 +20,7 @@ from .repo_structure_lib import (
     StructureRuleList,
     StructureRuleMap,
     BUILTIN_DIRECTORY_RULES,
+    TemplateError,
 )
 from .repo_structure_schema import get_json_schema
 
@@ -288,12 +289,6 @@ def _parse_use_template(
         return
 
     def _expand_template(dir_map_yaml, templates_yaml):
-        def _build_expansion_map(dir_map_yaml: dict) -> Dict[str, List[str]]:
-            expansion_map = {}
-            for key in dir_map_yaml.keys():
-                if key != "use_template":
-                    expansion_map[key] = dir_map_yaml[key]
-            return expansion_map
 
         def _max_values_length(expansion_map: Dict[str, List[str]]) -> int:
             max_length = 0
@@ -301,9 +296,13 @@ def _parse_use_template(
                 max_length = max(max_length, len(values))
             return max_length
 
-        expansion_map = _build_expansion_map(dir_map_yaml["parameters"])
+        expansion_map = dir_map_yaml["parameters"]
         structure_rules_yaml: List[dict] = []
         for i in range(_max_values_length(expansion_map)):
+            if dir_map_yaml["use_template"] not in templates_yaml:
+                raise TemplateError(
+                    f"Template '{dir_map_yaml['use_template']}' not found in templates"
+                )
             entries = copy.deepcopy(templates_yaml[dir_map_yaml["use_template"]])
             for expansion_key, expansion_vars in expansion_map.items():
                 index = i % len(expansion_vars)

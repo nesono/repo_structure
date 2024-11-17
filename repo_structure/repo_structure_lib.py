@@ -21,7 +21,7 @@ class UseRuleError(Exception):
     """Use_rule related error."""
 
 
-class RepoStructureTemplateError(Exception):
+class TemplateError(Exception):
     """Repo structure template related error."""
 
 
