@@ -7,7 +7,6 @@ import os
 from typing import List, Callable, Union
 from gitignore_parser import parse_gitignore
 
-from .repo_structure_lib import Flags, UnspecifiedEntryError, ForbiddenEntryError
 from .repo_structure_config import (
     Configuration,
 )
@@ -21,6 +20,9 @@ from .repo_structure_lib import (
     _handle_if_exists,
     _map_dir_to_entry_backlog,
     StructureRuleList,
+    Flags,
+    UnspecifiedEntryError,
+    ForbiddenEntryError,
 )
 
 
@@ -38,13 +40,14 @@ class EntryTypeMismatchError(Exception):
 
 
 def _fail_if_required_entries_missing(
+    rel_dir: str,
     entry_backlog: StructureRuleList,
 ) -> None:
 
     def _report_missing_entries(
         missing_files: List[str], missing_dirs: List[str]
     ) -> str:
-        result = "Matching entries for required patterns missing:\n"
+        result = f"Required patterns missing in  directory '{rel_dir}':\n"
         if missing_files:
             result += "Files:\n"
             result += "".join(f"  - '{file}'\n" for file in missing_files)
@@ -138,7 +141,9 @@ def _fail_if_invalid_repo_structure_recursive(
                     new_backlog,
                     flags,
                 )
-                _fail_if_required_entries_missing(new_backlog)
+                _fail_if_required_entries_missing(
+                    os.path.join(rel_dir, entry.path), new_backlog
+                )
 
 
 def _process_map_dir(
@@ -162,7 +167,7 @@ def _process_map_dir(
         backlog,
         flags,
     )
-    _fail_if_required_entries_missing(backlog)
+    _fail_if_required_entries_missing(rel_dir, backlog)
 
 
 def assert_full_repository_structure(
