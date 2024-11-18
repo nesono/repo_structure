@@ -4,6 +4,7 @@ structure_rules:
     - require: "requirements.txt"
     - require: "LICENSE"
     - require: 'README\.md'
+    - require: 'PUBLISHING\.md'
     - require: 'conflicting_test_config\.yaml'
     - require: '\.pre-commit-config\.yaml'
     - require: '\.pre-commit-hooks\.yaml'
