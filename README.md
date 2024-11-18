@@ -31,6 +31,8 @@ pip install repo-structure
 
 A basic consumption with pre-commit looks like the following.
 
+<!-- keep the versions in this document manually updated -->
+
 ```yaml
 repos:
   - repo: https://github.com/nesono/repo_structure
