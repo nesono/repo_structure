@@ -19,7 +19,8 @@ from .repo_structure_lib import (
     Flags,
     UnspecifiedEntryError,
     ConfigurationParseError,
-    ForbiddenEntryError, OverlappingRuleError,
+    ForbiddenEntryError,
+    OverlappingRuleError,
 )
 
 
@@ -239,6 +240,7 @@ directory_map:
     config = Configuration(config_yaml, True)
     with pytest.raises(MissingRequiredEntriesError):
         _assert_repo_directory_structure(config)
+
 
 @with_repo_structure_in_tmpdir(
     """
