@@ -34,7 +34,13 @@ poetry-plugin-export = "^1.8.0"
 requires = ["poetry-core", "setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
+[tool.coverage.run]
+omit = [
+    "repo_structure/_version.py",
+]
+
 # duplication to make this work with setup.py as well (used by pre-commit.com)
+# START SETUP.PY SPECIFIC SECTION
 [project]
 name = "repo-structure"
 dynamic = ["version"]
@@ -45,5 +51,4 @@ readme = "README.md"
 
 [tool.setuptools.packages.find]
 where = ["repo_structure"]
-#include = ["pkg*"]  # alternatively: `exclude = ["additional*"]`
-#namespaces = false
+# END SETUP.PY SPECIFIC SECTION
