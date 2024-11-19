@@ -32,6 +32,9 @@ class ConfigurationParseError(Exception):
 class ForbiddenEntryError(Exception):
     """Thrown when a forbidden entry is found."""
 
+class OverlappingRuleError(Exception):
+    """Thrown when a overlapping rule is found."""
+
 
 @dataclass
 class RepoEntry:
@@ -156,6 +159,9 @@ def _get_matching_item_index(
             if v.is_forbidden:
                 raise ForbiddenEntryError(f"Found forbidden entry: {entry_path}")
             result.append(i)
+            if len(result) > 1:
+                overlapping_rule_paths = "\n".join([backlog[x].path.pattern for x in result])
+                raise OverlappingRuleError(f"Found overlapping rules for: {entry_path}.\n{overlapping_rule_paths}")
     if len(result) != 0:
         return result
 
@@ -165,7 +171,6 @@ def _get_matching_item_index(
 
 
 def _handle_use_rule(
-    backlog: StructureRuleList,
     use_rule: str,
     structure_rules: StructureRuleMap,
     flags: Flags,
@@ -174,22 +179,19 @@ def _handle_use_rule(
     if use_rule:
         if flags.verbose:
             print(f"use_rule found for rel path {rel_path}")
-        backlog.extend(
-            _build_active_entry_backlog(
+        return _build_active_entry_backlog(
                 [use_rule],
                 structure_rules,
             )
-        )
 
 
 def _handle_if_exists(
-    backlog: StructureRuleList, backlog_entry: RepoEntry, flags: Flags
+    backlog_entry: RepoEntry, flags: Flags
 ):
     if backlog_entry.if_exists:
         if flags.verbose:
             print(f"if_exists found for rel path {backlog_entry.path.pattern}")
-        for e in backlog_entry.if_exists:
-            backlog.append(replace(e, path=re.compile(e.path.pattern)))
+        return backlog_entry.if_exists
 
 
 def _map_dir_to_entry_backlog(
@@ -216,5 +218,5 @@ def _build_active_entry_backlog(
         if rule == "ignore":
             continue
         for e in structure_rules[rule]:
-            result.append(replace(e, path=re.compile(e.path.pattern)))
+            result.append(replace(e, path=re.compile(e.path.pattern))) # TODO: do we need the "replace" here?
     return result

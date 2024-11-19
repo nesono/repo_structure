@@ -70,14 +70,15 @@ def _assert_path_in_backlog(
                 print(f"  Found match for path {entry_name}")
 
             if is_dir:
-                _handle_use_rule(
-                    backlog,
-                    backlog[idx].use_rule,
+                backlog_match = backlog[idx]
+                backlog = _handle_use_rule(
+                    backlog_match.use_rule,
                     config.structure_rules,
                     flags,
                     entry_name,
                 )
-                _handle_if_exists(backlog, backlog[idx], flags)
+                if not backlog:
+                    backlog = _handle_if_exists(backlog_match, flags)
 
 
 def assert_path(

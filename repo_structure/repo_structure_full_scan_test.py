@@ -19,7 +19,7 @@ from .repo_structure_lib import (
     Flags,
     UnspecifiedEntryError,
     ConfigurationParseError,
-    ForbiddenEntryError,
+    ForbiddenEntryError, OverlappingRuleError,
 )
 
 
@@ -131,7 +131,6 @@ directory_map:
 
 @with_repo_structure_in_tmpdir(
     """
-README.md
 python/
 python/main.py
 """
@@ -141,10 +140,9 @@ def test_required_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - require: 'README\.md'
     - require: 'python/'
       if_exists:
-      - require: '.*\.py'
+      - allow: '.*\.py'
 directory_map:
   /:
     - use_rule: base_structure
@@ -240,6 +238,28 @@ directory_map:
         """
     config = Configuration(config_yaml, True)
     with pytest.raises(MissingRequiredEntriesError):
+        _assert_repo_directory_structure(config)
+
+@with_repo_structure_in_tmpdir(
+    """
+README.md
+"""
+)
+def test_fail_rule_precedence():
+    """Test rule precedence. This needs to fail because the wildcard consumes all matches.
+
+    The first match wins and that needs to be kept in mind when designing the rules."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - require: '.*'
+    - require: 'README\.md'
+directory_map:
+  /:
+    - use_rule: base_structure
+"""
+    config = Configuration(config_yaml, True)
+    with pytest.raises(OverlappingRuleError):
         _assert_repo_directory_structure(config)
 
 
@@ -372,26 +392,6 @@ directory_map:
     config = Configuration(config_yaml, True)
     with pytest.raises(UnspecifiedEntryError):
         _assert_repo_directory_structure(config)
-
-
-@with_repo_structure_in_tmpdir(
-    """
-README.md
-"""
-)
-def test_succeed_overlapping_required_file_rules():
-    """Test for overlapping required file rules - two different rules apply to the same file."""
-    config_yaml = r"""
-structure_rules:
-  base_structure:
-    - require: 'README\.md'
-    - require: 'README\..*'
-directory_map:
-  /:
-    - use_rule: base_structure
-    """
-    config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
 
 
 @with_repo_structure_in_tmpdir(

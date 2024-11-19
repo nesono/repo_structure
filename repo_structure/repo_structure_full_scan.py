@@ -124,15 +124,14 @@ def _fail_if_invalid_repo_structure_recursive(
             backlog_entry.count += 1
 
             if os_entry.is_dir():
-                new_backlog: StructureRuleList = []
-                _handle_use_rule(
-                    new_backlog,
+                new_backlog = _handle_use_rule(
                     backlog_entry.use_rule,
                     config.structure_rules,
                     flags,
                     entry.path,
                 )
-                _handle_if_exists(new_backlog, backlog_entry, flags)
+                if not new_backlog:
+                    new_backlog = _handle_if_exists(backlog_entry, flags)
 
                 _fail_if_invalid_repo_structure_recursive(
                     repo_root,
