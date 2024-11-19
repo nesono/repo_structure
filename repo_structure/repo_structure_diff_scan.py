@@ -60,25 +60,25 @@ def _assert_path_in_backlog(
         ):
             return
 
-        for idx in _get_matching_item_index(
+        idx = _get_matching_item_index(
             backlog,
             entry_name,
             is_dir,
             flags.verbose,
-        ):
-            if flags.verbose:
-                print(f"  Found match for path {entry_name}")
+        )
+        if flags.verbose:
+            print(f"  Found match for path {entry_name}")
 
-            if is_dir:
-                backlog_match = backlog[idx]
-                backlog = _handle_use_rule(
-                    backlog_match.use_rule,
-                    config.structure_rules,
-                    flags,
-                    entry_name,
-                )
-                if not backlog:
-                    backlog = _handle_if_exists(backlog_match, flags)
+        if is_dir:
+            backlog_match = backlog[idx]
+            backlog = _handle_use_rule(
+                backlog_match.use_rule,
+                config.structure_rules,
+                flags,
+                entry_name,
+            )
+            if not backlog:
+                backlog = _handle_if_exists(backlog_match, flags)
 
 
 def assert_path(

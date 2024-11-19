@@ -33,10 +33,6 @@ class ForbiddenEntryError(Exception):
     """Thrown when a forbidden entry is found."""
 
 
-class OverlappingRuleError(Exception):
-    """Thrown when a overlapping rule is found."""
-
-
 @dataclass
 class RepoEntry:
     """Wrapper for entries in the directory structure, that store the path
@@ -151,24 +147,14 @@ def _get_matching_item_index(
     entry_path: str,
     is_dir: bool,
     verbose: bool = False,
-) -> List[int]:
-    result: List[int] = []
+) -> int:
     for i, v in enumerate(backlog):
         if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
-            if verbose:
-                print(f"  Found match at index {i}: {v.path.pattern}")
             if v.is_forbidden:
                 raise ForbiddenEntryError(f"Found forbidden entry: {entry_path}")
-            result.append(i)
-            if len(result) > 1:
-                overlapping_rule_paths = "\n".join(
-                    [backlog[x].path.pattern for x in result]
-                )
-                raise OverlappingRuleError(
-                    f"Found overlapping rules for: {entry_path}.\n{overlapping_rule_paths}"
-                )
-    if len(result) != 0:
-        return result
+            if verbose:
+                print(f"  Found match at index {i}: {v.path.pattern}")
+            return i
 
     if is_dir:
         entry_path += "/"

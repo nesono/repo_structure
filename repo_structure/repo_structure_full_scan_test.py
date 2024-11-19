@@ -20,7 +20,6 @@ from .repo_structure_lib import (
     UnspecifiedEntryError,
     ConfigurationParseError,
     ForbiddenEntryError,
-    OverlappingRuleError,
 )
 
 
@@ -250,7 +249,7 @@ README.md
 def test_fail_rule_precedence():
     """Test rule precedence. This needs to fail because the wildcard consumes all matches.
 
-    The first match wins and that needs to be kept in mind when designing the rules."""
+    The first match wins and thus the README.md will never be reached."""
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -261,7 +260,7 @@ directory_map:
     - use_rule: base_structure
 """
     config = Configuration(config_yaml, True)
-    with pytest.raises(OverlappingRuleError):
+    with pytest.raises(MissingRequiredEntriesError):
         _assert_repo_directory_structure(config)
 
 

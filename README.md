@@ -155,6 +155,18 @@ structure_rules:
       use_rule: example_rule_with_recursion
 ```
 
+## Pattern Matching Order
+
+Patterns are matched in the order they are declared. Once a rule is matched,
+the processing is stopped. Hence, wildcard patterns must be put to the end of
+the structure rules. Or more precise:
+
+> Less specific patterns need to come later that more specific patterns.
+
+Keep this rule in the back of your head when designing the structure rules. You
+won't get noticed if you make a mistake, unless you run into a directory
+structure that happens to run into the issue.
+
 ## Templates
 
 Templates provide the ability to reuse patterns of directory structures and
