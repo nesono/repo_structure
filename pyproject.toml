@@ -33,3 +33,22 @@ poetry-plugin-export = "^1.8.0"
 [build-system]
 requires = ["poetry-core", "setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
+
+[tool.coverage.run]
+omit = [
+    "repo_structure/_version.py",
+]
+
+# duplication to make this work with setup.py as well (used by pre-commit.com)
+# START SETUP.PY SPECIFIC SECTION
+[project]
+name = "repo-structure"
+dynamic = ["version"]
+description = "Check the directory structure of your repository"
+authors = [{name = "Jochen Issing", email = "c.333+git@nesono.com"}]
+license = {text = "BSD-3-Clause"}
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+where = ["repo_structure"]
+# END SETUP.PY SPECIFIC SECTION
