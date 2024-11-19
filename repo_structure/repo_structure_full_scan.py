@@ -119,18 +119,16 @@ def _fail_if_invalid_repo_structure_recursive(
                 f"Forbidden entry found: '{entry.rel_dir}/{entry.path}'"
             ) from err
 
-        backlog_entry = backlog[idx]
-        backlog_entry.count += 1
+        backlog_match = backlog[idx]
+        backlog_match.count += 1
 
         if os_entry.is_dir():
             new_backlog = _handle_use_rule(
-                backlog_entry.use_rule,
+                backlog_match.use_rule,
                 config.structure_rules,
                 flags,
                 entry.path,
-            )
-            if not new_backlog:
-                new_backlog = _handle_if_exists(backlog_entry, flags)
+            ) or _handle_if_exists(backlog_match, flags)
 
             _fail_if_invalid_repo_structure_recursive(
                 repo_root,

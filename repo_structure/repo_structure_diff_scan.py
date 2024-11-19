@@ -72,13 +72,8 @@ def _assert_path_in_backlog(
         if is_dir:
             backlog_match = backlog[idx]
             backlog = _handle_use_rule(
-                backlog_match.use_rule,
-                config.structure_rules,
-                flags,
-                entry_name,
-            )
-            if not backlog:
-                backlog = _handle_if_exists(backlog_match, flags)
+                backlog_match.use_rule, config.structure_rules, flags, entry_name
+            ) or _handle_if_exists(backlog_match, flags)
 
 
 def assert_path(

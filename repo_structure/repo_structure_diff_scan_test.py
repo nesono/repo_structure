@@ -49,6 +49,24 @@ directory_map:
         assert_path(config, "python/bad_filename.py")
 
 
+def test_matching_regex_dir_if_exists():
+    """Test with required file."""
+    config_yaml = r"""
+structure_rules:
+  recursive_rule:
+    - require: 'main\.py'
+    - require: 'python/'
+      if_exists:
+        - require: '.*'
+directory_map:
+  /:
+    - use_rule: recursive_rule
+    """
+    config = Configuration(config_yaml, True)
+    assert_path(config, "main.py")
+    assert_path(config, "python/something.py")
+
+
 def test_multi_use_rule():
     """Test multiple use rules."""
     config_yaml = r"""
