@@ -167,6 +167,15 @@ Keep this rule in the back of your head when designing the structure rules. You
 won't get noticed if you make a mistake, unless you run into a directory
 structure that happens to run into the issue.
 
+For example, the following configuration would fail always
+
+```yaml
+structure_rules:
+  example_rule:
+    - require: ".*"
+    - require: 'main\.py'
+```
+
 ## Templates
 
 Templates provide the ability to reuse patterns of directory structures and
