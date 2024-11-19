@@ -104,7 +104,7 @@ def _fail_if_invalid_repo_structure_recursive(
             continue
 
         try:
-            indices = _get_matching_item_index(
+            idx = _get_matching_item_index(
                 backlog,
                 entry.path,
                 os_entry.is_dir(),
@@ -119,31 +119,27 @@ def _fail_if_invalid_repo_structure_recursive(
                 f"Forbidden entry found: '{entry.rel_dir}/{entry.path}'"
             ) from err
 
-        for idx in indices:
-            backlog_entry = backlog[idx]
-            backlog_entry.count += 1
+        backlog_match = backlog[idx]
+        backlog_match.count += 1
 
-            if os_entry.is_dir():
-                new_backlog: StructureRuleList = []
-                _handle_use_rule(
-                    new_backlog,
-                    backlog_entry.use_rule,
-                    config.structure_rules,
-                    flags,
-                    entry.path,
-                )
-                _handle_if_exists(new_backlog, backlog_entry, flags)
+        if os_entry.is_dir():
+            new_backlog = _handle_use_rule(
+                backlog_match.use_rule,
+                config.structure_rules,
+                flags,
+                entry.path,
+            ) or _handle_if_exists(backlog_match, flags)
 
-                _fail_if_invalid_repo_structure_recursive(
-                    repo_root,
-                    os.path.join(rel_dir, entry.path),
-                    config,
-                    new_backlog,
-                    flags,
-                )
-                _fail_if_required_entries_missing(
-                    os.path.join(rel_dir, entry.path), new_backlog
-                )
+            _fail_if_invalid_repo_structure_recursive(
+                repo_root,
+                os.path.join(rel_dir, entry.path),
+                config,
+                new_backlog,
+                flags,
+            )
+            _fail_if_required_entries_missing(
+                os.path.join(rel_dir, entry.path), new_backlog
+            )
 
 
 def _process_map_dir(

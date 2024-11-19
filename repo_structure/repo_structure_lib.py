@@ -2,7 +2,7 @@
 
 import os
 import re
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from os import DirEntry
 from typing import List, Union, Callable, Dict, Final
 
@@ -147,17 +147,14 @@ def _get_matching_item_index(
     entry_path: str,
     is_dir: bool,
     verbose: bool = False,
-) -> List[int]:
-    result: List[int] = []
+) -> int:
     for i, v in enumerate(backlog):
         if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
-            if verbose:
-                print(f"  Found match at index {i}: {v.path.pattern}")
             if v.is_forbidden:
                 raise ForbiddenEntryError(f"Found forbidden entry: {entry_path}")
-            result.append(i)
-    if len(result) != 0:
-        return result
+            if verbose:
+                print(f"  Found match at index {i}: {v.path.pattern}")
+            return i
 
     if is_dir:
         entry_path += "/"
@@ -165,7 +162,6 @@ def _get_matching_item_index(
 
 
 def _handle_use_rule(
-    backlog: StructureRuleList,
     use_rule: str,
     structure_rules: StructureRuleMap,
     flags: Flags,
@@ -174,22 +170,20 @@ def _handle_use_rule(
     if use_rule:
         if flags.verbose:
             print(f"use_rule found for rel path {rel_path}")
-        backlog.extend(
-            _build_active_entry_backlog(
-                [use_rule],
-                structure_rules,
-            )
+        return _build_active_entry_backlog(
+            [use_rule],
+            structure_rules,
         )
+    return None
 
 
-def _handle_if_exists(
-    backlog: StructureRuleList, backlog_entry: RepoEntry, flags: Flags
-):
+def _handle_if_exists(backlog_entry: RepoEntry, flags: Flags):
     if backlog_entry.if_exists:
         if flags.verbose:
             print(f"if_exists found for rel path {backlog_entry.path.pattern}")
-        for e in backlog_entry.if_exists:
-            backlog.append(replace(e, path=re.compile(e.path.pattern)))
+        return backlog_entry.if_exists
+    # the following line can not be reached given the current integration
+    return None  # pragma: no cover
 
 
 def _map_dir_to_entry_backlog(
@@ -215,6 +209,5 @@ def _build_active_entry_backlog(
     for rule in active_use_rules:
         if rule == "ignore":
             continue
-        for e in structure_rules[rule]:
-            result.append(replace(e, path=re.compile(e.path.pattern)))
+        result += structure_rules[rule]
     return result
