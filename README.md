@@ -36,7 +36,7 @@ A basic consumption with pre-commit looks like the following.
 ```yaml
 repos:
   - repo: https://github.com/nesono/repo_structure
-    rev: "v0.3.4"
+    rev: "v0.4.0"
     hooks:
       - id: repo-structure-diff-scan
 ```
@@ -50,7 +50,7 @@ to the yaml, for instance:
 ```yaml
 repos:
   - repo: https://github.com/nesono/repo_structure
-    rev: "v0.3.4"
+    rev: "v0.4.0"
     hooks:
       - id: repo-structure-diff-scan
         args: ["--config-path", "path/to/your_config_file.yaml"]
