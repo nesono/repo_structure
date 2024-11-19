@@ -183,8 +183,7 @@ def _handle_if_exists(backlog_entry: RepoEntry, flags: Flags):
             print(f"if_exists found for rel path {backlog_entry.path.pattern}")
         return backlog_entry.if_exists
     # the following line can not be reached given the current integration
-    # pragma: no cover
-    return None
+    return None  # pragma: no cover
 
 
 def _map_dir_to_entry_backlog(
