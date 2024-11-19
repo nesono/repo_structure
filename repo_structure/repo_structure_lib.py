@@ -2,7 +2,7 @@
 
 import os
 import re
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from os import DirEntry
 from typing import List, Union, Callable, Dict, Final
 
@@ -217,6 +217,5 @@ def _build_active_entry_backlog(
     for rule in active_use_rules:
         if rule == "ignore":
             continue
-        for e in structure_rules[rule]:
-            result.append(replace(e, path=re.compile(e.path.pattern))) # TODO: do we need the "replace" here?
+        result += structure_rules[rule]
     return result
