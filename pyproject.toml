@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "repo-structure"
-version = "0.3.4" # keep this manually updated
+version = "0.4.0" # keep this manually updated
 description = "Check the directory structure of your repository"
 authors = ["Jochen Issing <c.333+git@nesono.com>"]
 repository = "https://github.com/nesono/repo_structure"
