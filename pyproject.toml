@@ -1,54 +1,44 @@
-[tool.poetry]
-name = "repo-structure"
-version = "0.4.0" # keep this manually updated
-description = "Check the directory structure of your repository"
-authors = ["Jochen Issing <c.333+git@nesono.com>"]
-repository = "https://github.com/nesono/repo_structure"
-license = "BSD-3-Clause"
-readme = "README.md"
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
 
-packages = [
-    { include = "repo_structure" }
+[project]
+name = "repo-structure"
+authors = [{name = "Jochen Issing", email = "c.333+git@nesono.com"}]
+description = "Check the directory structure of your repository"
+readme = "README.md"
+requires-python = ">=3.9,<4.0"
+license = {text = "BSD-3-Clause"}
+classifiers = [
+    "Programming Language :: Python :: 3",
 ]
+dependencies = [
+    "click",
+    "ruamel-yaml",
+    "gitignore-parser",
+    "jsonschema",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "poetry-plugin-export",
+]
+
+[project.scripts]
+repo_structure = "repo_structure.__main__:repo_structure"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["repo_structure"]
 exclude = ["repo_structure/*_test.py"]
 
 [tool.setuptools_scm]
 version_file = "repo_structure/_version.py"
 
-[tool.poetry.scripts]
-repo_structure = 'repo_structure.__main__:repo_structure'
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-click = "8.1.7"
-ruamel-yaml = "0.18.6"
-gitignore-parser = "0.1.11"
-jsonschema = "4.23.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "8.3.3"
-pytest-cov = "^6.0.0"
-poetry-plugin-export = "^1.8.0"
-
-[build-system]
-requires = ["poetry-core", "setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
-
 [tool.coverage.run]
 omit = [
     "repo_structure/_version.py",
 ]
-
-# duplication to make this work with setup.py as well (used by pre-commit.com)
-# START SETUP.PY SPECIFIC SECTION
-[project]
-name = "repo-structure"
-dynamic = ["version"]
-description = "Check the directory structure of your repository"
-authors = [{name = "Jochen Issing", email = "c.333+git@nesono.com"}]
-license = {text = "BSD-3-Clause"}
-readme = "README.md"
-
-[tool.setuptools.packages.find]
-where = ["repo_structure"]
-# END SETUP.PY SPECIFIC SECTION
