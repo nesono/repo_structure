@@ -14,3 +14,5 @@
 /node_modules/
 __pycache__/
 /repo_structure/repo_structure.egg-info/
+/build/
+/repo_structure.egg-info/
