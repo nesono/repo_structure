@@ -14,13 +14,16 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9
-      - uses: abatilo/actions-poetry@v2
-        with:
-          poetry-version: 1.8.4
-      - name: Run poetry install
+      - name: Install dependencies
         run: |
-          poetry install
-      - name: Publish to PyPI
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install --upgrade build
+          pip install --upgrade twine
+      - name: Build and publish to PyPI
         env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: poetry publish --build --username __token__ --password $POETRY_PYPI_TOKEN_PYPI
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          python -m build
+          twine upload dist/*
