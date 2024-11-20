@@ -1,6 +1,9 @@
 # Repo Structure
 
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![Build and Test CI](https://github.com/nesono/repo_structure/actions/workflows/build-and-test-ci.yaml/badge.svg)](https://github.com/nesono/repo_structure/actions/workflows/build-and-test-ci.yaml)
+[![Pre-Commit.Com](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![CodeQL](https://github.com/nesono/repo_structure/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/nesono/repo_structure/actions/workflows/github-code-scanning/codeql)
+[![Publish to PyPI](https://github.com/nesono/repo_structure/actions/workflows/publish-to-pypi.yaml/badge.svg)](https://github.com/nesono/repo_structure/actions/workflows/publish-to-pypi.yaml)
 
 A tool to maintain and enforce a clean and organized repository structure.
 
@@ -36,7 +39,7 @@ A basic consumption with pre-commit looks like the following.
 ```yaml
 repos:
   - repo: https://github.com/nesono/repo_structure
-    rev: "v0.4.0"
+    rev: "v0.4.1"
     hooks:
       - id: repo-structure-diff-scan
 ```
@@ -50,7 +53,7 @@ to the yaml, for instance:
 ```yaml
 repos:
   - repo: https://github.com/nesono/repo_structure
-    rev: "v0.4.0"
+    rev: "v0.4.1"
     hooks:
       - id: repo-structure-diff-scan
         args: ["--config-path", "path/to/your_config_file.yaml"]
