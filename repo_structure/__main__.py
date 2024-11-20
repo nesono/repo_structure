@@ -12,7 +12,11 @@ from .repo_structure_lib import Flags
 from .repo_structure_full_scan import assert_full_repository_structure
 from .repo_structure_diff_scan import assert_path
 from .repo_structure_config import Configuration
-from ._version import version
+
+try:
+    from ._version import version as VERSION
+except ModuleNotFoundError:
+    VERSION = "ersion unknown"
 
 
 @click.group()
@@ -38,7 +42,7 @@ from ._version import version
     help="Enable verbose messages for debugging and tracing.",
 )
 @click.version_option(
-    version=f"v{version}",
+    version=f"v{VERSION}",
     prog_name="Repo-Structure",
     message="%(prog)s %(version)s",
 )
