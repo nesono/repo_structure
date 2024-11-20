@@ -15,7 +15,7 @@ from .repo_structure_config import Configuration
 
 try:
     from ._version import version as VERSION
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
     VERSION = "ersion unknown"
 
 
