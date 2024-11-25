@@ -217,22 +217,20 @@ directory_map:
         Configuration(test_config, True)
 
 
-def test_fail_use_rule_not_recursive():
-    """Test use rule usage not recursive."""
+def test_use_rule_mixin():
+    """Test use rule usage not recursive - mix in another rule."""
     config_yaml = r"""
 structure_rules:
     license_rule:
         - require: 'LICENSE'
-    bad_use_rule:
+    other_rule:
         - allow: '.*/'
           use_rule: license_rule
 directory_map:
   /:
-    # it doesn't matter here what we 'use', the test should fail always
-    - use_rule: bad_use_rule
+    - use_rule: other_rule
     """
-    with pytest.raises(UseRuleError):
-        Configuration(config_yaml, True)
+    Configuration(config_yaml, True)
 
 
 def test_fail_directory_map_missing_trailing_slash():
