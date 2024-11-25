@@ -161,18 +161,8 @@ def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
                         "is not a valid rule key"
                     )
 
-    def _validate_use_rule_only_recursive(rules: StructureRuleMap) -> None:
-        for rule_key in rules.keys():
-            for entry in rules[rule_key]:
-                if entry.use_rule and entry.use_rule != rule_key:
-                    raise UseRuleError(
-                        f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
-                        "is not recursive"
-                    )
-
     rules = _build_rules(structure_rules_yaml)
     _validate_use_rule_not_dangling(rules)
-    _validate_use_rule_only_recursive(rules)
 
     return rules
 
