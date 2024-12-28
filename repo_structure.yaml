@@ -11,6 +11,7 @@ structure_rules:
     - require: '\.markdownlint\.yaml'
     - require: 'pyproject\.toml'
     - require: 'repo_structure\.iml'
+    - require: 'renovate\.json'
   python_package:
     - require: '__main__\.py'
     - require: '__init__\.py'
