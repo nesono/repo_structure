@@ -22,12 +22,12 @@ structure_rules:
     - forbid: 'CMakeLists\.txt'
     - allow: '.github/'
       if_exists:
-        - p: 'CODEOWNERS'
+        - require: 'CODEOWNERS'
   recursive_rule:
     - require: '.*\.py'
     - require: 'package/'
       if_exists:
-      - p: '.*/'
+      - require: '.*/'
         use_rule: recursive_rule
 templates:
   software_component:
@@ -169,7 +169,7 @@ directory_map:
   /:
     - use_rule: package
 """
-    with pytest.raises(ConfigurationParseError):
+    with pytest.raises(UseRuleError):
         Configuration(test_config, True)
 
 
