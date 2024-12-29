@@ -1,9 +1,7 @@
 structure_rules:
   allow_all:
-    - p: ".*"
-      required: False
-    - p: ".*/"
-      required: False
+    - allow: ".*"
+    - allow: ".*/"
       use_rule: allow_all
 
 directory_map:

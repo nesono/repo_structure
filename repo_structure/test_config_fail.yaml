@@ -1,6 +1,6 @@
 structure_rules:
   fail_rule:
-    - p: "non_existent_file.txt"
+    - require: "non_existent_file.txt"
 
 directory_map:
   /:

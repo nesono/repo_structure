@@ -1,6 +1,6 @@
 structure_rules:
   some_rule:
-    - p: "LICENSE"
+    - require: "LICENSE"
 
 directory_map:
   /:
