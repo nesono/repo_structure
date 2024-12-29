@@ -63,12 +63,15 @@ repos:
 
 The following modes are available with Repo Structure:
 
-| ID                               | Description                                                                                                  | Default stages |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------- |
-| `repo-structure-diff-scan`       | Ensure that all added or modified files are allowed by the repo structure configuration                      | all            |
-| `repo-structure-diff-scan-debug` | Ensure that all added or modified files are allowed by the repo structure configuration with tracing enabled | all            |
-| `repo-structure-full-scan`       | Run a full scan ensuring that all allowed and required files exist                                           | `pre-push`     |
-| `repo-structure-full-scan-debug` | Run a full scan ensuring that all allowed and required files exist with tracing enabled                      | `pre-push`     |
+| ID           | Description                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------ |
+| `diff`       | Ensure that all added or modified files are allowed by the repo structure configuration                      |
+| `diff-debug` | Ensure that all added or modified files are allowed by the repo structure configuration with tracing enabled |
+| `full`       | Run a full scan ensuring that all allowed and required files exist                                           |
+| `full-debug` | Run a full scan ensuring that all allowed and required files exist with tracing enabled                      |
+
+Note that the full scan hooks might take longer time than you are willing to spend during `pre-commit`.
+You can enable then for the `pre-push` stage only, or you can run the tool in the terminal installed from pip.
 
 ## Configuration Overall structure
 
