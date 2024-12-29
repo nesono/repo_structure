@@ -18,15 +18,10 @@ structure_rules:
     - require: '.*\.py'
     - require: 'config\.schema\.json'
     - require: 'test_config_.*\.yaml'
-  test_dir:
-    - require: "repo_struct/"
-      if_exists:
-        - require: "README.md"
 
 directory_map:
   /:
     - use_rule: base_structure
-    - use_rule: test_dir
   /repo_structure/:
     - use_rule: python_package
   /.github/:
