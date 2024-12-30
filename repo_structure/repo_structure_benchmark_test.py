@@ -1,6 +1,10 @@
 """"Tests for repo_structure benchmark."""
 
+# pylint: disable=import-error
+import os
 from typing import Final
+import pytest
+
 from .repo_structure_test_lib import with_random_repo_structure_in_tmpdir
 from .repo_structure_full_scan import assert_full_repository_structure
 from .repo_structure_config import Configuration
@@ -18,6 +22,9 @@ directory_map:
 """
 
 
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_RUN_ID", "") != "", reason="Only run on local machine."
+)
 @with_random_repo_structure_in_tmpdir()
 def test_benchmark_repo_structure_default(benchmark):
     """Test repo_structure benchmark."""
