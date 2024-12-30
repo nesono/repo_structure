@@ -5,6 +5,7 @@ from typing import Callable, TypeVar
 from pathlib import Path
 import random
 import string
+import functools
 
 
 def _get_tmp_dir() -> str:
@@ -112,6 +113,7 @@ def with_random_repo_structure_in_tmpdir(depth: int = 3, dir_count: int = 5, fil
 
     def decorator(func: Callable[..., R]) -> Callable[..., R]:
 
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             cwd = os.getcwd()
             tmpdir = _get_tmp_dir()
