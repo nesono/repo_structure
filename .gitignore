@@ -17,3 +17,4 @@ __pycache__/
 /build/
 /repo_structure.egg-info/
 repo_structure/_version.py
+/.benchmarks/
