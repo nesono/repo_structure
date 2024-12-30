@@ -2,10 +2,6 @@
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-lines
 """Tests for repo_structure library functions."""
-import os
-import shutil
-import tempfile
-from typing import Callable, TypeVar
 
 import pytest
 
