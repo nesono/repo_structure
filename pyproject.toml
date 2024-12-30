@@ -24,6 +24,7 @@ dynamic = ["version"]
 dev = [
     "pytest",
     "pytest-cov",
+    "pytest-benchmark",
     "poetry-plugin-export",
 ]
 
