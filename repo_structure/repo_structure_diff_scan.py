@@ -67,7 +67,7 @@ def _assert_path_in_backlog(
             flags.verbose,
         )
         if flags.verbose:
-            print(f"  Found match for path {entry_name}")
+            print(f"  Found match for path '{entry_name}'")
 
         if is_dir:
             backlog_match = backlog[idx]
@@ -88,14 +88,14 @@ def assert_path(
 
     def _get_corresponding_map_dir(c: Configuration, f: Flags, p: str):
 
-        map_dir = ""
+        map_dir = "/"
         for rel_dir, entry_name, is_dir in _incremental_path_split(p):
             map_sub_dir = rel_dir_to_map_dir(os.path.join(rel_dir, entry_name))
             if is_dir and map_sub_dir in c.directory_map:
                 map_dir = map_sub_dir
 
         if f.verbose:
-            print(f"Found corresponding map dir for {p}: {map_dir}")
+            print(f"Found corresponding map dir for '{p}': '{map_dir}'")
 
         return map_dir
 
@@ -113,9 +113,9 @@ def assert_path(
         _assert_path_in_backlog(backlog, config, flags, rel_path)
     except UnspecifiedEntryError as err:
         raise UnspecifiedEntryError(
-            f"Unspecified entry {path} found. Map dir: {map_dir}"
+            f"Unspecified entry '{path}' found. Map dir: '{map_dir}'"
         ) from err
     except ForbiddenEntryError as err:
         raise ForbiddenEntryError(
-            f"Forbidden entry {path} found. Map dir: {map_dir}"
+            f"Forbidden entry '{path}' found. Map dir: '{map_dir}'"
         ) from err

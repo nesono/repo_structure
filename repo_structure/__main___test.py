@@ -82,6 +82,7 @@ def test_main_diff_scan_fail_bad_config():
         ],
     )
 
+    assert "bad_rule" in result.output
     assert result.exit_code != 0
 
 
@@ -98,4 +99,22 @@ def test_main_diff_scan_fail():
         ],
     )
 
+    assert "LICENSE" in result.output
+    assert result.exit_code != 0
+
+
+def test_main_diff_scan_fail_abs_path():
+    """Test failing main run due to bad file."""
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure,
+        [
+            "diff-scan",
+            "-c",
+            "repo_structure/test_config_fail.yaml",
+            "/etc/passwd",
+        ],
+    )
+
+    assert "/etc/passwd" in result.output
     assert result.exit_code != 0

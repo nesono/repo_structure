@@ -153,12 +153,12 @@ def _get_matching_item_index(
             if v.is_forbidden:
                 raise ForbiddenEntryError(f"Found forbidden entry: {entry_path}")
             if verbose:
-                print(f"  Found match at index {i}: {v.path.pattern}")
+                print(f"  Found match at index {i}: '{v.path.pattern}'")
             return i
 
     if is_dir:
         entry_path += "/"
-    raise UnspecifiedEntryError(f"Found unspecified entry: {entry_path}")
+    raise UnspecifiedEntryError(f"Found unspecified entry: '{entry_path}'")
 
 
 def _handle_use_rule(
@@ -169,7 +169,7 @@ def _handle_use_rule(
 ):
     if use_rule:
         if flags.verbose:
-            print(f"use_rule found for rel path {rel_path}")
+            print(f"use_rule found for rel path '{rel_path}'")
         return _build_active_entry_backlog(
             [use_rule],
             structure_rules,
@@ -180,7 +180,7 @@ def _handle_use_rule(
 def _handle_if_exists(backlog_entry: RepoEntry, flags: Flags):
     if backlog_entry.if_exists:
         if flags.verbose:
-            print(f"if_exists found for rel path {backlog_entry.path.pattern}")
+            print(f"if_exists found for rel path '{backlog_entry.path.pattern}'")
         return backlog_entry.if_exists
     # the following line can not be reached given the current integration
     return None  # pragma: no cover

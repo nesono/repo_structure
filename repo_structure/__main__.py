@@ -5,6 +5,7 @@
 """Ensure clean repository structure for your projects."""
 import sys
 import time
+from pathlib import Path
 
 import click
 
@@ -66,7 +67,7 @@ def repo_structure(
 @click.option(
     "--repo-root",
     "-r",
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, file_okay=False),
     help="The path to the repository root.",
     default=".",
     show_default=True,
@@ -147,7 +148,7 @@ def full_scan(ctx: click.Context, repo_root: str, config_path: str) -> None:
 @click.argument(
     "paths",
     nargs=-1,
-    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    type=click.Path(),
     required=False,
 )
 @click.pass_context
@@ -177,6 +178,13 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
         sys.exit(1)
 
     for path in paths:
+        if Path(path).is_absolute():
+            err = f"'{path}' must not be absolute, but relative to the repository root"
+            click.echo(
+                f"Error: " + click.style(err, fg="red"), err=True
+            )
+            successful = False
+            continue
         try:
             assert_path(
                 config,
