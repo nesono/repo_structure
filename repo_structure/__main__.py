@@ -179,10 +179,10 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
 
     for path in paths:
         if Path(path).is_absolute():
-            err = f"'{path}' must not be absolute, but relative to the repository root"
-            click.echo(
-                f"Error: " + click.style(err, fg="red"), err=True
+            err_msg = (
+                f"'{path}' must not be absolute, but relative to the repository root"
             )
+            click.echo("Error: " + click.style(err_msg, fg="red"), err=True)
             successful = False
             continue
         try:
