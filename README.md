@@ -39,7 +39,7 @@ A basic consumption with pre-commit looks like the following.
 ```yaml
 repos:
   - repo: https://github.com/nesono/repo_structure
-    rev: "v0.5.0"
+    rev: ""
     hooks:
       - id: repo-structure-diff-scan
 ```
@@ -53,7 +53,7 @@ to the yaml, for instance:
 ```yaml
 repos:
   - repo: https://github.com/nesono/repo_structure
-    rev: "v0.5.0"
+    rev: ""
     hooks:
       - id: repo-structure-diff-scan
         args: ["--config-path", "path/to/your_config_file.yaml"]
@@ -63,12 +63,12 @@ repos:
 
 The following modes are available with Repo Structure:
 
-| ID           | Description                                                                                                  |
-| ------------ | ------------------------------------------------------------------------------------------------------------ |
-| `diff`       | Ensure that all added or modified files are allowed by the repo structure configuration                      |
-| `diff-debug` | Ensure that all added or modified files are allowed by the repo structure configuration with tracing enabled |
-| `full`       | Run a full scan ensuring that all allowed and required files exist                                           |
-| `full-debug` | Run a full scan ensuring that all allowed and required files exist with tracing enabled                      |
+| ID                          | Description                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `repo-structure-diff`       | Ensure that all added or modified files are allowed by the repo structure configuration                      |
+| `repo-structure-diff-debug` | Ensure that all added or modified files are allowed by the repo structure configuration with tracing enabled |
+| `repo-structure-full`       | Run a full scan ensuring that all allowed and required files exist                                           |
+| `repo-structure-full-debug` | Run a full scan ensuring that all allowed and required files exist with tracing enabled                      |
 
 Note that the full scan hooks might take longer time than you are willing to spend during `pre-commit`.
 You can enable then for the `pre-push` stage only, or you can run the tool in the terminal installed from pip.
