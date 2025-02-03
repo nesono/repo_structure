@@ -45,3 +45,11 @@ jobs:
         run: |
           pip install .
           repo_structure full-scan
+
+      - name: Testing publication steps without publishing
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install --upgrade build
+          pip install --upgrade twine
+          python -m build
