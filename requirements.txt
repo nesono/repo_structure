@@ -138,9 +138,9 @@ rpds-py==0.23.1 \
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.10 \
-    --hash=sha256:20c86ab29ac2153f80a428e1254a8adf686d3383df04490514ca3b79a362db58 \
-    --hash=sha256:30f22513ab2301b3d2b577adc121c6471f28734d3d9728581245f1e76468b4f1
+ruamel-yaml==0.18.11 \
+    --hash=sha256:b586a3416676566ed45bf679a0909719f7ea7b58c03a9b6e03f905a1e2cd5076 \
+    --hash=sha256:eca06c9fce6ee3220845c4c54e58376586e041a6127e4d1958e12a3142084897
     # via repo-structure (pyproject.toml)
 ruamel-yaml-clib==0.2.12 \
     --hash=sha256:040ae85536960525ea62868b642bdb0c2cc6021c9f9d507810c0c604e66f5a7b \
