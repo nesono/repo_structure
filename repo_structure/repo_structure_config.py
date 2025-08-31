@@ -115,6 +115,51 @@ class Configuration:
             )
             print("Configuration parsed successfully")
 
+    def _load_and_validate_configuration(
+        self,
+        config_file: str,
+        param1_is_yaml_string: bool,
+        schema: Optional[dict[Any, Any]],
+        verbose: bool,
+    ) -> dict:
+        """Load and validate the configuration from a YAML file or string.
+
+        Args:
+            config_file (str): Path to the configuration file or configuration string.
+            param1_is_yaml_string (bool): If true interprets config_file as contents not path.
+            schema (dict[Any, Any]): An optional JSON schema file for schema verification.
+            verbose (bool): If true, prints verbose output.
+
+        Returns:
+            dict: The loaded YAML configuration.
+
+        Raises:
+            ConfigurationParseError: If the configuration is invalid.
+        """
+        if verbose:
+            print("Loading configuration")
+        if param1_is_yaml_string:
+            yaml_dict = _load_repo_structure_yamls(config_file)
+        else:
+            yaml_dict = _load_repo_structure_yaml(config_file)
+
+        if not yaml_dict:
+            raise ConfigurationParseError
+
+        if not schema:
+            schema = get_json_schema()
+
+        try:
+            validate(instance=yaml_dict, schema=schema)
+        except ValidationError as e:
+            raise ConfigurationParseError(f"Bad config: {e.message}") from e
+        except SchemaError as e:
+            raise ConfigurationParseError(f"Bad schema: {e.message}") from e
+        if verbose:
+            print("Configuration validated successfully")
+
+        return yaml_dict
+
     def _validate_directory_map_use_rules(self):
         existing_rules = self.config.structure_rules.keys()
         for directory, rule in self.config.directory_map.items():
