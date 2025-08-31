@@ -26,3 +26,5 @@ directory_map:
     - use_rule: python_package
   /.github/:
     - use_rule: ignore
+  /.python-version/:
+    - use_rule: ignore
