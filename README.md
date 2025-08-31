@@ -305,7 +305,7 @@ The rule can
 
 ## System Requirements
 
-- Tested with Python versions ["3.8", "3.9", "3.10", "3.11"]
+- Tested with Python versions ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 - [Pip requirements](requirements.txt)
 - Does not work on Windows
 
@@ -329,3 +329,10 @@ The rule can
 - `conda activate .conda_env`
 - `pip install -r requirements.txt`
 - `pytest *_test.py`
+
+### Using uv
+
+- `uv python install 3.10`
+- `uv pip install -e '.[dev]'`
+- `uv build`
+- `uv run pytest`

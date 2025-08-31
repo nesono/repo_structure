@@ -12,6 +12,7 @@ structure_rules:
     - require: 'pyproject\.toml'
     - require: 'repo_structure\.iml'
     - require: 'renovate\.json'
+    - require: '\.python-version'
   python_package:
     - require: '__main__\.py'
     - require: '__init__\.py'
