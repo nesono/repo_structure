@@ -329,3 +329,10 @@ The rule can
 - `conda activate .conda_env`
 - `pip install -r requirements.txt`
 - `pytest *_test.py`
+
+### Using uv
+
+- `uv python install 3.10`
+- `uv pip install -e '.[dev]'`
+- `uv build`
+- `uv run pytest`
