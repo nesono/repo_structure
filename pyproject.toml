@@ -8,8 +8,8 @@ authors = [{name = "Jochen Issing", email = "c.333+git@nesono.com"}]
 description = "Check the directory structure of your repository"
 readme = "README.md"
 requires-python = ">=3.9,<4.0"
-# TODO: make this a simple SPDX expression or use license-files
-license = {text = "BSD-3-Clause"}
+license = "BSD-3-Clause"
+
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
