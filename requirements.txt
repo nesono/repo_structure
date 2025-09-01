@@ -14,8 +14,8 @@ click==8.1.8 \
     --hash=sha256:63c132bbbed01578a06712a2d1f497bb62d9c1c0d329b7903a866228027263b2 \
     --hash=sha256:ed53c9d8990d83c2a27deae68e4ee337473f6330c040a31d4225c9574d16096a
     # via repo-structure (pyproject.toml)
-gitignore-parser==0.1.12 \
-    --hash=sha256:78b22243adc0f02102c56c5e8c9a1d9121394142ca6143a90daa7f8d7a07a17e
+gitignore-parser==0.1.13 \
+    --hash=sha256:c7e10c8190accb8ae57fb3711889e73a9c0dbc04d4222b91ace8a4bf64d2f746
     # via repo-structure (pyproject.toml)
 jsonschema==4.25.1 \
     --hash=sha256:3fba0169e345c7175110351d456342c364814cfcf3b964ba4587f22915230a63 \
