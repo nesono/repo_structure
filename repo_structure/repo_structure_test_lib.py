@@ -1,4 +1,4 @@
-""""Library functions for repo structure testing."""
+"""Library functions for repo structure testing."""
 
 import os
 import shutil

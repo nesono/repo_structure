@@ -1,4 +1,4 @@
-""""Tests for repo_structure benchmark."""
+"""Tests for repo_structure benchmark."""
 
 # pylint: disable=import-error
 import os
