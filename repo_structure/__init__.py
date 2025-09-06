@@ -3,6 +3,7 @@
 from .repo_structure_config import Configuration
 from .repo_structure_full_scan import (
     assert_full_repository_structure,
+    scan_full_repository,
     MissingMappingError,
     MissingRequiredEntriesError,
     EntryTypeMismatchError,
@@ -18,6 +19,7 @@ __all__ = [
     "UnspecifiedEntryError",
     "ConfigurationParseError",
     "assert_full_repository_structure",
+    "scan_full_repository",
     "assert_path",
     "Flags",
 ]
