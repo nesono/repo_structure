@@ -229,7 +229,7 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
     show_default=True,
 )
 @click.pass_context
-def full_scan_warnings(ctx: click.Context, repo_root: str, config_path: str) -> None:
+def full_scan_warning(ctx: click.Context, repo_root: str, config_path: str) -> None:
     """Run a full scan and print warnings and errors without throwing.
 
     This behaves like full_scan, but uses scan_full_repository to aggregate
