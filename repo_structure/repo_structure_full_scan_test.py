@@ -978,3 +978,34 @@ directory_map:
     flags.verbose = True
     config = Configuration(config_yaml, True)
     _assert_repo_directory_structure(config, flags)
+
+
+@with_repo_structure_in_tmpdir(
+    """
+README.md
+"""
+)
+def test_warn_on_unused_structure_rule():  # pylint: disable=import-outside-toplevel
+    """Warn if a structure rule exists in the configuration but is never used in the scan.
+
+    Using the non-throwing API, warnings are returned as ScanIssue entries.
+    """
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - require: 'README\\.md'
+  unused_rule:
+    - allow: 'NEVER_MATCHES\\.md'
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    from .repo_structure_full_scan import (  # pylint: disable=import-outside-toplevel
+        scan_full_repository,
+    )
+
+    _, warnings = scan_full_repository(".", config)
+    assert any(
+        "unused_rule" in i.message for i in warnings
+    ), f"Expected unused rule warning, got: {warnings}"
