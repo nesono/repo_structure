@@ -4,7 +4,7 @@
 
 import os
 
-from typing import List, Callable, Union, Literal, Optional
+from typing import List, Callable, Union, Literal, Optional, Tuple
 from dataclasses import dataclass
 from gitignore_parser import parse_gitignore
 
@@ -205,18 +205,18 @@ def scan_full_repository(
     repo_root: str,
     config: Configuration,
     flags: Flags = Flags(),
-) -> List[ScanIssue]:
+) -> Tuple[List[ScanIssue], List[ScanIssue]]:
     """Scan the repository and return a list of issues (errors and warnings).
 
     This function is a non-throwing variant intended for easier consumption.
     It keeps the old assert_* behavior intact elsewhere.
     """
     assert repo_root is not None
-    issues: List[ScanIssue] = []
+    errors: List[ScanIssue] = []
 
     # Missing root mapping error
     if "/" not in config.directory_map:
-        issues.append(
+        errors.append(
             ScanIssue(
                 severity="error",
                 code="missing_root_mapping",
@@ -232,7 +232,7 @@ def scan_full_repository(
             try:
                 _process_map_dir(map_dir, repo_root, config, flags)
             except MissingRequiredEntriesError as e:
-                issues.append(
+                errors.append(
                     ScanIssue(
                         severity="error",
                         code="missing_required_entries",
@@ -241,7 +241,7 @@ def scan_full_repository(
                     )
                 )
             except UnspecifiedEntryError as e:
-                issues.append(
+                errors.append(
                     ScanIssue(
                         severity="error",
                         code="unspecified_entry",
@@ -250,7 +250,7 @@ def scan_full_repository(
                     )
                 )
             except ForbiddenEntryError as e:
-                issues.append(
+                errors.append(
                     ScanIssue(
                         severity="error",
                         code="forbidden_entry",
@@ -262,7 +262,7 @@ def scan_full_repository(
                 Exception
             ) as e:  # pylint: disable=broad-exception-caught,W0718  # pragma: no cover
                 # Fallback catch-all to avoid breaking non-throwing contract
-                issues.append(
+                errors.append(
                     ScanIssue(
                         severity="error",
                         code="internal_error",
@@ -271,6 +271,7 @@ def scan_full_repository(
                     )
                 )
 
+    warnings: List[ScanIssue] = []
     # Compute unused rule warnings (do not throw)
     try:
         used_rules = set()
@@ -289,7 +290,7 @@ def scan_full_repository(
                             changed = True
         for rule_name in config.structure_rules.keys():
             if rule_name not in used_rules:
-                issues.append(
+                warnings.append(
                     ScanIssue(
                         severity="warning",
                         code="unused_structure_rule",
@@ -300,4 +301,4 @@ def scan_full_repository(
     except Exception:  # pylint: disable=broad-exception-caught  # pragma: no cover
         pass
 
-    return issues
+    return errors, warnings

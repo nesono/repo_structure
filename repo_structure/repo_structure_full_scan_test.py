@@ -995,7 +995,7 @@ structure_rules:
   base_structure:
     - require: 'README\\.md'
   unused_rule:
-    - require: 'NEVER_MATCHES\\.md'
+    - allow: 'NEVER_MATCHES\\.md'
 directory_map:
   /:
     - use_rule: base_structure
@@ -1005,12 +1005,7 @@ directory_map:
         scan_full_repository,
     )
 
-    issues = scan_full_repository(".", config)
-    warnings = [
-        i
-        for i in issues
-        if i.severity == "warning" and i.code == "unused_structure_rule"
-    ]
+    _, warnings = scan_full_repository(".", config)
     assert any(
         "unused_rule" in i.message for i in warnings
-    ), f"Expected unused rule warning, got: {issues}"
+    ), f"Expected unused rule warning, got: {warnings}"
