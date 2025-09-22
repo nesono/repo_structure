@@ -56,6 +56,90 @@ class ScanIssue:
     path: Optional[str] = None
 
 
+@dataclass
+class MatchResult:
+    """Result of attempting to match an entry against backlog rules."""
+
+    success: bool
+    index: Optional[int] = None
+    issue: Optional[ScanIssue] = None
+
+
+def _get_matching_item_index_safe(
+    backlog: StructureRuleList,
+    entry_path: str,
+    is_dir: bool,
+    verbose: bool = False,
+) -> MatchResult:
+    """Get matching item index without raising exceptions, return result with potential issues."""
+    for i, v in enumerate(backlog):
+        if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
+            if v.is_forbidden:
+                return MatchResult(
+                    success=False,
+                    issue=ScanIssue(
+                        severity="error",
+                        code="forbidden_entry",
+                        message=f"Found forbidden entry: {entry_path}",
+                        path=entry_path,
+                    ),
+                )
+            if verbose:
+                print(f"  Found match at index {i}: '{v.path.pattern}'")
+            return MatchResult(success=True, index=i)
+
+    display_path = entry_path + "/" if is_dir else entry_path
+    return MatchResult(
+        success=False,
+        issue=ScanIssue(
+            severity="error",
+            code="unspecified_entry",
+            message=f"Found unspecified entry: '{display_path}'",
+            path=entry_path,
+        ),
+    )
+
+
+def _check_required_entries_missing(
+    rel_dir: str,
+    entry_backlog: StructureRuleList,
+) -> Optional[ScanIssue]:
+    """Check for missing required entries and return a ScanIssue if any are found."""
+
+    def _report_missing_entries(
+        missing_files: List[str], missing_dirs: List[str]
+    ) -> str:
+        result = f"Required patterns missing in  directory '{rel_dir}':\n"
+        if missing_files:
+            result += "Files:\n"
+            result += "".join(f"  - '{file}'\n" for file in missing_files)
+        if missing_dirs:
+            result += "Directories:\n"
+            result += "".join(f"  - '{dir}'\n" for dir in missing_dirs)
+        return result
+
+    missing_required: StructureRuleList = []
+    for entry in entry_backlog:
+        if entry.is_required and entry.count == 0:
+            missing_required.append(entry)
+
+    if missing_required:
+        missing_required_files = [
+            f.path.pattern for f in missing_required if not f.is_dir
+        ]
+        missing_required_dirs = [d.path.pattern for d in missing_required if d.is_dir]
+
+        return ScanIssue(
+            severity="error",
+            code="missing_required_entries",
+            message=_report_missing_entries(
+                missing_required_files, missing_required_dirs
+            ),
+            path=rel_dir,
+        )
+    return None
+
+
 def _fail_if_required_entries_missing(
     rel_dir: str,
     entry_backlog: StructureRuleList,
@@ -87,6 +171,80 @@ def _fail_if_required_entries_missing(
         raise MissingRequiredEntriesError(
             _report_missing_entries(missing_required_files, missing_required_dirs)
         )
+
+
+def _check_invalid_repo_structure_recursive(
+    repo_root: str,
+    rel_dir: str,
+    config: Configuration,
+    backlog: StructureRuleList,
+    flags: Flags,
+) -> List[ScanIssue]:
+    """Check repository structure recursively and return list of issues."""
+    errors: List[ScanIssue] = []
+
+    def _get_git_ignore(rr: str) -> Union[Callable[[str], bool], None]:
+        git_ignore_path = os.path.join(rr, ".gitignore")
+        if os.path.isfile(git_ignore_path):
+            return parse_gitignore(git_ignore_path)
+        return None
+
+    git_ignore = _get_git_ignore(repo_root)
+
+    for os_entry in os.scandir(os.path.join(repo_root, rel_dir)):
+        entry = _to_entry(os_entry, rel_dir)
+
+        if flags.verbose:
+            print(f"Checking entry {entry.path}")
+
+        if _skip_entry(
+            entry,
+            config.directory_map,
+            config.configuration_file_name,
+            git_ignore,
+            flags,
+        ):
+            continue
+
+        match_result = _get_matching_item_index_safe(
+            backlog, entry.path, os_entry.is_dir(), flags.verbose
+        )
+
+        if not match_result.success:
+            if match_result.issue:
+                # Update the path to include the full relative directory context
+                match_result.issue.path = f"{entry.rel_dir}/{entry.path}"
+                errors.append(match_result.issue)
+            continue
+
+        # At this point we know match_result.index is not None since success is True
+        idx = match_result.index
+        assert idx is not None  # Type hint for mypy
+
+        backlog[idx].count += 1
+
+        if os_entry.is_dir():
+            new_backlog = _handle_use_rule(
+                backlog[idx].use_rule,
+                config.structure_rules,
+                flags,
+                entry.path,
+            ) or _handle_if_exists(backlog[idx], flags)
+
+            subdirectory_path = os.path.join(rel_dir, entry.path)
+            errors.extend(
+                _check_invalid_repo_structure_recursive(
+                    repo_root, subdirectory_path, config, new_backlog, flags
+                )
+            )
+
+            missing_entry_issue = _check_required_entries_missing(
+                subdirectory_path, new_backlog
+            )
+            if missing_entry_issue:
+                errors.append(missing_entry_issue)
+
+    return errors
 
 
 def _fail_if_invalid_repo_structure_recursive(
@@ -217,54 +375,20 @@ def _process_map_dir_sync(
             print("backlog empty - returning success")
         return errors
 
-    try:
-        _fail_if_invalid_repo_structure_recursive(
-            repo_root,
-            rel_dir,
-            config,
-            backlog,
-            flags,
-        )
-        _fail_if_required_entries_missing(rel_dir, backlog)
-    except MissingRequiredEntriesError as e:
-        errors.append(
-            ScanIssue(
-                severity="error",
-                code="missing_required_entries",
-                message=str(e),
-                path=map_dir,
-            )
-        )
-    except UnspecifiedEntryError as e:
-        errors.append(
-            ScanIssue(
-                severity="error",
-                code="unspecified_entry",
-                message=str(e),
-                path=map_dir,
-            )
-        )
-    except ForbiddenEntryError as e:
-        errors.append(
-            ScanIssue(
-                severity="error",
-                code="forbidden_entry",
-                message=str(e),
-                path=map_dir,
-            )
-        )
-    except (
-        Exception
-    ) as e:  # pylint: disable=broad-exception-caught,W0718  # pragma: no cover
-        # Fallback catch-all to avoid breaking non-throwing contract
-        errors.append(
-            ScanIssue(
-                severity="error",
-                code="internal_error",
-                message=str(e),
-                path=map_dir,
-            )
-        )
+    # Check repository structure using non-throwing functions
+    structure_errors = _check_invalid_repo_structure_recursive(
+        repo_root,
+        rel_dir,
+        config,
+        backlog,
+        flags,
+    )
+    errors.extend(structure_errors)
+
+    # Check for missing required entries
+    missing_entry_issue = _check_required_entries_missing(rel_dir, backlog)
+    if missing_entry_issue:
+        errors.append(missing_entry_issue)
 
     return errors
 
