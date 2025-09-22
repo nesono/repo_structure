@@ -304,32 +304,29 @@ def scan_full_repository(
 
     warnings: List[ScanIssue] = []
     # Compute unused rule warnings (do not throw)
-    try:
-        used_rules = set()
-        for rules in config.directory_map.values():
-            for r in rules:
-                if r and r not in ("ignore",):
-                    used_rules.add(r)
-        changed = True
-        while changed:
-            changed = False
-            for rule_name in list(used_rules):
-                for entry in config.structure_rules.get(rule_name, []):
-                    if entry.use_rule and entry.use_rule not in ("ignore",):
-                        if entry.use_rule not in used_rules:
-                            used_rules.add(entry.use_rule)
-                            changed = True
-        for rule_name in config.structure_rules.keys():
-            if rule_name not in used_rules:
-                warnings.append(
-                    ScanIssue(
-                        severity="warning",
-                        code="unused_structure_rule",
-                        message=f"Unused structure rule '{rule_name}'",
-                        path=None,
-                    )
+    used_rules = set()
+    for rules in config.directory_map.values():
+        for r in rules:
+            if r and r not in ("ignore",):
+                used_rules.add(r)
+    changed = True
+    while changed:
+        changed = False
+        for rule_name in list(used_rules):
+            for entry in config.structure_rules.get(rule_name, []):
+                if entry.use_rule and entry.use_rule not in ("ignore",):
+                    if entry.use_rule not in used_rules:
+                        used_rules.add(entry.use_rule)
+                        changed = True
+    for rule_name in config.structure_rules.keys():
+        if rule_name not in used_rules:
+            warnings.append(
+                ScanIssue(
+                    severity="warning",
+                    code="unused_structure_rule",
+                    message=f"Unused structure rule '{rule_name}'",
+                    path=None,
                 )
-    except Exception:  # pylint: disable=broad-exception-caught  # pragma: no cover
-        pass
+            )
 
     return errors, warnings
