@@ -297,47 +297,10 @@ def scan_full_repository(
     else:
         # Process each mapped directory independently, collecting errors
         for map_dir in config.directory_map:
-            try:
-                _process_map_dir(map_dir, repo_root, config, flags)
-            except MissingRequiredEntriesError as e:
-                errors.append(
-                    ScanIssue(
-                        severity="error",
-                        code="missing_required_entries",
-                        message=str(e),
-                        path=map_dir,
-                    )
-                )
-            except UnspecifiedEntryError as e:
-                errors.append(
-                    ScanIssue(
-                        severity="error",
-                        code="unspecified_entry",
-                        message=str(e),
-                        path=map_dir,
-                    )
-                )
-            except ForbiddenEntryError as e:
-                errors.append(
-                    ScanIssue(
-                        severity="error",
-                        code="forbidden_entry",
-                        message=str(e),
-                        path=map_dir,
-                    )
-                )
-            except (
-                Exception
-            ) as e:  # pylint: disable=broad-exception-caught,W0718  # pragma: no cover
-                # Fallback catch-all to avoid breaking non-throwing contract
-                errors.append(
-                    ScanIssue(
-                        severity="error",
-                        code="internal_error",
-                        message=str(e),
-                        path=map_dir,
-                    )
-                )
+            map_dir_errors = _process_map_dir_with_return_values(
+                map_dir, repo_root, config, flags
+            )
+            errors.extend(map_dir_errors)
 
     warnings: List[ScanIssue] = []
     # Compute unused rule warnings (do not throw)
