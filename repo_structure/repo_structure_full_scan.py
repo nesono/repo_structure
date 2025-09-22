@@ -159,7 +159,7 @@ def _fail_if_invalid_repo_structure_recursive(
             )
 
 
-def _process_map_dir(
+def _process_map_dir_except(
     map_dir: str, repo_root: str, config: Configuration, flags: Flags = Flags()
 ):
     """Process a single map directory entry."""
@@ -195,10 +195,78 @@ def assert_full_repository_structure(
         raise MissingMappingError("Config does not have a root mapping")
 
     for map_dir in config.directory_map:
-        _process_map_dir(map_dir, repo_root, config, flags)
+        _process_map_dir_except(map_dir, repo_root, config, flags)
 
 
 # pylint: disable=too-many-branches, too-many-nested-blocks
+
+
+def _process_map_dir_sync(
+    map_dir: str, repo_root: str, config: Configuration, flags: Flags = Flags()
+) -> List[ScanIssue]:
+    """Process a single map directory entry and return issues instead of raising exceptions."""
+    errors: List[ScanIssue] = []
+
+    rel_dir = map_dir_to_rel_dir(map_dir)
+    backlog = _map_dir_to_entry_backlog(
+        config.directory_map, config.structure_rules, rel_dir
+    )
+
+    if not backlog:
+        if flags.verbose:
+            print("backlog empty - returning success")
+        return errors
+
+    try:
+        _fail_if_invalid_repo_structure_recursive(
+            repo_root,
+            rel_dir,
+            config,
+            backlog,
+            flags,
+        )
+        _fail_if_required_entries_missing(rel_dir, backlog)
+    except MissingRequiredEntriesError as e:
+        errors.append(
+            ScanIssue(
+                severity="error",
+                code="missing_required_entries",
+                message=str(e),
+                path=map_dir,
+            )
+        )
+    except UnspecifiedEntryError as e:
+        errors.append(
+            ScanIssue(
+                severity="error",
+                code="unspecified_entry",
+                message=str(e),
+                path=map_dir,
+            )
+        )
+    except ForbiddenEntryError as e:
+        errors.append(
+            ScanIssue(
+                severity="error",
+                code="forbidden_entry",
+                message=str(e),
+                path=map_dir,
+            )
+        )
+    except (
+        Exception
+    ) as e:  # pylint: disable=broad-exception-caught,W0718  # pragma: no cover
+        # Fallback catch-all to avoid breaking non-throwing contract
+        errors.append(
+            ScanIssue(
+                severity="error",
+                code="internal_error",
+                message=str(e),
+                path=map_dir,
+            )
+        )
+
+    return errors
 
 
 def scan_full_repository(
@@ -229,76 +297,34 @@ def scan_full_repository(
     else:
         # Process each mapped directory independently, collecting errors
         for map_dir in config.directory_map:
-            try:
-                _process_map_dir(map_dir, repo_root, config, flags)
-            except MissingRequiredEntriesError as e:
-                errors.append(
-                    ScanIssue(
-                        severity="error",
-                        code="missing_required_entries",
-                        message=str(e),
-                        path=map_dir,
-                    )
-                )
-            except UnspecifiedEntryError as e:
-                errors.append(
-                    ScanIssue(
-                        severity="error",
-                        code="unspecified_entry",
-                        message=str(e),
-                        path=map_dir,
-                    )
-                )
-            except ForbiddenEntryError as e:
-                errors.append(
-                    ScanIssue(
-                        severity="error",
-                        code="forbidden_entry",
-                        message=str(e),
-                        path=map_dir,
-                    )
-                )
-            except (
-                Exception
-            ) as e:  # pylint: disable=broad-exception-caught,W0718  # pragma: no cover
-                # Fallback catch-all to avoid breaking non-throwing contract
-                errors.append(
-                    ScanIssue(
-                        severity="error",
-                        code="internal_error",
-                        message=str(e),
-                        path=map_dir,
-                    )
-                )
+            map_dir_errors = _process_map_dir_sync(map_dir, repo_root, config, flags)
+            errors.extend(map_dir_errors)
 
     warnings: List[ScanIssue] = []
     # Compute unused rule warnings (do not throw)
-    try:
-        used_rules = set()
-        for rules in config.directory_map.values():
-            for r in rules:
-                if r and r not in ("ignore",):
-                    used_rules.add(r)
-        changed = True
-        while changed:
-            changed = False
-            for rule_name in list(used_rules):
-                for entry in config.structure_rules.get(rule_name, []):
-                    if entry.use_rule and entry.use_rule not in ("ignore",):
-                        if entry.use_rule not in used_rules:
-                            used_rules.add(entry.use_rule)
-                            changed = True
-        for rule_name in config.structure_rules.keys():
-            if rule_name not in used_rules:
-                warnings.append(
-                    ScanIssue(
-                        severity="warning",
-                        code="unused_structure_rule",
-                        message=f"Unused structure rule '{rule_name}'",
-                        path=None,
-                    )
+    used_rules = set()
+    for rules in config.directory_map.values():
+        for r in rules:
+            if r and r not in ("ignore",):
+                used_rules.add(r)
+    changed = True
+    while changed:
+        changed = False
+        for rule_name in list(used_rules):
+            for entry in config.structure_rules.get(rule_name, []):
+                if entry.use_rule and entry.use_rule not in ("ignore",):
+                    if entry.use_rule not in used_rules:
+                        used_rules.add(entry.use_rule)
+                        changed = True
+    for rule_name in config.structure_rules.keys():
+        if rule_name not in used_rules:
+            warnings.append(
+                ScanIssue(
+                    severity="warning",
+                    code="unused_structure_rule",
+                    message=f"Unused structure rule '{rule_name}'",
+                    path=None,
                 )
-    except Exception:  # pylint: disable=broad-exception-caught  # pragma: no cover
-        pass
+            )
 
     return errors, warnings
