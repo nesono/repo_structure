@@ -7,9 +7,10 @@ import pytest
 
 from .repo_structure_config import Configuration
 from .repo_structure_full_scan import (
-    MissingMappingError,
     MissingRequiredEntriesError,
     assert_full_repository_structure,
+    scan_full_repository,
+    ScanIssue,
 )
 from .repo_structure_lib import (
     Flags,
@@ -19,6 +20,14 @@ from .repo_structure_lib import (
 )
 
 from .repo_structure_test_lib import with_repo_structure_in_tmpdir
+
+
+def _check_repo_directory_structure(
+    config: Configuration,
+    flags: Flags = Flags(),
+) -> tuple[list[ScanIssue], list[ScanIssue]]:
+    """Check repository structure and return errors and warnings instead of asserting."""
+    return scan_full_repository(".", config, flags)
 
 
 def _assert_repo_directory_structure(
@@ -53,7 +62,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -75,7 +86,9 @@ directory_map:
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -100,8 +113,10 @@ directory_map:
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
-    with pytest.raises(UnspecifiedEntryError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "unspecified_entry"
+    assert "unspecified" in errors[0].path
 
 
 @with_repo_structure_in_tmpdir(
@@ -120,8 +135,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    with pytest.raises(MissingMappingError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "missing_root_mapping"
 
 
 @with_repo_structure_in_tmpdir(
@@ -1001,10 +1017,6 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    from .repo_structure_full_scan import (  # pylint: disable=import-outside-toplevel
-        scan_full_repository,
-    )
-
     _, warnings = scan_full_repository(".", config)
     assert any(
         "unused_rule" in i.message for i in warnings

@@ -175,37 +175,11 @@ def assert_path(
 
     Note that this function will not be able to ensure if all required
     entries are present."""
-
-    def _get_corresponding_map_dir(c: Configuration, f: Flags, p: str):
-
-        map_dir = "/"
-        for rel_dir, entry_name, is_dir in _incremental_path_split(p):
-            map_sub_dir = rel_dir_to_map_dir(os.path.join(rel_dir, entry_name))
-            if is_dir and map_sub_dir in c.directory_map:
-                map_dir = map_sub_dir
-
-        if f.verbose:
-            print(f"Found corresponding map dir for '{p}': '{map_dir}'")
-
-        return map_dir
-
-    map_dir = _get_corresponding_map_dir(config, flags, path)
-    backlog = _map_dir_to_entry_backlog(
-        config.directory_map, config.structure_rules, map_dir_to_rel_dir(map_dir)
-    )
-    if not backlog:
-        if flags.verbose:
-            print("backlog empty - returning success")
-        return
-
-    rel_path = os.path.relpath(path, map_dir_to_rel_dir(map_dir))
-    try:
-        _assert_path_in_backlog(backlog, config, flags, rel_path)
-    except UnspecifiedEntryError as err:
-        raise UnspecifiedEntryError(
-            f"Unspecified entry '{path}' found. Map dir: '{map_dir}'"
-        ) from err
-    except ForbiddenEntryError as err:
-        raise ForbiddenEntryError(
-            f"Forbidden entry '{path}' found. Map dir: '{map_dir}'"
-        ) from err
+    issue = check_path(config, path, flags)
+    if issue:
+        if issue.code == "unspecified_entry":
+            raise UnspecifiedEntryError(issue.message)
+        if issue.code == "forbidden_entry":
+            raise ForbiddenEntryError(issue.message)
+        # Fallback for any other error codes
+        raise UnspecifiedEntryError(issue.message)
