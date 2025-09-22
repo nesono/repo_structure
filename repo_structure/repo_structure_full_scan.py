@@ -159,7 +159,7 @@ def _fail_if_invalid_repo_structure_recursive(
             )
 
 
-def _process_map_dir(
+def _process_map_dir_except(
     map_dir: str, repo_root: str, config: Configuration, flags: Flags = Flags()
 ):
     """Process a single map directory entry."""
@@ -195,13 +195,13 @@ def assert_full_repository_structure(
         raise MissingMappingError("Config does not have a root mapping")
 
     for map_dir in config.directory_map:
-        _process_map_dir(map_dir, repo_root, config, flags)
+        _process_map_dir_except(map_dir, repo_root, config, flags)
 
 
 # pylint: disable=too-many-branches, too-many-nested-blocks
 
 
-def _process_map_dir_with_return_values(
+def _process_map_dir_sync(
     map_dir: str, repo_root: str, config: Configuration, flags: Flags = Flags()
 ) -> List[ScanIssue]:
     """Process a single map directory entry and return issues instead of raising exceptions."""
@@ -297,9 +297,7 @@ def scan_full_repository(
     else:
         # Process each mapped directory independently, collecting errors
         for map_dir in config.directory_map:
-            map_dir_errors = _process_map_dir_with_return_values(
-                map_dir, repo_root, config, flags
-            )
+            map_dir_errors = _process_map_dir_sync(map_dir, repo_root, config, flags)
             errors.extend(map_dir_errors)
 
     warnings: List[ScanIssue] = []
