@@ -201,6 +201,74 @@ def assert_full_repository_structure(
 # pylint: disable=too-many-branches, too-many-nested-blocks
 
 
+def _process_map_dir_with_return_values(
+    map_dir: str, repo_root: str, config: Configuration, flags: Flags = Flags()
+) -> List[ScanIssue]:
+    """Process a single map directory entry and return issues instead of raising exceptions."""
+    errors: List[ScanIssue] = []
+
+    rel_dir = map_dir_to_rel_dir(map_dir)
+    backlog = _map_dir_to_entry_backlog(
+        config.directory_map, config.structure_rules, rel_dir
+    )
+
+    if not backlog:
+        if flags.verbose:
+            print("backlog empty - returning success")
+        return errors
+
+    try:
+        _fail_if_invalid_repo_structure_recursive(
+            repo_root,
+            rel_dir,
+            config,
+            backlog,
+            flags,
+        )
+        _fail_if_required_entries_missing(rel_dir, backlog)
+    except MissingRequiredEntriesError as e:
+        errors.append(
+            ScanIssue(
+                severity="error",
+                code="missing_required_entries",
+                message=str(e),
+                path=map_dir,
+            )
+        )
+    except UnspecifiedEntryError as e:
+        errors.append(
+            ScanIssue(
+                severity="error",
+                code="unspecified_entry",
+                message=str(e),
+                path=map_dir,
+            )
+        )
+    except ForbiddenEntryError as e:
+        errors.append(
+            ScanIssue(
+                severity="error",
+                code="forbidden_entry",
+                message=str(e),
+                path=map_dir,
+            )
+        )
+    except (
+        Exception
+    ) as e:  # pylint: disable=broad-exception-caught,W0718  # pragma: no cover
+        # Fallback catch-all to avoid breaking non-throwing contract
+        errors.append(
+            ScanIssue(
+                severity="error",
+                code="internal_error",
+                message=str(e),
+                path=map_dir,
+            )
+        )
+
+    return errors
+
+
 def scan_full_repository(
     repo_root: str,
     config: Configuration,
