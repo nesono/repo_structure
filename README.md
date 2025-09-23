@@ -63,8 +63,8 @@ repos:
 
 The following modes are available with Repo Structure:
 
-| ID                                  | Description                                                                                                      |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| ID                   | Description                                                                                                      |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `diff`               | Ensure that all added or modified files are allowed by the repo structure configuration                          |
 | `diff-debug`         | Ensure that all added or modified files are allowed by the repo structure configuration with tracing enabled     |
 | `full`               | Run a full scan ensuring that all allowed and required files exist                                               |
