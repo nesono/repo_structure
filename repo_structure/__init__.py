@@ -8,7 +8,7 @@ from .repo_structure_full_scan import (
     MissingRequiredEntriesError,
     EntryTypeMismatchError,
 )
-from .repo_structure_diff_scan import assert_path
+from .repo_structure_diff_scan import assert_path, check_path
 from .repo_structure_lib import Flags, UnspecifiedEntryError, ConfigurationParseError
 
 __all__ = [
@@ -21,6 +21,7 @@ __all__ = [
     "assert_full_repository_structure",
     "scan_full_repository",
     "assert_path",
+    "check_path",
     "Flags",
 ]
 

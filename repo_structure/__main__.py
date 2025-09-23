@@ -11,10 +11,9 @@ import click
 
 from .repo_structure_lib import Flags
 from .repo_structure_full_scan import (
-    assert_full_repository_structure,
     scan_full_repository,
 )
-from .repo_structure_diff_scan import assert_path
+from .repo_structure_diff_scan import check_path
 from .repo_structure_config import Configuration
 
 try:
@@ -112,14 +111,22 @@ def full_scan(ctx: click.Context, repo_root: str, config_path: str) -> None:
         successful = False
         sys.exit(1)
 
-    try:
-        assert_full_repository_structure(
-            repo_root,
-            config,
-            flags,
-        )
-    except Exception as err:
-        click.echo("Error: " + click.style(err, fg="red"), err=True)
+    # Call the non-throwing scan and print results
+    errors, warnings = scan_full_repository(repo_root, config, flags)
+
+    # Print warnings first
+    if warnings:
+        click.echo(click.style("Warnings:", fg="yellow"))
+        for w in warnings:
+            loc = f" [{w.path}]" if getattr(w, "path", None) else ""
+            click.echo(click.style(f" - ({w.code}) {w.message}{loc}", fg="yellow"))
+
+    # Then errors
+    if errors:
+        click.echo(click.style("Errors:", fg="red"))
+        for e in errors:
+            loc = f" [{e.path}]" if getattr(e, "path", None) else ""
+            click.echo(click.style(f" - ({e.code}) {e.message}{loc}", fg="red"))
         successful = False
 
     duration = time.time() - start_time
@@ -188,14 +195,14 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
             click.echo("Error: " + click.style(err_msg, fg="red"), err=True)
             successful = False
             continue
-        try:
-            assert_path(
-                config,
-                path,
-                flags,
+        issue = check_path(config, path, flags)
+        if issue:
+            loc = f" [{issue.path}]" if getattr(issue, "path", None) else ""
+            click.echo(
+                "Error: "
+                + click.style(f"({issue.code}) {issue.message}{loc}", fg="red"),
+                err=True,
             )
-        except Exception as err:
-            click.echo("Error: " + click.style(err, fg="red"), err=True)
             successful = False
 
     click.echo(
