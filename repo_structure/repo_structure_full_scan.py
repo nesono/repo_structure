@@ -4,7 +4,7 @@
 
 import os
 
-from typing import List, Callable, Union, Literal, Optional, Tuple
+from typing import Callable, Literal
 from dataclasses import dataclass
 from gitignore_parser import parse_gitignore
 
@@ -38,7 +38,7 @@ class ScanIssue:
     severity: Literal["error", "warning"]
     code: str
     message: str
-    path: Optional[str] = None
+    path: str | None = None
 
 
 @dataclass
@@ -46,8 +46,8 @@ class MatchResult:
     """Result of attempting to match an entry against backlog rules."""
 
     success: bool
-    index: Optional[int] = None
-    issue: Optional[ScanIssue] = None
+    index: int | None = None
+    issue: ScanIssue | None = None
 
 
 def _get_matching_item_index_safe(
@@ -88,11 +88,11 @@ def _get_matching_item_index_safe(
 def _check_required_entries_missing(
     rel_dir: str,
     entry_backlog: StructureRuleList,
-) -> Optional[ScanIssue]:
+) -> ScanIssue | None:
     """Check for missing required entries and return a ScanIssue if any are found."""
 
     def _report_missing_entries(
-        missing_files: List[str], missing_dirs: List[str]
+        missing_files: list[str], missing_dirs: list[str]
     ) -> str:
         result = f"Required patterns missing in  directory '{rel_dir}':\n"
         if missing_files:
@@ -131,11 +131,11 @@ def _check_invalid_repo_structure_recursive(
     config: Configuration,
     backlog: StructureRuleList,
     flags: Flags,
-) -> List[ScanIssue]:
+) -> list[ScanIssue]:
     """Check repository structure recursively and return list of issues."""
-    errors: List[ScanIssue] = []
+    errors: list[ScanIssue] = []
 
-    def _get_git_ignore(rr: str) -> Union[Callable[[str], bool], None]:
+    def _get_git_ignore(rr: str) -> Callable[[str], bool] | None:
         git_ignore_path = os.path.join(rr, ".gitignore")
         if os.path.isfile(git_ignore_path):
             return parse_gitignore(git_ignore_path)
@@ -209,9 +209,9 @@ def _check_invalid_repo_structure_recursive(
 
 def _process_map_dir_sync(
     map_dir: str, repo_root: str, config: Configuration, flags: Flags = Flags()
-) -> List[ScanIssue]:
+) -> list[ScanIssue]:
     """Process a single map directory entry and return issues instead of raising exceptions."""
-    errors: List[ScanIssue] = []
+    errors: list[ScanIssue] = []
 
     rel_dir = map_dir_to_rel_dir(map_dir)
     backlog = _map_dir_to_entry_backlog(
@@ -245,14 +245,14 @@ def scan_full_repository(
     repo_root: str,
     config: Configuration,
     flags: Flags = Flags(),
-) -> Tuple[List[ScanIssue], List[ScanIssue]]:
+) -> tuple[list[ScanIssue], list[ScanIssue]]:
     """Scan the repository and return a list of issues (errors and warnings).
 
     This function is a non-throwing variant intended for easier consumption.
     It keeps the old assert_* behavior intact elsewhere.
     """
     assert repo_root is not None
-    errors: List[ScanIssue] = []
+    errors: list[ScanIssue] = []
 
     # Missing root mapping error
     if "/" not in config.directory_map:
@@ -272,7 +272,7 @@ def scan_full_repository(
             map_dir_errors = _process_map_dir_sync(map_dir, repo_root, config, flags)
             errors.extend(map_dir_errors)
 
-    warnings: List[ScanIssue] = []
+    warnings: list[ScanIssue] = []
     # Compute unused rule warnings (do not throw)
     used_rules = set()
     for rules in config.directory_map.values():

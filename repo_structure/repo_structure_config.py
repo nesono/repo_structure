@@ -5,7 +5,7 @@ import copy
 import pprint
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, TextIO, Union, Any, Optional
+from typing import TextIO, Any
 
 from ruamel import yaml as YAML
 from jsonschema import validate, ValidationError, SchemaError
@@ -41,7 +41,7 @@ class Configuration:
         self,
         config_file: str,
         param1_is_yaml_string: bool = False,
-        schema: Optional[dict[Any, Any]] = None,
+        schema: dict[Any, Any] | None = None,
         verbose: bool = False,
     ):
         """Create new configuration object.
@@ -145,7 +145,7 @@ def _load_repo_structure_yaml(filename: str) -> dict:
         return _load_repo_structure_yamls(file)
 
 
-def _load_repo_structure_yamls(yaml_string: Union[str, TextIO]) -> dict:
+def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
     yaml = YAML.YAML(typ="safe")
     return yaml.load(yaml_string)
 
@@ -263,15 +263,15 @@ def _get_pattern_key(entry: dict) -> str:
 
 
 def _expand_template_entry(
-    template_yaml: List[dict], expansion_key: str, expansion_var: str
-) -> List[dict]:
+    template_yaml: list[dict], expansion_key: str, expansion_var: str
+) -> list[dict]:
 
     def _expand_entry(entry: dict, expansion_key: str, expansion_var: str):
         k = _get_pattern_key(entry)
         entry[k] = entry[k].replace(f"{{{{{expansion_key}}}}}", expansion_var)
         return entry
 
-    expanded_yaml: List[dict] = []
+    expanded_yaml: list[dict] = []
     for entry in template_yaml:
         entry = _expand_entry(entry, expansion_key, expansion_var)
         if "if_exists" in entry:
@@ -290,14 +290,14 @@ def _parse_use_template(
 
     def _expand_template(dir_map_yaml, templates_yaml):
 
-        def _max_values_length(expansion_map: Dict[str, List[str]]) -> int:
+        def _max_values_length(expansion_map: dict[str, list[str]]) -> int:
             max_length = 0
             for _, values in expansion_map.items():
                 max_length = max(max_length, len(values))
             return max_length
 
         expansion_map = dir_map_yaml["parameters"]
-        structure_rules_yaml: List[dict] = []
+        structure_rules_yaml: list[dict] = []
         for i in range(_max_values_length(expansion_map)):
             if dir_map_yaml["use_template"] not in templates_yaml:
                 raise TemplateError(
@@ -329,7 +329,7 @@ def _parse_directory_map(
     directory_map_yaml: dict,
 ) -> DirectoryMap:
 
-    def _parse_use_rule(rule: dict, dir_map: List[str]) -> None:
+    def _parse_use_rule(rule: dict, dir_map: list[str]) -> None:
         if rule.keys() == {"use_rule"}:
             dir_map.append(rule["use_rule"])
 
