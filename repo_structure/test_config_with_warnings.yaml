@@ -1,0 +1,8 @@
+structure_rules:
+  base_structure:
+    - require: 'README\.md'
+  unused_rule:
+    - allow: 'NEVER_MATCHES\.md'
+directory_map:
+  /:
+    - use_rule: base_structure
