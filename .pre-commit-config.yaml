@@ -10,7 +10,7 @@ repos:
   - repo: https://github.com/nesono/repo_structure
     rev: "v0.5.4"
     hooks:
-      - id: repo-structure-diff
+      - id: diff
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
