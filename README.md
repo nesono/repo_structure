@@ -320,7 +320,7 @@ The rule can
 
 - Tested with Python versions ["3.10", "3.11", "3.12", "3.13", "3.14"]
 - [Pip requirements](requirements.txt)
-- Does not work on Windows
+- Cross-platform support for Windows, macOS, and Linux
 
 ## Building from Source
 
