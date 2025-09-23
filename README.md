@@ -19,18 +19,29 @@ You can control:
 Here is an example file that showcases all the supported features:
 [example YAML](repo_structure.yaml)
 
-Note that Windows clients are not supported at the moment.
+Cross-platform support for Windows, macOS, and Linux.
 
 ## Integration
 
 ### Quick Start
 
 The Repo Structure tool is written to be consumed through [pre-commit.com](https://pre-commit.com/) and/or via pip for running locally.
+
 Installation with pip:
 
 ```bash
 pip install repo-structure
 ```
+
+#### Windows Installation
+
+On Windows, you can install using pip in Command Prompt, PowerShell, or Windows Terminal:
+
+```cmd
+pip install repo-structure
+```
+
+For Windows users using pre-commit, ensure you have Python and Git properly installed. The tool works seamlessly across Windows, macOS, and Linux with automatic path normalization.
 
 A basic consumption with pre-commit looks like the following.
 

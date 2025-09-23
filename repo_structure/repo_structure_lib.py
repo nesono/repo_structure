@@ -71,6 +71,26 @@ StructureRuleList = List[RepoEntry]
 StructureRuleMap = Dict[str, StructureRuleList]
 
 
+def normalize_path(path: str) -> str:
+    """Normalize path separators for cross-platform compatibility.
+
+    Converts all path separators to forward slashes for consistent
+    internal representation across Windows, macOS, and Linux.
+    """
+    return path.replace(os.sep, "/") if path else path
+
+
+def join_path_normalized(*parts: str) -> str:
+    """Join path parts and normalize separators for cross-platform compatibility.
+
+    Equivalent to os.path.join but ensures forward slashes in the result.
+    """
+    if not parts:
+        return ""
+    joined = os.path.join(*parts)
+    return normalize_path(joined)
+
+
 def rel_dir_to_map_dir(rel_dir: str):
     """Convert a relative directory path to a mapped directory path.
 
@@ -118,7 +138,7 @@ def _skip_entry(
         (git_ignore and git_ignore(entry.path)),
         (
             entry.is_dir
-            and rel_dir_to_map_dir(os.path.join(entry.rel_dir, entry.path))
+            and rel_dir_to_map_dir(join_path_normalized(entry.rel_dir, entry.path))
             in directory_map
         ),
         (entry.path == config_file_name),

@@ -21,6 +21,7 @@ from .repo_structure_lib import (
     _map_dir_to_entry_backlog,
     StructureRuleList,
     Flags,
+    join_path_normalized,
 )
 
 
@@ -167,7 +168,9 @@ def _check_invalid_repo_structure_recursive(
         if not match_result.success:
             if match_result.issue:
                 # Update the path to include the full relative directory context
-                match_result.issue.path = f"{entry.rel_dir}/{entry.path}"
+                match_result.issue.path = join_path_normalized(
+                    entry.rel_dir, entry.path
+                )
                 errors.append(match_result.issue)
             continue
 
@@ -185,7 +188,7 @@ def _check_invalid_repo_structure_recursive(
                 entry.path,
             ) or _handle_if_exists(backlog[idx], flags)
 
-            subdirectory_path = os.path.join(rel_dir, entry.path)
+            subdirectory_path = join_path_normalized(rel_dir, entry.path)
             errors.extend(
                 _check_invalid_repo_structure_recursive(
                     repo_root, subdirectory_path, config, new_backlog, flags

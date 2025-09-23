@@ -20,6 +20,8 @@ from .repo_structure_lib import (
     Flags,
     _map_dir_to_entry_backlog,
     StructureRuleList,
+    normalize_path,
+    join_path_normalized,
 )
 
 from .repo_structure_full_scan import (
@@ -42,7 +44,9 @@ def _incremental_path_split(path_to_split: str) -> Iterator[Tuple[str, str, bool
       ("path/to", "file" false),
     ]
     """
-    parts = path_to_split.strip("/").split("/")
+    # Normalize path separators for cross-platform compatibility
+    normalized_path = normalize_path(path_to_split)
+    parts = normalized_path.strip("/").split("/")
     for i, part in enumerate(parts):
         rel_dir = "/".join(parts[:i])
         is_directory = i < len(parts) - 1
@@ -103,7 +107,7 @@ def check_path(
 
         map_dir = "/"
         for rel_dir, entry_name, is_dir in _incremental_path_split(p):
-            map_sub_dir = rel_dir_to_map_dir(os.path.join(rel_dir, entry_name))
+            map_sub_dir = rel_dir_to_map_dir(join_path_normalized(rel_dir, entry_name))
             if is_dir and map_sub_dir in c.directory_map:
                 map_dir = map_sub_dir
 
