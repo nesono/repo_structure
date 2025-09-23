@@ -191,7 +191,10 @@ def _check_invalid_repo_structure_recursive(
 
     git_ignore = _get_git_ignore(repo_root)
 
-    for os_entry in os.scandir(os.path.join(repo_root, rel_dir)):
+    # Sort directory entries for deterministic processing across platforms
+    for os_entry in sorted(
+        os.scandir(os.path.join(repo_root, rel_dir)), key=lambda e: e.name
+    ):
         entry = _to_entry(os_entry, rel_dir)
 
         if flags.verbose:
@@ -263,7 +266,10 @@ def _fail_if_invalid_repo_structure_recursive(
 
     git_ignore = _get_git_ignore(repo_root)
 
-    for os_entry in os.scandir(os.path.join(repo_root, rel_dir)):
+    # Sort directory entries for deterministic processing across platforms
+    for os_entry in sorted(
+        os.scandir(os.path.join(repo_root, rel_dir)), key=lambda e: e.name
+    ):
         entry = _to_entry(os_entry, rel_dir)
 
         if flags.verbose:
@@ -450,5 +456,10 @@ def scan_full_repository(
                     path=None,
                 )
             )
+
+    # Sort errors and warnings by path for deterministic ordering across platforms
+    # None paths go to the end
+    errors.sort(key=lambda x: (x.path is None, x.path or "", x.code))
+    warnings.sort(key=lambda x: (x.path is None, x.path or "", x.code))
 
     return errors, warnings

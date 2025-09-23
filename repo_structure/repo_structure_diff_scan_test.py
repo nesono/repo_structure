@@ -2,12 +2,9 @@
 # pylint: disable=duplicate-code
 """Tests for diff-scan subcommand."""
 
-import pytest
-
-
-from .repo_structure_lib import UnspecifiedEntryError, Flags, ForbiddenEntryError
+from .repo_structure_lib import Flags
 from .repo_structure_config import Configuration
-from .repo_structure_diff_scan import assert_path
+from .repo_structure_diff_scan import check_path
 
 
 def test_matching_regex():
@@ -23,12 +20,16 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    assert_path(config, "README.md")
-    assert_path(config, "LICENSE")
-    with pytest.raises(UnspecifiedEntryError):
-        assert_path(config, "bad_filename.md")
-    with pytest.raises(ForbiddenEntryError):
-        assert_path(config, "CMakeLists.txt")
+    assert check_path(config, "README.md") is None
+    assert check_path(config, "LICENSE") is None
+
+    issue = check_path(config, "bad_filename.md")
+    assert issue is not None
+    assert issue.code == "unspecified_entry"
+
+    issue = check_path(config, "CMakeLists.txt")
+    assert issue is not None
+    assert issue.code == "forbidden_entry"
 
 
 def test_matching_regex_dir():
@@ -44,9 +45,11 @@ directory_map:
     - use_rule: recursive_rule
     """
     config = Configuration(config_yaml, True)
-    assert_path(config, "python/main.py")
-    with pytest.raises(UnspecifiedEntryError):
-        assert_path(config, "python/bad_filename.py")
+    assert check_path(config, "python/main.py") is None
+
+    issue = check_path(config, "python/bad_filename.py")
+    assert issue is not None
+    assert issue.code == "unspecified_entry"
 
 
 def test_matching_regex_dir_if_exists():
@@ -63,8 +66,8 @@ directory_map:
     - use_rule: recursive_rule
     """
     config = Configuration(config_yaml, True)
-    assert_path(config, "main.py")
-    assert_path(config, "python/something.py")
+    assert check_path(config, "main.py") is None
+    assert check_path(config, "python/something.py") is None
 
 
 def test_multi_use_rule():
@@ -81,10 +84,12 @@ directory_map:
     - use_rule: python_package
     """
     config = Configuration(config_yaml, True)
-    assert_path(config, "README.md")
-    assert_path(config, "main.py")
-    with pytest.raises(UnspecifiedEntryError):
-        assert_path(config, "bad_file_name.cpp")
+    assert check_path(config, "README.md") is None
+    assert check_path(config, "main.py") is None
+
+    issue = check_path(config, "bad_file_name.cpp")
+    assert issue is not None
+    assert issue.code == "unspecified_entry"
 
 
 def test_use_rule_recursive():
@@ -105,12 +110,16 @@ directory_map:
     flags = Flags()
     flags.verbose = True
     config = Configuration(config_yaml, True)
-    assert_path(config, "main/main.cpp", flags)
-    assert_path(config, "main/main/main.cpp", flags)
-    with pytest.raises(UnspecifiedEntryError):
-        assert_path(config, "main/main.rs", flags)
-    with pytest.raises(UnspecifiedEntryError):
-        assert_path(config, "main/main/main.rs", flags)
+    assert check_path(config, "main/main.cpp", flags) is None
+    assert check_path(config, "main/main/main.cpp", flags) is None
+
+    issue = check_path(config, "main/main.rs", flags)
+    assert issue is not None
+    assert issue.code == "unspecified_entry"
+
+    issue = check_path(config, "main/main/main.rs", flags)
+    assert issue is not None
+    assert issue.code == "unspecified_entry"
 
 
 def test_succeed_elaborate_use_rule_recursive():
@@ -133,22 +142,26 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    assert_path(config, "app/main.py")
-    assert_path(config, "app/lib/lib.py")
-    assert_path(config, "app/lib/sub_lib/lib.py")
-    assert_path(config, "app/lib/sub_lib/tool/main.py")
-    assert_path(config, "app/lib/sub_lib/tool/README.md")
-    with pytest.raises(UnspecifiedEntryError):
-        assert_path(config, "app/README.md")
-    with pytest.raises(UnspecifiedEntryError):
-        assert_path(config, "app/lib/sub_lib/README.md")
+    assert check_path(config, "app/main.py") is None
+    assert check_path(config, "app/lib/lib.py") is None
+    assert check_path(config, "app/lib/sub_lib/lib.py") is None
+    assert check_path(config, "app/lib/sub_lib/tool/main.py") is None
+    assert check_path(config, "app/lib/sub_lib/tool/README.md") is None
+
+    issue = check_path(config, "app/README.md")
+    assert issue is not None
+    assert issue.code == "unspecified_entry"
+
+    issue = check_path(config, "app/lib/sub_lib/README.md")
+    assert issue is not None
+    assert issue.code == "unspecified_entry"
 
 
 def test_skip_file():
     """Test skipping file for diff scan."""
     config_filname = "repo_structure.yaml"
     config = Configuration(config_filname)
-    assert_path(config, "repo_structure.yaml")
+    assert check_path(config, "repo_structure.yaml") is None
 
 
 def test_ignore_rule():
@@ -166,5 +179,5 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.verbose = True
-    assert_path(config, "README.md", flags)
-    assert_path(config, "python/main.py", flags)
+    assert check_path(config, "README.md", flags) is None
+    assert check_path(config, "python/main.py", flags) is None

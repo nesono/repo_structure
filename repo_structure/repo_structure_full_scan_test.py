@@ -7,18 +7,24 @@ import pytest
 
 from .repo_structure_config import Configuration
 from .repo_structure_full_scan import (
-    MissingMappingError,
-    MissingRequiredEntriesError,
     assert_full_repository_structure,
+    scan_full_repository,
+    ScanIssue,
 )
 from .repo_structure_lib import (
     Flags,
-    UnspecifiedEntryError,
     ConfigurationParseError,
-    ForbiddenEntryError,
 )
 
 from .repo_structure_test_lib import with_repo_structure_in_tmpdir
+
+
+def _check_repo_directory_structure(
+    config: Configuration,
+    flags: Flags = Flags(),
+) -> tuple[list[ScanIssue], list[ScanIssue]]:
+    """Check repository structure and return errors and warnings instead of asserting."""
+    return scan_full_repository(".", config, flags)
 
 
 def _assert_repo_directory_structure(
@@ -53,7 +59,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -75,7 +83,9 @@ directory_map:
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -100,8 +110,10 @@ directory_map:
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
-    with pytest.raises(UnspecifiedEntryError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "unspecified_entry"
+    assert "unspecified" in errors[0].path
 
 
 @with_repo_structure_in_tmpdir(
@@ -120,8 +132,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    with pytest.raises(MissingMappingError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "missing_root_mapping"
 
 
 @with_repo_structure_in_tmpdir(
@@ -141,8 +154,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    with pytest.raises(MissingRequiredEntriesError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "missing_required_entries"
 
 
 @with_repo_structure_in_tmpdir(
@@ -164,8 +178,9 @@ directory_map:
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
-    with pytest.raises(MissingRequiredEntriesError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "missing_required_entries"
 
 
 @with_repo_structure_in_tmpdir(
@@ -187,8 +202,9 @@ directory_map:
     - use_rule: base_structure
 """
     config = Configuration(config_yaml, True)
-    with pytest.raises(MissingRequiredEntriesError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "missing_required_entries"
 
 
 @with_repo_structure_in_tmpdir(
@@ -211,7 +227,9 @@ directory_map:
     - use_rule: python_package
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -233,8 +251,9 @@ directory_map:
     - use_rule: python_package
     """
     config = Configuration(config_yaml, True)
-    with pytest.raises(MissingRequiredEntriesError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "missing_required_entries"
 
 
 @with_repo_structure_in_tmpdir(
@@ -257,7 +276,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -276,8 +297,10 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    with pytest.raises(UnspecifiedEntryError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 2
+    assert errors[0].code == "missing_required_entries"
+    assert errors[1].code == "unspecified_entry"
 
 
 @with_repo_structure_in_tmpdir(
@@ -298,8 +321,10 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    with pytest.raises(UnspecifiedEntryError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 2
+    assert errors[0].code == "missing_required_entries"
+    assert errors[1].code == "unspecified_entry"
 
 
 @with_repo_structure_in_tmpdir(
@@ -318,8 +343,10 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    with pytest.raises(UnspecifiedEntryError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 2
+    assert errors[0].code == "missing_required_entries"
+    assert errors[1].code == "unspecified_entry"
 
 
 @with_repo_structure_in_tmpdir(
@@ -341,7 +368,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -364,8 +393,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    with pytest.raises(MissingRequiredEntriesError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "missing_required_entries"
 
 
 @with_repo_structure_in_tmpdir(
@@ -389,7 +419,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -416,7 +448,9 @@ directory_map:
     - use_rule: cpp_source
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -443,8 +477,12 @@ directory_map:
     - use_rule: python_package
     """
     config = Configuration(config_yaml, True)
-    with pytest.raises(UnspecifiedEntryError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 2
+    assert errors[0].code == "missing_required_entries"
+    assert errors[0].path == "lib"
+    assert errors[1].code == "unspecified_entry"
+    assert errors[1].path == "lib/README.md"
 
 
 @with_repo_structure_in_tmpdir(
@@ -473,7 +511,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -510,7 +550,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -532,7 +574,9 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.include_hidden = False
-    _assert_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(config, flags)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -554,8 +598,9 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.include_hidden = True
-    with pytest.raises(MissingRequiredEntriesError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "missing_required_entries"
 
 
 @with_repo_structure_in_tmpdir(
@@ -579,8 +624,9 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.include_hidden = True
-    with pytest.raises(UnspecifiedEntryError):
-        _assert_repo_directory_structure(config, flags)
+    errors, _ = _check_repo_directory_structure(config, flags)
+    assert len(errors) == 1
+    assert errors[0].code == "unspecified_entry"
 
 
 @with_repo_structure_in_tmpdir(
@@ -601,7 +647,9 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -623,8 +671,10 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.follow_symlinks = True
-    with pytest.raises(UnspecifiedEntryError):
-        _assert_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(config, flags)
+    assert len(errors) == 1
+    assert errors[0].code == "unspecified_entry"
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -647,7 +697,9 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.follow_symlinks = True
-    _assert_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(config, flags)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -680,7 +732,9 @@ directory_map:
         component: ['lidar', 'driver']
 """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -712,8 +766,9 @@ directory_map:
         component: ['lidar', 'driver']
 """
     config = Configuration(config_yaml, True)
-    with pytest.raises(MissingRequiredEntriesError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "missing_required_entries"
 
 
 @with_repo_structure_in_tmpdir(
@@ -745,7 +800,9 @@ directory_map:
         component: ['lidar', 'driver']
 """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -790,7 +847,9 @@ directory_map:
         component: ['control', 'camera']
 """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -834,8 +893,9 @@ directory_map:
         component: ['control', 'camera']
 """
     config = Configuration(config_yaml, True)
-    with pytest.raises(MissingRequiredEntriesError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "missing_required_entries"
 
 
 @with_repo_structure_in_tmpdir(
@@ -882,7 +942,9 @@ directory_map:
         extension: ['py']
 """
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -924,7 +986,9 @@ directory_map:
     flags = Flags()
     flags.verbose = True
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(config, flags)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -950,8 +1014,9 @@ directory_map:
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
-    with pytest.raises(ForbiddenEntryError):
-        _assert_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(config)
+    assert len(errors) == 1
+    assert errors[0].code == "forbidden_entry"
 
 
 @with_repo_structure_in_tmpdir(
@@ -977,7 +1042,9 @@ directory_map:
     flags = Flags()
     flags.verbose = True
     config = Configuration(config_yaml, True)
-    _assert_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(config, flags)
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @with_repo_structure_in_tmpdir(
@@ -1001,10 +1068,6 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    from .repo_structure_full_scan import (  # pylint: disable=import-outside-toplevel
-        scan_full_repository,
-    )
-
     _, warnings = scan_full_repository(".", config)
     assert any(
         "unused_rule" in i.message for i in warnings
