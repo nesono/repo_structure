@@ -2,25 +2,16 @@
 
 from .repo_structure_config import Configuration
 from .repo_structure_full_scan import (
-    assert_full_repository_structure,
     scan_full_repository,
-    MissingMappingError,
-    MissingRequiredEntriesError,
-    EntryTypeMismatchError,
 )
-from .repo_structure_diff_scan import assert_path, check_path
+from .repo_structure_diff_scan import check_path
 from .repo_structure_lib import Flags, UnspecifiedEntryError, ConfigurationParseError
 
 __all__ = [
     "Configuration",
-    "EntryTypeMismatchError",
-    "MissingMappingError",
-    "MissingRequiredEntriesError",
     "UnspecifiedEntryError",
     "ConfigurationParseError",
-    "assert_full_repository_structure",
     "scan_full_repository",
-    "assert_path",
     "check_path",
     "Flags",
 ]

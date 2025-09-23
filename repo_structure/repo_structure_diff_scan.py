@@ -15,14 +15,11 @@ from .repo_structure_lib import (
     map_dir_to_rel_dir,
     _skip_entry,
     Entry,
-    _get_matching_item_index,
     _handle_use_rule,
     _handle_if_exists,
     Flags,
     _map_dir_to_entry_backlog,
     StructureRuleList,
-    UnspecifiedEntryError,
-    ForbiddenEntryError,
 )
 
 from .repo_structure_full_scan import (
@@ -91,35 +88,6 @@ def _check_path_in_backlog(
     return None
 
 
-def _assert_path_in_backlog(
-    backlog: StructureRuleList, config: Configuration, flags: Flags, path: str
-):
-
-    for rel_dir, entry_name, is_dir in _incremental_path_split(path):
-        if _skip_entry(
-            Entry(path=entry_name, rel_dir=rel_dir, is_dir=is_dir, is_symlink=False),
-            config.directory_map,
-            config.configuration_file_name,
-            flags=flags,
-        ):
-            return
-
-        idx = _get_matching_item_index(
-            backlog,
-            entry_name,
-            is_dir,
-            flags.verbose,
-        )
-        if flags.verbose:
-            print(f"  Found match for path '{entry_name}'")
-
-        if is_dir:
-            backlog_match = backlog[idx]
-            backlog = _handle_use_rule(
-                backlog_match.use_rule, config.structure_rules, flags, entry_name
-            ) or _handle_if_exists(backlog_match, flags)
-
-
 def check_path(
     config: Configuration,
     path: str,
@@ -164,22 +132,3 @@ def check_path(
         issue.path = path
 
     return issue
-
-
-def assert_path(
-    config: Configuration,
-    path: str,
-    flags: Flags = Flags(),
-) -> None:
-    """Fail if the given path is invalid according to the configuration.
-
-    Note that this function will not be able to ensure if all required
-    entries are present."""
-    issue = check_path(config, path, flags)
-    if issue:
-        if issue.code == "unspecified_entry":
-            raise UnspecifiedEntryError(issue.message)
-        if issue.code == "forbidden_entry":
-            raise ForbiddenEntryError(issue.message)
-        # Fallback for any other error codes
-        raise UnspecifiedEntryError(issue.message)

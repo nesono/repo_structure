@@ -7,7 +7,6 @@ import pytest
 
 from .repo_structure_config import Configuration
 from .repo_structure_full_scan import (
-    assert_full_repository_structure,
     scan_full_repository,
     ScanIssue,
 )
@@ -25,13 +24,6 @@ def _check_repo_directory_structure(
 ) -> tuple[list[ScanIssue], list[ScanIssue]]:
     """Check repository structure and return errors and warnings instead of asserting."""
     return scan_full_repository(".", config, flags)
-
-
-def _assert_repo_directory_structure(
-    config: Configuration,
-    flags: Flags = Flags(),
-) -> None:
-    assert_full_repository_structure(".", config, flags)
 
 
 @with_repo_structure_in_tmpdir("")
