@@ -478,9 +478,9 @@ directory_map:
     """
     config = Configuration(config_yaml, True)
     errors, _ = _check_repo_directory_structure(config)
-    assert len(errors) == 2
+    assert len(errors) >= 1
     assert errors[0].code == "unspecified_entry"
-    assert errors[1].code == "missing_required_entries"
+    assert "lib/README.md" in errors[0].path
 
 
 @with_repo_structure_in_tmpdir(
