@@ -4,7 +4,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from os import DirEntry
-from typing import List, Union, Callable, Dict, Final
+from typing import Callable, Final
 
 BUILTIN_DIRECTORY_RULES: Final = ["ignore"]
 
@@ -43,7 +43,7 @@ class RepoEntry:
     is_required: bool
     is_forbidden: bool
     use_rule: str = ""
-    if_exists: List["RepoEntry"] = field(default_factory=list)
+    if_exists: list["RepoEntry"] = field(default_factory=list)
     count: int = 0
 
 
@@ -66,9 +66,9 @@ class Flags:
     verbose: bool = False
 
 
-DirectoryMap = Dict[str, List[str]]
-StructureRuleList = List[RepoEntry]
-StructureRuleMap = Dict[str, StructureRuleList]
+DirectoryMap = dict[str, list[str]]
+StructureRuleList = list[RepoEntry]
+StructureRuleMap = dict[str, StructureRuleList]
 
 
 def normalize_path(path: str) -> str:
@@ -127,7 +127,7 @@ def _skip_entry(
     entry: Entry,
     directory_map: DirectoryMap,
     config_file_name: str,
-    git_ignore: Union[Callable[[str], bool], None] = None,
+    git_ignore: Callable[[str], bool] | None = None,
     flags: Flags = Flags(),
 ) -> bool:
     skip_conditions = [
@@ -214,7 +214,7 @@ def _map_dir_to_entry_backlog(
 
     def _get_use_rules_for_directory(
         directory_map: DirectoryMap, directory: str
-    ) -> List[str]:
+    ) -> list[str]:
         d = rel_dir_to_map_dir(directory)
         return directory_map[d]
 
@@ -223,7 +223,7 @@ def _map_dir_to_entry_backlog(
 
 
 def _build_active_entry_backlog(
-    active_use_rules: List[str], structure_rules: StructureRuleMap
+    active_use_rules: list[str], structure_rules: StructureRuleMap
 ) -> StructureRuleList:
     result: StructureRuleList = []
     for rule in active_use_rules:

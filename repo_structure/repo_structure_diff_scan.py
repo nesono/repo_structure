@@ -4,7 +4,7 @@
 
 import os
 
-from typing import Iterator, Tuple, Optional
+from typing import Iterator
 
 from .repo_structure_config import (
     Configuration,
@@ -30,7 +30,7 @@ from .repo_structure_full_scan import (
 )
 
 
-def _incremental_path_split(path_to_split: str) -> Iterator[Tuple[str, str, bool]]:
+def _incremental_path_split(path_to_split: str) -> Iterator[tuple[str, str, bool]]:
     """Split the path into incremental tokens.
 
     Each token starts with the top-level directory and grows the path by
@@ -55,7 +55,7 @@ def _incremental_path_split(path_to_split: str) -> Iterator[Tuple[str, str, bool
 
 def _check_path_in_backlog(
     backlog: StructureRuleList, config: Configuration, flags: Flags, path: str
-) -> Optional[ScanIssue]:
+) -> ScanIssue | None:
     """Check if path is valid in backlog and return ScanIssue if invalid."""
 
     for rel_dir, entry_name, is_dir in _incremental_path_split(path):
@@ -96,7 +96,7 @@ def check_path(
     config: Configuration,
     path: str,
     flags: Flags = Flags(),
-) -> Optional[ScanIssue]:
+) -> ScanIssue | None:
     """Check if the given path is valid according to the configuration.
 
     Returns ScanIssue if invalid, None if valid.
