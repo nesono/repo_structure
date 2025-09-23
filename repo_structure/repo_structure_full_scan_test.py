@@ -299,8 +299,8 @@ directory_map:
     config = Configuration(config_yaml, True)
     errors, _ = _check_repo_directory_structure(config)
     assert len(errors) == 2
-    assert errors[0].code == "unspecified_entry"
-    assert errors[1].code == "missing_required_entries"
+    assert errors[0].code == "missing_required_entries"
+    assert errors[1].code == "unspecified_entry"
 
 
 @with_repo_structure_in_tmpdir(
@@ -323,8 +323,8 @@ directory_map:
     config = Configuration(config_yaml, True)
     errors, _ = _check_repo_directory_structure(config)
     assert len(errors) == 2
-    assert errors[0].code == "unspecified_entry"
-    assert errors[1].code == "missing_required_entries"
+    assert errors[0].code == "missing_required_entries"
+    assert errors[1].code == "unspecified_entry"
 
 
 @with_repo_structure_in_tmpdir(
@@ -345,8 +345,8 @@ directory_map:
     config = Configuration(config_yaml, True)
     errors, _ = _check_repo_directory_structure(config)
     assert len(errors) == 2
-    assert errors[0].code == "unspecified_entry"
-    assert errors[1].code == "missing_required_entries"
+    assert errors[0].code == "missing_required_entries"
+    assert errors[1].code == "unspecified_entry"
 
 
 @with_repo_structure_in_tmpdir(
@@ -478,9 +478,11 @@ directory_map:
     """
     config = Configuration(config_yaml, True)
     errors, _ = _check_repo_directory_structure(config)
-    assert len(errors) >= 1
-    assert errors[0].code == "unspecified_entry"
-    assert "lib/README.md" in errors[0].path
+    assert len(errors) == 2
+    assert errors[0].code == "missing_required_entries"
+    assert errors[0].path == "lib"
+    assert errors[1].code == "unspecified_entry"
+    assert errors[1].path == "lib/README.md"
 
 
 @with_repo_structure_in_tmpdir(
