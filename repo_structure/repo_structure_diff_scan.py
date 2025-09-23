@@ -42,7 +42,9 @@ def _incremental_path_split(path_to_split: str) -> Iterator[Tuple[str, str, bool
       ("path/to", "file" false),
     ]
     """
-    parts = path_to_split.strip("/").split("/")
+    # Normalize path separators for cross-platform compatibility
+    normalized_path = path_to_split.replace(os.sep, "/")
+    parts = normalized_path.strip("/").split("/")
     for i, part in enumerate(parts):
         rel_dir = "/".join(parts[:i])
         is_directory = i < len(parts) - 1
