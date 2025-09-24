@@ -319,7 +319,7 @@ The rule can
 ## System Requirements
 
 - Tested with Python versions ["3.10", "3.11", "3.12", "3.13", "3.14"]
-- [Pip requirements](requirements.txt)
+- Dependencies defined in [pyproject.toml](pyproject.toml)
 - Does not work on Windows
 
 ## Building from Source
@@ -333,14 +333,14 @@ The rule can
 
 - `python3.11 -m venv .venv`
 - `source .venv/bin/activate`
-- `pip install -r requirements.txt`
+- `pip install -e .[dev]`
 - `pytest *_test.py`
 
 ### Using Conda
 
 - `conda create -n .conda_env python=3.11`
 - `conda activate .conda_env`
-- `pip install -r requirements.txt`
+- `pip install -e .[dev]`
 - `pytest *_test.py`
 
 ### Using uv
