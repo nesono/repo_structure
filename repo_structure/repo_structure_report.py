@@ -77,7 +77,7 @@ def generate_markdown_report(
         report_lines.extend(
             [
                 f"**Git Branch:** `{branch}`",
-                f"**Git Commit:** `{commit_hash}`",
+                f"**Git Commit:** `{commit_hash[:12]}...`",
             ]
         )
     elif branch:
