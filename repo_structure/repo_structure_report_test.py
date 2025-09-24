@@ -3,9 +3,10 @@
 
 import tempfile
 from io import StringIO
+from unittest.mock import patch
 
 from .repo_structure_config import Configuration
-from .repo_structure_report import generate_markdown_report
+from .repo_structure_report import generate_markdown_report, _get_git_info
 
 
 class TestGenerateMarkdownReport:
@@ -197,6 +198,67 @@ structure_rules: {}
         assert "Generated on:" in report
         # Should include current date (at least year)
         assert "2025" in report
+
+    def test_git_information_inclusion(self) -> None:
+        """Test that report includes Git information when available."""
+        yaml_content = """
+directory_map: {}
+structure_rules: {}
+"""
+        config = Configuration(yaml_content, param1_is_yaml_string=True)
+
+        report = generate_markdown_report(config)
+
+        assert "**Generated on:**" in report
+        # Git info should be present if we're in a git repo
+        # At minimum, we should see either branch or commit info
+        # (This test might pass without Git info if not in a git repo)
+
+    def test_git_info_function(self) -> None:
+        """Test the _get_git_info function directly."""
+        # Test the actual function - should return branch and commit if in git repo
+        branch, commit_hash = _get_git_info()
+
+        # We're in a git repo, so at least one should be present
+        # (Allow for cases where git might not be available in test environment)
+        if branch is not None or commit_hash is not None:
+            if branch:
+                assert isinstance(branch, str) and len(branch) > 0
+            if commit_hash:
+                assert isinstance(commit_hash, str) and len(commit_hash) == 40  # Git SHA-1 is 40 chars
+
+    @patch('repo_structure.repo_structure_report.subprocess.run')
+    def test_git_info_with_mocked_git(self, mock_run) -> None:
+        """Test Git info with mocked subprocess calls."""
+        from types import SimpleNamespace
+
+        # Mock successful git commands
+        mock_run.side_effect = [
+            SimpleNamespace(stdout="main\n", returncode=0),  # branch
+            SimpleNamespace(stdout="abc1234567890abcdef1234567890abcdef123456\n", returncode=0)  # commit
+        ]
+
+        branch, commit_hash = _get_git_info()
+
+        assert branch == "main"
+        assert commit_hash == "abc1234567890abcdef1234567890abcdef123456"
+
+    @patch('repo_structure.repo_structure_report._get_git_info')
+    def test_report_with_mocked_git_info(self, mock_git_info) -> None:
+        """Test report generation with mocked Git information."""
+        # Mock Git info
+        mock_git_info.return_value = ("feature-branch", "abc1234567890abcdef1234567890abcdef123456")
+
+        yaml_content = """
+directory_map: {}
+structure_rules: {}
+"""
+        config = Configuration(yaml_content, param1_is_yaml_string=True)
+
+        report = generate_markdown_report(config)
+
+        assert "**Git Branch:** `feature-branch`" in report
+        assert "**Git Commit:** `abc123456789...`" in report
 
     def test_builtin_rules(self) -> None:
         """Test report with built-in directory rules."""

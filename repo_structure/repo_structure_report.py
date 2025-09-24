@@ -1,10 +1,45 @@
 """Generate human-readable Markdown reports from repository structure configuration."""
 
+import subprocess
 from datetime import datetime
 from typing import TextIO
 
 from .repo_structure_config import Configuration
 from .repo_structure_lib import StructureRuleList
+
+
+def _get_git_info() -> tuple[str | None, str | None]:
+    """Get current Git branch and commit hash.
+
+    Returns:
+        Tuple of (branch_name, commit_hash) or (None, None) if not in a git repo
+    """
+    try:
+        # Get current branch
+        branch_result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=5
+        )
+        branch = branch_result.stdout.strip()
+
+        # Get current commit hash
+        commit_result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=5
+        )
+        commit_hash = commit_result.stdout.strip()
+
+        return branch, commit_hash
+
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        # Not in a git repo, git not available, or command failed
+        return None, None
 
 
 def generate_markdown_report(
@@ -21,17 +56,32 @@ def generate_markdown_report(
     """
     report_lines = []
 
+    # Get Git information
+    branch, commit_hash = _get_git_info()
+
     # Header
-    report_lines.extend(
-        [
-            "# Repository Structure Report",
-            "",
-            f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            "",
-            "This document describes the enforced repository structure rules and directory mappings.",
-            "",
-        ]
-    )
+    report_lines.extend([
+        "# Repository Structure Report",
+        "",
+        f"**Generated on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+    ])
+
+    # Add Git information if available
+    if branch and commit_hash:
+        report_lines.extend([
+            f"**Git Branch:** `{branch}`",
+            f"**Git Commit:** `{commit_hash[:12]}...`",
+        ])
+    elif branch:
+        report_lines.append(f"**Git Branch:** `{branch}`")
+    elif commit_hash:
+        report_lines.append(f"**Git Commit:** `{commit_hash[:12]}...`")
+
+    report_lines.extend([
+        "",
+        "This document describes the enforced repository structure rules and directory mappings.",
+        "",
+    ])
 
     # Table of Contents
     report_lines.extend(
