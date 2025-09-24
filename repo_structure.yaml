@@ -1,7 +1,6 @@
 structure_rules:
   base_structure:
     - require: "environment.yml"
-    - require: "requirements.txt"
     - require: "LICENSE"
     - require: 'README\.md'
     - require: 'PUBLISHING\.md'
