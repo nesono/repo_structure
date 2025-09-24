@@ -104,7 +104,6 @@ def check_path(
     entries are present."""
 
     def _get_corresponding_map_dir(c: Configuration, f: Flags, p: str):
-
         map_dir = "/"
         for rel_dir, entry_name, is_dir in _incremental_path_split(p):
             map_sub_dir = rel_dir_to_map_dir(join_path_normalized(rel_dir, entry_name))

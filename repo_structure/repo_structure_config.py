@@ -151,7 +151,6 @@ def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
 
 
 def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
-
     def _validate_use_rule_not_dangling(rules: StructureRuleMap) -> None:
         for rule_key in rules.keys():
             for entry in rules[rule_key]:
@@ -178,7 +177,6 @@ def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
 
 
 def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
-
     def _parse_directory_structure(
         directory_structure_yaml: dict, structure_rule_list: StructureRuleList
     ) -> None:
@@ -265,7 +263,6 @@ def _get_pattern_key(entry: dict) -> str:
 def _expand_template_entry(
     template_yaml: list[dict], expansion_key: str, expansion_var: str
 ) -> list[dict]:
-
     def _expand_entry(entry: dict, expansion_key: str, expansion_var: str):
         k = _get_pattern_key(entry)
         entry[k] = entry[k].replace(f"{{{{{expansion_key}}}}}", expansion_var)
@@ -289,7 +286,6 @@ def _parse_use_template(
         return
 
     def _expand_template(dir_map_yaml, templates_yaml):
-
         def _max_values_length(expansion_map: dict[str, list[str]]) -> int:
             max_length = 0
             for _, values in expansion_map.items():
@@ -328,7 +324,6 @@ def _parse_use_template(
 def _parse_directory_map(
     directory_map_yaml: dict,
 ) -> DirectoryMap:
-
     def _parse_use_rule(rule: dict, dir_map: list[str]) -> None:
         if rule.keys() == {"use_rule"}:
             dir_map.append(rule["use_rule"])

@@ -21,7 +21,7 @@ def _get_git_info() -> tuple[str | None, str | None]:
             capture_output=True,
             text=True,
             check=True,
-            timeout=5
+            timeout=5,
         )
         branch = branch_result.stdout.strip()
 
@@ -31,13 +31,17 @@ def _get_git_info() -> tuple[str | None, str | None]:
             capture_output=True,
             text=True,
             check=True,
-            timeout=5
+            timeout=5,
         )
         commit_hash = commit_result.stdout.strip()
 
         return branch, commit_hash
 
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+    except (
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+        FileNotFoundError,
+    ):
         # Not in a git repo, git not available, or command failed
         return None, None
 
@@ -60,28 +64,34 @@ def generate_markdown_report(
     branch, commit_hash = _get_git_info()
 
     # Header
-    report_lines.extend([
-        "# Repository Structure Report",
-        "",
-        f"**Generated on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-    ])
+    report_lines.extend(
+        [
+            "# Repository Structure Report",
+            "",
+            f"**Generated on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        ]
+    )
 
     # Add Git information if available
     if branch and commit_hash:
-        report_lines.extend([
-            f"**Git Branch:** `{branch}`",
-            f"**Git Commit:** `{commit_hash[:12]}...`",
-        ])
+        report_lines.extend(
+            [
+                f"**Git Branch:** `{branch}`",
+                f"**Git Commit:** `{commit_hash}`",
+            ]
+        )
     elif branch:
         report_lines.append(f"**Git Branch:** `{branch}`")
     elif commit_hash:
         report_lines.append(f"**Git Commit:** `{commit_hash[:12]}...`")
 
-    report_lines.extend([
-        "",
-        "This document describes the enforced repository structure rules and directory mappings.",
-        "",
-    ])
+    report_lines.extend(
+        [
+            "",
+            "This document describes the enforced repository structure rules and directory mappings.",
+            "",
+        ]
+    )
 
     # Table of Contents
     report_lines.extend(

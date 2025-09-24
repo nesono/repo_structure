@@ -211,7 +211,6 @@ def _map_dir_to_entry_backlog(
     structure_rules: StructureRuleMap,
     map_dir: str,
 ) -> StructureRuleList:
-
     def _get_use_rules_for_directory(
         directory_map: DirectoryMap, directory: str
     ) -> list[str]:

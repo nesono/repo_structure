@@ -62,7 +62,6 @@ def with_repo_structure_in_tmpdir(specification: str):
     """Create and remove repo structure based on specification for testing. Use as decorator."""
 
     def decorator(func: Callable[..., R]) -> Callable[..., R]:
-
         def wrapper(*args, **kwargs):
             cwd = os.getcwd()
             tmpdir = _get_tmp_dir()
@@ -126,7 +125,6 @@ def with_random_repo_structure_in_tmpdir(
     """Create and remove random repo structure based on specification for testing."""
 
     def decorator(func: Callable[..., R]) -> Callable[..., R]:
-
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             cwd = os.getcwd()

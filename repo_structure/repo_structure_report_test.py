@@ -3,6 +3,7 @@
 
 import tempfile
 from io import StringIO
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from .repo_structure_config import Configuration
@@ -225,29 +226,38 @@ structure_rules: {}
             if branch:
                 assert isinstance(branch, str) and len(branch) > 0
             if commit_hash:
-                assert isinstance(commit_hash, str) and len(commit_hash) == 40  # Git SHA-1 is 40 chars
+                assert (
+                    isinstance(commit_hash, str) and len(commit_hash) == 40
+                )  # Git SHA-1 is 40 chars
 
-    @patch('repo_structure.repo_structure_report.subprocess.run')
+    @patch("repo_structure.repo_structure_report.subprocess.run")
     def test_git_info_with_mocked_git(self, mock_run) -> None:
         """Test Git info with mocked subprocess calls."""
-        from types import SimpleNamespace
 
         # Mock successful git commands
         mock_run.side_effect = [
             SimpleNamespace(stdout="main\n", returncode=0),  # branch
-            SimpleNamespace(stdout="abc1234567890abcdef1234567890abcdef123456\n", returncode=0)  # commit
+            SimpleNamespace(
+                stdout="abc1234567890abcdef1234567890abcdef123456\n",
+                returncode=0,  # pragma: allowlist secret
+            ),  # commit
         ]
 
         branch, commit_hash = _get_git_info()
 
         assert branch == "main"
-        assert commit_hash == "abc1234567890abcdef1234567890abcdef123456"
+        assert (
+            commit_hash == "abc1234567890abcdef1234567890abcdef123456"  # pragma: allowlist secret
+        )
 
-    @patch('repo_structure.repo_structure_report._get_git_info')
+    @patch("repo_structure.repo_structure_report._get_git_info")
     def test_report_with_mocked_git_info(self, mock_git_info) -> None:
         """Test report generation with mocked Git information."""
         # Mock Git info
-        mock_git_info.return_value = ("feature-branch", "abc1234567890abcdef1234567890abcdef123456")
+        mock_git_info.return_value = (
+            "feature-branch",
+            "abc1234567890abcdef1234567890abcdef123456",  # pragma: allowlist secret
+        )
 
         yaml_content = """
 directory_map: {}
