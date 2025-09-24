@@ -15,6 +15,7 @@ from .repo_structure_full_scan import (
 )
 from .repo_structure_diff_scan import check_path
 from .repo_structure_config import Configuration
+from .repo_structure_report import generate_markdown_report
 
 try:
     from ._version import version as VERSION
@@ -286,6 +287,62 @@ def full_scan_warning(ctx: click.Context, repo_root: str, config_path: str) -> N
     )
 
     if not successful:
+        sys.exit(1)
+
+
+@repo_structure.command()
+@click.option(
+    "--config-path",
+    "-c",
+    type=click.Path(exists=True),
+    help="The path to the configuration file.",
+    default="repo_structure.yaml",
+    show_default=True,
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    help="Output file path for the report. If not specified, prints to stdout.",
+    default=None,
+)
+@click.pass_context
+def generate_report(ctx: click.Context, config_path: str, output: str | None) -> None:
+    """Generate a Markdown report describing the repository structure.
+
+    This command creates a human-readable Markdown document that describes
+    the repository structure rules, directory mappings, and requirements.
+    The report can be shared with external parties or used for documentation.
+
+    Options:
+        config_path: The path to the configuration file.
+        output: Output file path for the report (optional).
+
+    Examples:
+        repo_structure generate-report
+        repo_structure generate-report -c custom_config.yaml -o structure_report.md
+    """
+    click.echo("Generating repository structure report")
+    flags = ctx.obj
+
+    try:
+        config = Configuration(config_path, False, None, flags.verbose)
+    except Exception as err:
+        click.echo(f"Error loading configuration: {err}", err=True)
+        sys.exit(1)
+
+    try:
+        report_content = generate_markdown_report(config, output)
+
+        if output:
+            click.echo(f"Report saved to: {output}")
+        else:
+            click.echo("\n" + "=" * 50)
+            click.echo(report_content)
+            click.echo("=" * 50)
+
+    except Exception as err:
+        click.echo(f"Error generating report: {err}", err=True)
         sys.exit(1)
 
 
