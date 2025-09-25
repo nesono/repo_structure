@@ -20,11 +20,8 @@ from .repo_structure_lib import (
     StructureRuleList,
     normalize_path,
     join_path_normalized,
-)
-
-from .repo_structure_full_scan import (
     ScanIssue,
-    _get_matching_item_index_safe,
+    get_matching_item_index_safe,
 )
 
 
@@ -80,7 +77,7 @@ class DiffScanProcessor:
             ):
                 return None
 
-            match_result = _get_matching_item_index_safe(
+            match_result = get_matching_item_index_safe(
                 backlog,
                 entry_name,
                 is_dir,
