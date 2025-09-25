@@ -235,7 +235,10 @@ def _process_map_dir_sync(
 
     return errors
 
-def scan_full_repository(repo_root: str, config: Configuration, flags: Flags = Flags()) -> tuple[list[ScanIssue], list[ScanIssue]]:
+
+def scan_full_repository(
+    repo_root: str, config: Configuration, flags: Flags = Flags()
+) -> tuple[list[ScanIssue], list[ScanIssue]]:
     """Scan the repository and return a list of issues (errors and warnings).
 
     This function is a non-throwing variant intended for easier consumption.
@@ -249,7 +252,9 @@ def scan_full_repository(repo_root: str, config: Configuration, flags: Flags = F
     return errors, warnings
 
 
-def _collect_errors(repo_root: str, config: Configuration, flags: Flags) -> list[ScanIssue]:
+def _collect_errors(
+    repo_root: str, config: Configuration, flags: Flags
+) -> list[ScanIssue]:
     errors: list[ScanIssue] = []
     # Missing root mapping error
     if "/" not in config.directory_map:
@@ -299,4 +304,3 @@ def _collect_warnings(config: Configuration) -> list[ScanIssue]:
                 )
             )
     return warnings
-
