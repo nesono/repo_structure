@@ -254,6 +254,7 @@ class FullScanProcessor:
         return errors
 
     def _collect_warnings(self) -> list[ScanIssue]:
+        """Collect and return warnings without running the scan."""
         warnings: list[ScanIssue] = []
         # Compute unused rule warnings (do not throw)
         used_rules = set()
