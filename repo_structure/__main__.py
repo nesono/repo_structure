@@ -1,6 +1,5 @@
-# pylint: disable=import-error
-
 """Ensure clean repository structure for your projects."""
+
 import sys
 import time
 from pathlib import Path
