@@ -6,11 +6,10 @@ from pathlib import Path
 
 import click
 
-from .repo_structure_lib import ConfigurationParseError, Flags
+from .repo_structure_lib import ConfigurationParseError, Flags, ScanIssue
 from .repo_structure_full_scan import (
     scan_full_repository,
     FullScanProcessor,
-    ScanIssue,
 )
 from .repo_structure_diff_scan import DiffScanProcessor
 from .repo_structure_config import Configuration

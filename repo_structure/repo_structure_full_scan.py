@@ -2,8 +2,7 @@
 
 import os
 
-from typing import Callable, Literal
-from dataclasses import dataclass
+from typing import Callable
 from gitignore_parser import parse_gitignore
 
 from .repo_structure_config import (
@@ -20,32 +19,10 @@ from .repo_structure_lib import (
     StructureRuleList,
     Flags,
     join_path_normalized,
+    ScanIssue,
+    MatchResult,
+    get_matching_item_index_safe,
 )
-
-
-@dataclass
-class ScanIssue:
-    """Represents a single finding from a scan.
-
-    severity: "error" or "warning"
-    code: short machine-consumable code (e.g., "unused_structure_rule")
-    message: human-readable description
-    path: optional path context for the issue
-    """
-
-    severity: Literal["error", "warning"]
-    code: str
-    message: str
-    path: str | None = None
-
-
-@dataclass
-class MatchResult:
-    """Result of attempting to match an entry against backlog rules."""
-
-    success: bool
-    index: int | None = None
-    issue: ScanIssue | None = None
 
 
 class FullScanProcessor:
@@ -165,8 +142,8 @@ class FullScanProcessor:
             if self._should_skip_entry(entry):
                 continue
 
-            match_result = self._get_matching_item_index_safe(
-                backlog, entry.path, os_entry.is_dir()
+            match_result = get_matching_item_index_safe(
+                backlog, entry.path, os_entry.is_dir(), self.flags.verbose
             )
 
             if not match_result.success:
@@ -333,32 +310,7 @@ def _get_matching_item_index_safe(
     verbose: bool = False,
 ) -> MatchResult:
     """Get matching item index without raising exceptions, return result with potential issues."""
-    for i, v in enumerate(backlog):
-        if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
-            if v.is_forbidden:
-                return MatchResult(
-                    success=False,
-                    issue=ScanIssue(
-                        severity="error",
-                        code="forbidden_entry",
-                        message=f"Found forbidden entry: {entry_path}",
-                        path=entry_path,
-                    ),
-                )
-            if verbose:
-                print(f"  Found match at index {i}: '{v.path.pattern}'")
-            return MatchResult(success=True, index=i)
-
-    display_path = entry_path + "/" if is_dir else entry_path
-    return MatchResult(
-        success=False,
-        issue=ScanIssue(
-            severity="error",
-            code="unspecified_entry",
-            message=f"Found unspecified entry: '{display_path}'",
-            path=entry_path,
-        ),
-    )
+    return get_matching_item_index_safe(backlog, entry_path, is_dir, verbose)
 
 
 def scan_full_repository(
