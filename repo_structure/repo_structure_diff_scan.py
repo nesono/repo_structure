@@ -21,7 +21,6 @@ from .repo_structure_lib import (
     normalize_path,
     join_path_normalized,
     ScanIssue,
-    MatchResult,
     get_matching_item_index_safe,
 )
 
@@ -44,7 +43,6 @@ class DiffScanProcessor:
     ) -> Iterator[tuple[str, str, bool]]:
         """Split the path into incremental tokens.
 
-<<<<<<< HEAD
         Each token starts with the top-level directory and grows the path by
         one directory with each iteration.
 
