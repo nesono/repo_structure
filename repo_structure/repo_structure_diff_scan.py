@@ -79,7 +79,7 @@ class DiffScanProcessor:
             ):
                 return None
 
-            match_result = _get_matching_item_index_safe(
+            match_result = get_matching_item_index_safe(
                 backlog,
                 entry_name,
                 is_dir,
@@ -103,19 +103,9 @@ class DiffScanProcessor:
                     self.flags,
                     entry_name,
                 ) or _handle_if_exists(backlog_match, self.flags)
-=======
-def _check_path_in_backlog(
-    backlog: StructureRuleList, config: Configuration, flags: Flags, path: str
-) -> ScanIssue | None:
-    """Check if path is valid in backlog and return ScanIssue if invalid."""
-    processor = DiffScanProcessor(config, flags)
-    # pylint: disable-next=protected-access
-    return processor._check_path_in_backlog(backlog, path)
->>>>>>> 36fc0dd (Move diff scan into class)
 
         return None
 
-<<<<<<< HEAD
     def _get_corresponding_map_dir(self, path: str) -> str:
         """Get the corresponding map directory for the given path."""
         map_dir = "/"
@@ -180,7 +170,17 @@ def _check_path_in_backlog(
             if issue:
                 issues.append(issue)
         return issues
-=======
+
+
+def _check_path_in_backlog(
+    backlog: StructureRuleList, config: Configuration, flags: Flags, path: str
+) -> ScanIssue | None:
+    """Check if path is valid in backlog and return ScanIssue if invalid."""
+    processor = DiffScanProcessor(config, flags)
+    # pylint: disable-next=protected-access
+    return processor._check_path_in_backlog(backlog, path)
+
+
 def check_path(
     config: Configuration,
     path: str,
@@ -193,4 +193,3 @@ def check_path(
     entries are present."""
     processor = DiffScanProcessor(config, flags)
     return processor.check_path(path)
->>>>>>> 36fc0dd (Move diff scan into class)
