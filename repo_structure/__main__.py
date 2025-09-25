@@ -9,6 +9,8 @@ import click
 from .repo_structure_lib import ConfigurationParseError, Flags
 from .repo_structure_full_scan import (
     scan_full_repository,
+    FullScanProcessor,
+    ScanIssue,
 )
 from .repo_structure_diff_scan import check_path
 from .repo_structure_config import Configuration
@@ -62,6 +64,65 @@ def repo_structure(
     ctx.obj = flags
 
 
+def _load_configuration(config_path: str, verbose: bool) -> Configuration:
+    """Load and validate configuration from file."""
+    try:
+        return Configuration(config_path, False, None, verbose)
+    except ConfigurationParseError as err:
+        click.echo(err, err=True)
+        sys.exit(1)
+
+
+def _validate_directory_mapping(directory: str, config: Configuration) -> None:
+    """Validate that directory mapping exists in configuration."""
+    if directory not in config.directory_map:
+        available_dirs = list(config.directory_map.keys())
+        click.echo(
+            click.style(
+                f"Error: Directory mapping '{directory}' not found in configuration.",
+                fg="red",
+            )
+            + f"\nAvailable directory mappings: {', '.join(available_dirs)}",
+            err=True,
+        )
+        sys.exit(1)
+
+
+def _perform_scan(
+    repo_root: str, config: Configuration, flags: Flags, directory: str | None
+) -> tuple[list[ScanIssue], list[ScanIssue]]:
+    """Perform the actual scan operation."""
+    if directory:
+        _validate_directory_mapping(directory, config)
+        processor = FullScanProcessor(repo_root, config, flags)
+        errors = processor.scan_directory(directory)
+        warnings: list[ScanIssue] = []
+        return errors, warnings
+    return scan_full_repository(repo_root, config, flags)
+
+
+def _print_scan_results(errors: list[ScanIssue], warnings: list[ScanIssue]) -> bool:
+    """Print scan results and return success status."""
+    successful = True
+
+    # Print warnings first
+    if warnings:
+        click.echo(click.style("Warnings:", fg="yellow"))
+        for w in warnings:
+            loc = f" [{w.path}]" if getattr(w, "path", None) else ""
+            click.echo(click.style(f" - ({w.code}) {w.message}{loc}", fg="yellow"))
+
+    # Then errors
+    if errors:
+        click.echo(click.style("Errors:", fg="red"))
+        for e in errors:
+            loc = f" [{e.path}]" if getattr(e, "path", None) else ""
+            click.echo(click.style(f" - ({e.code}) {e.message}{loc}", fg="red"))
+        successful = False
+
+    return successful
+
+
 @repo_structure.command()
 @click.option(
     "--repo-root",
@@ -79,56 +140,49 @@ def repo_structure(
     default="repo_structure.yaml",
     show_default=True,
 )
+@click.option(
+    "--directory",
+    "-d",
+    help="Limit scan to a specific directory (e.g. '/', 'src/', 'tests/')",
+    default=None,
+)
 @click.pass_context
-def full_scan(ctx: click.Context, repo_root: str, config_path: str) -> None:
+def full_scan(
+    ctx: click.Context, repo_root: str, config_path: str, directory: str | None
+) -> None:
     """Run a full scan on all files in the repository.
 
     This command is a sub command of repo_structure.
     Options:
         repo_root: The path to the repository root.
         config_path: The path to the configuration file.
+        directory: Optional directory mapping to scan specifically.
 
     The full scan respects gitignore files and will run over all files it finds
     in the repository, no matter if they were added to git or not.
 
     Run this command to ensure that not only all files are allowed, but also
     that all files that are required are there.
+
+    Use --directory to scan only a specific directory mapping for faster,
+    targeted analysis.
     """
-    click.echo("Running full scan")
+    if directory:
+        click.echo(f"Running full scan on directory mapping: {directory}")
+    else:
+        click.echo("Running full scan")
 
-    successful = True
     flags = ctx.obj
-
     start_time = time.time()
 
-    try:
-        config = Configuration(config_path, False, None, flags.verbose)
-    except ConfigurationParseError as err:
-        click.echo(err, err=True)
-        successful = False
-        sys.exit(1)
-
-    # Call the non-throwing scan and print results
-    errors, warnings = scan_full_repository(repo_root, config, flags)
-
-    # Print warnings first
-    if warnings:
-        click.echo(click.style("Warnings:", fg="yellow"))
-        for w in warnings:
-            loc = f" [{w.path}]" if getattr(w, "path", None) else ""
-            click.echo(click.style(f" - ({w.code}) {w.message}{loc}", fg="yellow"))
-
-    # Then errors
-    if errors:
-        click.echo(click.style("Errors:", fg="red"))
-        for e in errors:
-            loc = f" [{e.path}]" if getattr(e, "path", None) else ""
-            click.echo(click.style(f" - ({e.code}) {e.message}{loc}", fg="red"))
-        successful = False
+    config = _load_configuration(config_path, flags.verbose)
+    errors, warnings = _perform_scan(repo_root, config, flags, directory)
+    successful = _print_scan_results(errors, warnings)
 
     duration = time.time() - start_time
     if flags.verbose:
-        click.echo(f"Full scan took {duration:.2f} seconds")
+        scan_type = f"Directory scan ({directory})" if directory else "Full scan"
+        click.echo(f"{scan_type} took {duration:.2f} seconds")
 
     click.echo(
         "Checks have"
