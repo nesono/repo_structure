@@ -6,7 +6,7 @@ from .repo_structure_config import (
     Configuration,
 )
 from . import ConfigurationParseError
-from .repo_structure_lib import StructureRuleError, UseRuleError, TemplateError
+from .repo_structure_lib import StructureRuleError, TemplateError
 
 
 def test_successful_parse():
@@ -133,7 +133,7 @@ directory_map:
     - use_rule: base_structure
     - use_rule: python_package
     """
-    with pytest.raises(UseRuleError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(test_yaml, True)
 
 
@@ -150,7 +150,7 @@ directory_map:
   /:
     - use_rule: base_structure
     """
-    with pytest.raises(UseRuleError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(test_yaml, True)
 
 
@@ -169,7 +169,7 @@ directory_map:
   /:
     - use_rule: package
 """
-    with pytest.raises(UseRuleError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(test_config, True)
 
 
@@ -231,7 +231,7 @@ directory_map:
     # it doesn't matter here what we 'use', the test should fail always
     - use_rule: bad_use_rule
     """
-    with pytest.raises(UseRuleError):
+    with pytest.raises(ConfigurationParseError):
         Configuration(config_yaml, True)
 
 
