@@ -1,7 +1,5 @@
 """Library functions for repo structure directory verification."""
 
-# pylint: disable=import-error, broad-exception-caught
-
 import os
 
 from typing import Callable, Literal
