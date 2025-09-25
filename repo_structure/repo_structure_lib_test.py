@@ -1,6 +1,6 @@
 """Unit tests for repo_structure_lib.py core functions."""
 
-# pylint: disable=import-error,too-few-public-methods
+# pylint: disable=too-few-public-methods
 
 import os
 import re

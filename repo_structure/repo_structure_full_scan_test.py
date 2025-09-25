@@ -1,4 +1,3 @@
-# pylint: disable=import-error
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-lines
 """Tests for repo_structure library functions."""

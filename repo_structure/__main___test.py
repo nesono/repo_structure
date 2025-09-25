@@ -1,5 +1,5 @@
-# pylint: disable=import-error
 """Main tests module."""
+
 from click.testing import CliRunner
 from .__main__ import repo_structure
 
