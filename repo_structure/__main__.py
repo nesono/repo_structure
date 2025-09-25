@@ -12,7 +12,7 @@ from .repo_structure_full_scan import (
     FullScanProcessor,
     ScanIssue,
 )
-from .repo_structure_diff_scan import check_path
+from .repo_structure_diff_scan import DiffScanProcessor
 from .repo_structure_config import Configuration
 
 try:
@@ -229,15 +229,11 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
     """
     click.echo("Running diff scan")
     flags = ctx.obj
+
+    config = _load_configuration(config_path, flags.verbose)
+    processor = DiffScanProcessor(config, flags)
+
     successful = True
-
-    try:
-        config = Configuration(config_path, False, None, flags.verbose)
-    except ConfigurationParseError as err:
-        click.echo(err, err=True)
-        successful = False
-        sys.exit(1)
-
     for path in paths:
         if Path(path).is_absolute():
             err_msg = (
@@ -246,7 +242,7 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
             click.echo("Error: " + click.style(err_msg, fg="red"), err=True)
             successful = False
             continue
-        issue = check_path(config, path, flags)
+        issue = processor.check_path(path)
         if issue:
             loc = f" [{issue.path}]" if getattr(issue, "path", None) else ""
             click.echo(
