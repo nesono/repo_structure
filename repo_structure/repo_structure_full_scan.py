@@ -202,9 +202,6 @@ def _check_invalid_repo_structure_recursive(
     return errors
 
 
-# pylint: disable=too-many-branches, too-many-nested-blocks
-
-
 def _process_map_dir_sync(
     map_dir: str, repo_root: str, config: Configuration, flags: Flags = Flags()
 ) -> list[ScanIssue]:
