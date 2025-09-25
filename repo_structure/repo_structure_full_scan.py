@@ -235,20 +235,22 @@ def _process_map_dir_sync(
 
     return errors
 
-
-def scan_full_repository(
-    repo_root: str,
-    config: Configuration,
-    flags: Flags = Flags(),
-) -> tuple[list[ScanIssue], list[ScanIssue]]:
+def scan_full_repository(repo_root: str, config: Configuration, flags: Flags = Flags()) -> tuple[list[ScanIssue], list[ScanIssue]]:
     """Scan the repository and return a list of issues (errors and warnings).
 
     This function is a non-throwing variant intended for easier consumption.
     It keeps the old assert_* behavior intact elsewhere.
     """
     assert repo_root is not None
-    errors: list[ScanIssue] = []
+    errors = _collect_errors(repo_root, config, flags)
+    warnings = _collect_warnings(config)
+    errors.sort(key=lambda x: (x.path is None, x.path or "", x.code))
+    warnings.sort(key=lambda x: (x.path is None, x.path or "", x.code))
+    return errors, warnings
 
+
+def _collect_errors(repo_root: str, config: Configuration, flags: Flags) -> list[ScanIssue]:
+    errors: list[ScanIssue] = []
     # Missing root mapping error
     if "/" not in config.directory_map:
         errors.append(
@@ -266,7 +268,10 @@ def scan_full_repository(
         for map_dir in config.directory_map:
             map_dir_errors = _process_map_dir_sync(map_dir, repo_root, config, flags)
             errors.extend(map_dir_errors)
+    return errors
 
+
+def _collect_warnings(config: Configuration) -> list[ScanIssue]:
     warnings: list[ScanIssue] = []
     # Compute unused rule warnings (do not throw)
     used_rules = set()
@@ -293,10 +298,5 @@ def scan_full_repository(
                     path=None,
                 )
             )
+    return warnings
 
-    # Sort errors and warnings by path for deterministic ordering across platforms
-    # None paths go to the end
-    errors.sort(key=lambda x: (x.path is None, x.path or "", x.code))
-    warnings.sort(key=lambda x: (x.path is None, x.path or "", x.code))
-
-    return errors, warnings
