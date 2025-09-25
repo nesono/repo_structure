@@ -1,6 +1,4 @@
 # pylint: disable=import-error
-# pylint: disable=broad-exception-caught
-# pylint: disable=no-value-for-parameter
 
 """Ensure clean repository structure for your projects."""
 import sys
@@ -9,7 +7,7 @@ from pathlib import Path
 
 import click
 
-from .repo_structure_lib import Flags
+from .repo_structure_lib import ConfigurationParseError, Flags
 from .repo_structure_full_scan import (
     scan_full_repository,
 )
@@ -106,7 +104,7 @@ def full_scan(ctx: click.Context, repo_root: str, config_path: str) -> None:
 
     try:
         config = Configuration(config_path, False, None, flags.verbose)
-    except Exception as err:
+    except ConfigurationParseError as err:
         click.echo(err, err=True)
         successful = False
         sys.exit(1)
@@ -182,7 +180,7 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
 
     try:
         config = Configuration(config_path, False, None, flags.verbose)
-    except Exception as err:
+    except ConfigurationParseError as err:
         click.echo(err, err=True)
         successful = False
         sys.exit(1)
@@ -249,7 +247,7 @@ def full_scan_warning(ctx: click.Context, repo_root: str, config_path: str) -> N
 
     try:
         config = Configuration(config_path, False, None, flags.verbose)
-    except Exception as err:
+    except ConfigurationParseError as err:
         click.echo(err, err=True)
         sys.exit(1)
 
@@ -292,4 +290,4 @@ def full_scan_warning(ctx: click.Context, repo_root: str, config_path: str) -> N
 # The following main check is very hard to get into unit
 # testing and as long as it contains so little code, we'll skip it.
 if __name__ == "__main__":  # pragma: no cover
-    repo_structure()
+    repo_structure()  # pylint: disable=no-value-for-parameter
