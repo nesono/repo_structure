@@ -17,10 +17,6 @@ class StructureRuleError(Exception):
     """Structure rule related error."""
 
 
-class UseRuleError(Exception):
-    """Use_rule related error."""
-
-
 class TemplateError(Exception):
     """Repo structure template related error."""
 

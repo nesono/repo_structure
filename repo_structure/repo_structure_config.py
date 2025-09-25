@@ -15,7 +15,6 @@ from .repo_structure_lib import (
     RepoEntry,
     ConfigurationParseError,
     StructureRuleError,
-    UseRuleError,
     DirectoryMap,
     StructureRuleList,
     StructureRuleMap,
@@ -53,7 +52,6 @@ class Configuration:
 
         Exceptions:
             StructureRuleError: Raised for errors in structure rules.
-            UseRuleError: Raised for errors related to the use rule.
             RepoStructureTemplateError: Raised for errors in repository structure templates.
             ConfigurationParseError: Raised for errors during the configuration parsing process.
         """
@@ -120,7 +118,7 @@ class Configuration:
         for directory, rule in self.config.directory_map.items():
             for r in rule:
                 if r not in existing_rules and r not in BUILTIN_DIRECTORY_RULES:
-                    raise UseRuleError(
+                    raise ConfigurationParseError(
                         f"Directory mapping '{directory}' uses non-existing rule '{r}'"
                     )
 
@@ -156,7 +154,7 @@ def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
         for rule_key in rules.keys():
             for entry in rules[rule_key]:
                 if entry.use_rule and entry.use_rule not in rules:
-                    raise UseRuleError(
+                    raise ConfigurationParseError(
                         f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
                         "is not a valid rule key"
                     )
@@ -165,7 +163,7 @@ def _parse_structure_rules(structure_rules_yaml: dict) -> StructureRuleMap:
         for rule_key in rules.keys():
             for entry in rules[rule_key]:
                 if entry.use_rule and entry.use_rule != rule_key:
-                    raise UseRuleError(
+                    raise ConfigurationParseError(
                         f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
                         "is not recursive"
                     )
