@@ -28,7 +28,7 @@ from .repo_structure_full_scan import (
 )
 
 
-class DiffScanProcessor:  # pylint: disable=too-few-public-methods
+class DiffScanProcessor:
     """Handles differential scanning of specific paths with stateful configuration."""
 
     def __init__(self, config: Configuration, flags: Flags = Flags()):
@@ -156,17 +156,21 @@ class DiffScanProcessor:  # pylint: disable=too-few-public-methods
 
         return issue
 
+    def check_paths(self, paths: list[str]) -> list[ScanIssue]:
+        """Check multiple paths efficiently using the same configuration.
 
-# Standalone functions for backward compatibility
-def _incremental_path_split(path_to_split: str) -> Iterator[tuple[str, str, bool]]:
-    """Split the path into incremental tokens."""
-    # Normalize path separators for cross-platform compatibility
-    normalized_path = normalize_path(path_to_split)
-    parts = normalized_path.strip("/").split("/")
-    for i, part in enumerate(parts):
-        rel_dir = "/".join(parts[:i])
-        is_directory = i < len(parts) - 1
-        yield rel_dir, part, is_directory
+        Args:
+            paths: List of paths to check
+
+        Returns:
+            List of ScanIssues for invalid paths. Empty list if all paths are valid.
+        """
+        issues = []
+        for path in paths:
+            issue = self.check_path(path)
+            if issue:
+                issues.append(issue)
+        return issues
 
 
 def _check_path_in_backlog(

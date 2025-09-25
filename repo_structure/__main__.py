@@ -233,6 +233,8 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
     config = _load_configuration(config_path, flags.verbose)
     processor = DiffScanProcessor(config, flags)
 
+    # Validate paths first
+    valid_paths = []
     successful = True
     for path in paths:
         if Path(path).is_absolute():
@@ -241,16 +243,20 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
             )
             click.echo("Error: " + click.style(err_msg, fg="red"), err=True)
             successful = False
-            continue
-        issue = processor.check_path(path)
-        if issue:
+        else:
+            valid_paths.append(path)
+
+    # Check all valid paths efficiently
+    issues = processor.check_paths(valid_paths)
+    if issues:
+        for issue in issues:
             loc = f" [{issue.path}]" if getattr(issue, "path", None) else ""
             click.echo(
                 "Error: "
                 + click.style(f"({issue.code}) {issue.message}{loc}", fg="red"),
                 err=True,
             )
-            successful = False
+        successful = False
 
     click.echo(
         "Checks have"
