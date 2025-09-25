@@ -170,26 +170,3 @@ class DiffScanProcessor:
             if issue:
                 issues.append(issue)
         return issues
-
-
-def _check_path_in_backlog(
-    backlog: StructureRuleList, config: Configuration, flags: Flags, path: str
-) -> ScanIssue | None:
-    """Check if path is valid in backlog and return ScanIssue if invalid."""
-    processor = DiffScanProcessor(config, flags)
-    # pylint: disable-next=protected-access
-    return processor._check_path_in_backlog(backlog, path)
-
-
-def check_path(
-    config: Configuration,
-    path: str,
-    flags: Flags = Flags(),
-) -> ScanIssue | None:
-    """Check if the given path is valid according to the configuration.
-
-    Returns ScanIssue if invalid, None if valid.
-    Note that this function will not be able to ensure if all required
-    entries are present."""
-    processor = DiffScanProcessor(config, flags)
-    return processor.check_path(path)
