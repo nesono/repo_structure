@@ -20,11 +20,9 @@ from .repo_structure_lib import (
     StructureRuleList,
     normalize_path,
     join_path_normalized,
-)
-
-from .repo_structure_full_scan import (
     ScanIssue,
-    _get_matching_item_index_safe,
+    MatchResult,
+    get_matching_item_index_safe,
 )
 
 
@@ -46,6 +44,7 @@ class DiffScanProcessor:
     ) -> Iterator[tuple[str, str, bool]]:
         """Split the path into incremental tokens.
 
+<<<<<<< HEAD
         Each token starts with the top-level directory and grows the path by
         one directory with each iteration.
 
@@ -104,9 +103,19 @@ class DiffScanProcessor:
                     self.flags,
                     entry_name,
                 ) or _handle_if_exists(backlog_match, self.flags)
+=======
+def _check_path_in_backlog(
+    backlog: StructureRuleList, config: Configuration, flags: Flags, path: str
+) -> ScanIssue | None:
+    """Check if path is valid in backlog and return ScanIssue if invalid."""
+    processor = DiffScanProcessor(config, flags)
+    # pylint: disable-next=protected-access
+    return processor._check_path_in_backlog(backlog, path)
+>>>>>>> 36fc0dd (Move diff scan into class)
 
         return None
 
+<<<<<<< HEAD
     def _get_corresponding_map_dir(self, path: str) -> str:
         """Get the corresponding map directory for the given path."""
         map_dir = "/"
@@ -171,3 +180,17 @@ class DiffScanProcessor:
             if issue:
                 issues.append(issue)
         return issues
+=======
+def check_path(
+    config: Configuration,
+    path: str,
+    flags: Flags = Flags(),
+) -> ScanIssue | None:
+    """Check if the given path is valid according to the configuration.
+
+    Returns ScanIssue if invalid, None if valid.
+    Note that this function will not be able to ensure if all required
+    entries are present."""
+    processor = DiffScanProcessor(config, flags)
+    return processor.check_path(path)
+>>>>>>> 36fc0dd (Move diff scan into class)

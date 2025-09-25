@@ -1,15 +1,20 @@
 """Check the repository directory strucgure against your configuration."""
 
 from .repo_structure_config import Configuration
-from .repo_structure_full_scan import FullScanProcessor
-from .repo_structure_diff_scan import DiffScanProcessor
+from .repo_structure_full_scan import (
+    scan_full_repository,
+    FullScanProcessor,
+)
+from .repo_structure_diff_scan import check_path, DiffScanProcessor
 from .repo_structure_lib import Flags, UnspecifiedEntryError, ConfigurationParseError
 
 __all__ = [
     "Configuration",
     "UnspecifiedEntryError",
     "ConfigurationParseError",
+    "scan_full_repository",
     "FullScanProcessor",
+    "check_path",
     "DiffScanProcessor",
     "Flags",
 ]
