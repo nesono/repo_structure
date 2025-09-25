@@ -66,7 +66,7 @@ repos:
   - repo: https://github.com/nesono/repo_structure
     rev: ""
     hooks:
-      - id: repo-structure-diff-scan
+      - id: diff
         args: ["--config-path", "path/to/your_config_file.yaml"]
 ```
 
