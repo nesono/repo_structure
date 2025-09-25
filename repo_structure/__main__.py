@@ -12,7 +12,7 @@ from .repo_structure_full_scan import (
     FullScanProcessor,
     ScanIssue,
 )
-from .repo_structure_diff_scan import check_path
+from .repo_structure_diff_scan import DiffScanProcessor
 from .repo_structure_config import Configuration
 
 try:
@@ -229,15 +229,13 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
     """
     click.echo("Running diff scan")
     flags = ctx.obj
+
+    config = _load_configuration(config_path, flags.verbose)
+    processor = DiffScanProcessor(config, flags)
+
+    # Validate paths first
+    valid_paths = []
     successful = True
-
-    try:
-        config = Configuration(config_path, False, None, flags.verbose)
-    except ConfigurationParseError as err:
-        click.echo(err, err=True)
-        successful = False
-        sys.exit(1)
-
     for path in paths:
         if Path(path).is_absolute():
             err_msg = (
@@ -245,16 +243,20 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
             )
             click.echo("Error: " + click.style(err_msg, fg="red"), err=True)
             successful = False
-            continue
-        issue = check_path(config, path, flags)
-        if issue:
+        else:
+            valid_paths.append(path)
+
+    # Check all valid paths efficiently
+    issues = processor.check_paths(valid_paths)
+    if issues:
+        for issue in issues:
             loc = f" [{issue.path}]" if getattr(issue, "path", None) else ""
             click.echo(
                 "Error: "
                 + click.style(f"({issue.code}) {issue.message}{loc}", fg="red"),
                 err=True,
             )
-            successful = False
+        successful = False
 
     click.echo(
         "Checks have"

@@ -3,7 +3,7 @@
 
 from .repo_structure_lib import Flags
 from .repo_structure_config import Configuration
-from .repo_structure_diff_scan import check_path
+from .repo_structure_diff_scan import DiffScanProcessor
 
 
 def test_matching_regex():
@@ -19,14 +19,15 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    assert check_path(config, "README.md") is None
-    assert check_path(config, "LICENSE") is None
+    processor = DiffScanProcessor(config)
+    assert processor.check_path("README.md") is None
+    assert processor.check_path("LICENSE") is None
 
-    issue = check_path(config, "bad_filename.md")
+    issue = processor.check_path("bad_filename.md")
     assert issue is not None
     assert issue.code == "unspecified_entry"
 
-    issue = check_path(config, "CMakeLists.txt")
+    issue = processor.check_path("CMakeLists.txt")
     assert issue is not None
     assert issue.code == "forbidden_entry"
 
@@ -44,9 +45,10 @@ directory_map:
     - use_rule: recursive_rule
     """
     config = Configuration(config_yaml, True)
-    assert check_path(config, "python/main.py") is None
+    processor = DiffScanProcessor(config)
+    assert processor.check_path("python/main.py") is None
 
-    issue = check_path(config, "python/bad_filename.py")
+    issue = processor.check_path("python/bad_filename.py")
     assert issue is not None
     assert issue.code == "unspecified_entry"
 
@@ -65,8 +67,9 @@ directory_map:
     - use_rule: recursive_rule
     """
     config = Configuration(config_yaml, True)
-    assert check_path(config, "main.py") is None
-    assert check_path(config, "python/something.py") is None
+    processor = DiffScanProcessor(config)
+    assert processor.check_path("main.py") is None
+    assert processor.check_path("python/something.py") is None
 
 
 def test_multi_use_rule():
@@ -83,10 +86,11 @@ directory_map:
     - use_rule: python_package
     """
     config = Configuration(config_yaml, True)
-    assert check_path(config, "README.md") is None
-    assert check_path(config, "main.py") is None
+    processor = DiffScanProcessor(config)
+    assert processor.check_path("README.md") is None
+    assert processor.check_path("main.py") is None
 
-    issue = check_path(config, "bad_file_name.cpp")
+    issue = processor.check_path("bad_file_name.cpp")
     assert issue is not None
     assert issue.code == "unspecified_entry"
 
@@ -109,14 +113,15 @@ directory_map:
     flags = Flags()
     flags.verbose = True
     config = Configuration(config_yaml, True)
-    assert check_path(config, "main/main.cpp", flags) is None
-    assert check_path(config, "main/main/main.cpp", flags) is None
+    processor = DiffScanProcessor(config, flags)
+    assert processor.check_path("main/main.cpp") is None
+    assert processor.check_path("main/main/main.cpp") is None
 
-    issue = check_path(config, "main/main.rs", flags)
+    issue = processor.check_path("main/main.rs")
     assert issue is not None
     assert issue.code == "unspecified_entry"
 
-    issue = check_path(config, "main/main/main.rs", flags)
+    issue = processor.check_path("main/main/main.rs")
     assert issue is not None
     assert issue.code == "unspecified_entry"
 
@@ -141,17 +146,18 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    assert check_path(config, "app/main.py") is None
-    assert check_path(config, "app/lib/lib.py") is None
-    assert check_path(config, "app/lib/sub_lib/lib.py") is None
-    assert check_path(config, "app/lib/sub_lib/tool/main.py") is None
-    assert check_path(config, "app/lib/sub_lib/tool/README.md") is None
+    processor = DiffScanProcessor(config)
+    assert processor.check_path("app/main.py") is None
+    assert processor.check_path("app/lib/lib.py") is None
+    assert processor.check_path("app/lib/sub_lib/lib.py") is None
+    assert processor.check_path("app/lib/sub_lib/tool/main.py") is None
+    assert processor.check_path("app/lib/sub_lib/tool/README.md") is None
 
-    issue = check_path(config, "app/README.md")
+    issue = processor.check_path("app/README.md")
     assert issue is not None
     assert issue.code == "unspecified_entry"
 
-    issue = check_path(config, "app/lib/sub_lib/README.md")
+    issue = processor.check_path("app/lib/sub_lib/README.md")
     assert issue is not None
     assert issue.code == "unspecified_entry"
 
@@ -160,7 +166,8 @@ def test_skip_file():
     """Test skipping file for diff scan."""
     config_filname = "repo_structure.yaml"
     config = Configuration(config_filname)
-    assert check_path(config, "repo_structure.yaml") is None
+    processor = DiffScanProcessor(config)
+    assert processor.check_path("repo_structure.yaml") is None
 
 
 def test_ignore_rule():
@@ -178,5 +185,49 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.verbose = True
-    assert check_path(config, "README.md", flags) is None
-    assert check_path(config, "python/main.py", flags) is None
+    processor = DiffScanProcessor(config, flags)
+    assert processor.check_path("README.md") is None
+    assert processor.check_path("python/main.py") is None
+
+
+def test_check_paths_batch():
+    """Test the check_paths method for batch processing."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - require: 'README\.md'
+    - forbid: 'CMakeLists\.txt'
+    - allow: 'LICENSE'
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    config = Configuration(config_yaml, True)
+    processor = DiffScanProcessor(config)
+
+    # Test with all valid paths
+    valid_paths = ["README.md", "LICENSE"]
+    issues = processor.check_paths(valid_paths)
+    assert len(issues) == 0
+
+    # Test with mixed valid and invalid paths
+    mixed_paths = [
+        "README.md",
+        "invalid.py",
+        "LICENSE",
+        "CMakeLists.txt",
+        "another_invalid.txt",
+    ]
+    issues = processor.check_paths(mixed_paths)
+    assert len(issues) == 3
+
+    # Check specific issues
+    issue_codes = {issue.code for issue in issues}
+    assert "unspecified_entry" in issue_codes
+    assert "forbidden_entry" in issue_codes
+
+    # Check specific paths
+    issue_paths = {issue.path for issue in issues}
+    assert "invalid.py" in issue_paths
+    assert "CMakeLists.txt" in issue_paths
+    assert "another_invalid.txt" in issue_paths
