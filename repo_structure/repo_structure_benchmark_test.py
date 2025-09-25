@@ -1,6 +1,5 @@
 """Tests for repo_structure benchmark."""
 
-# pylint: disable=import-error
 import os
 from typing import Final
 import pytest

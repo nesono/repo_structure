@@ -30,12 +30,14 @@ repos:
     rev: 25.1.0
     hooks:
       - id: black
-  - repo: https://github.com/pylint-dev/pylint
-    rev: "v3.3.8"
+  - repo: local
     hooks:
-      - id: pylint
-        args: [--verbose]
-        exclude: 'repo_structure/_version\.py'
+      - id: pylint-uv
+        name: pylint (uv)
+        entry: uv run pylint
+        language: system
+        types: [python]
+        pass_filenames: true
   - repo: https://github.com/codespell-project/codespell
     rev: "v2.4.1"
     hooks:

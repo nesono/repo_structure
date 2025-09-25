@@ -1,7 +1,5 @@
 """Library functions for repo structure directory verification."""
 
-# pylint: disable=import-error
-
 import os
 
 from typing import Iterator

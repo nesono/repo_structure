@@ -1,4 +1,3 @@
-# pylint: disable=import-error
 """Tests for repo_structure library functions."""
 
 import pytest

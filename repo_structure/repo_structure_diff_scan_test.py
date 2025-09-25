@@ -1,4 +1,3 @@
-# pylint: disable=import-error
 # pylint: disable=duplicate-code
 """Tests for diff-scan subcommand."""
 

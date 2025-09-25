@@ -1,6 +1,5 @@
-# pylint: disable=import-error
-
 """Library functions for repo structure config parsing."""
+
 import copy
 import pprint
 import re
