@@ -2,7 +2,6 @@
 
 from .repo_structure_config import Configuration
 from .repo_structure_full_scan import (
-    scan_full_repository,
     FullScanProcessor,
 )
 from .repo_structure_diff_scan import check_path, DiffScanProcessor
@@ -12,7 +11,6 @@ __all__ = [
     "Configuration",
     "UnspecifiedEntryError",
     "ConfigurationParseError",
-    "scan_full_repository",
     "FullScanProcessor",
     "check_path",
     "DiffScanProcessor",
