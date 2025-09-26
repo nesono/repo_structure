@@ -233,7 +233,7 @@ class MatchResult:
     issue: ScanIssue | None = None
 
 
-def get_matching_item_index(  # pylint: disable=duplicate-code
+def get_matching_item_index(
     backlog: StructureRuleList,
     entry_path: str,
     is_dir: bool,
