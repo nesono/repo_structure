@@ -152,7 +152,7 @@ def to_entry(os_entry: DirEntry[str], rel_dir: str) -> Entry:
     )
 
 
-def handle_use_rule(
+def expand_use_rule(
     use_rule: str,
     structure_rules: StructureRuleMap,
     flags: Flags,
@@ -169,8 +169,8 @@ def handle_use_rule(
     return None
 
 
-def handle_if_exists(backlog_entry: RepoEntry, flags: Flags):
-    """Convenience function - subject to be removed."""
+def expand_if_exists(backlog_entry: RepoEntry, flags: Flags):
+    """Expand to the entry in `if_exists` or None."""
     if backlog_entry.if_exists:
         if flags.verbose:
             print(f"if_exists found for rel path '{backlog_entry.path.pattern}'")

@@ -13,8 +13,8 @@ from .repo_structure_lib import (
     map_dir_to_rel_dir,
     skip_entry,
     to_entry,
-    handle_use_rule,
-    handle_if_exists,
+    expand_use_rule,
+    expand_if_exists,
     map_dir_to_entry_backlog,
     StructureRuleList,
     Flags,
@@ -184,12 +184,12 @@ class FullScanProcessor:
         idx: int,
     ) -> list[ScanIssue]:
         errors: list[ScanIssue] = []
-        new_backlog = handle_use_rule(
+        new_backlog = expand_use_rule(
             backlog[idx].use_rule,
             self.config.structure_rules,
             self.flags,
             entry.path,
-        ) or handle_if_exists(backlog[idx], self.flags)
+        ) or expand_if_exists(backlog[idx], self.flags)
 
         subdirectory_path = join_path_normalized(rel_dir, entry.path)
         errors.extend(self._check_reldir_structure(subdirectory_path, new_backlog))

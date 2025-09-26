@@ -12,8 +12,8 @@ from .repo_structure_lib import (
     join_path_normalized,
     rel_dir_to_map_dir,
     map_dir_to_rel_dir,
-    handle_if_exists,
-    handle_use_rule,
+    expand_if_exists,
+    expand_use_rule,
     map_dir_to_entry_backlog,
     to_entry,
     _build_active_entry_backlog,
@@ -315,7 +315,7 @@ class TestHandleUseRule:
         }
         flags = Flags()
 
-        result = handle_use_rule("python_files", structure_rules, flags, "app")
+        result = expand_use_rule("python_files", structure_rules, flags, "app")
         assert result is not None
         assert len(result) == 1
         assert result[0].path.pattern == ".*\\.py"
@@ -325,7 +325,7 @@ class TestHandleUseRule:
         structure_rules = {}
         flags = Flags()
 
-        result = handle_use_rule("", structure_rules, flags, "app")
+        result = expand_use_rule("", structure_rules, flags, "app")
         assert result is None
 
     def test_handle_use_rule_verbose_output(self, capsys):
@@ -333,7 +333,7 @@ class TestHandleUseRule:
         structure_rules = {"test_rule": []}
         flags = Flags(verbose=True)
 
-        handle_use_rule("test_rule", structure_rules, flags, "app")
+        expand_use_rule("test_rule", structure_rules, flags, "app")
         captured = capsys.readouterr()
         assert "use_rule found for rel path 'app'" in captured.out
 
@@ -360,7 +360,7 @@ class TestHandleIfExists:
         )
         flags = Flags()
 
-        result = handle_if_exists(backlog_entry, flags)
+        result = expand_if_exists(backlog_entry, flags)
         assert result == if_exists_entries
 
     def test_handle_if_exists_empty(self):
@@ -370,7 +370,7 @@ class TestHandleIfExists:
         )
         flags = Flags()
 
-        result = handle_if_exists(backlog_entry, flags)
+        result = expand_if_exists(backlog_entry, flags)
         assert result is None
 
     def test_handle_if_exists_verbose_output(self, capsys):
@@ -392,7 +392,7 @@ class TestHandleIfExists:
         )
         flags = Flags(verbose=True)
 
-        handle_if_exists(backlog_entry, flags)
+        expand_if_exists(backlog_entry, flags)
         captured = capsys.readouterr()
         assert "if_exists found for rel path 'test_pattern'" in captured.out
 
