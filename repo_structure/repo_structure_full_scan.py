@@ -217,21 +217,12 @@ class FullScanProcessor:
 
     def _collect_warnings(self) -> list[ScanIssue]:
         warnings: list[ScanIssue] = []
-        # Compute unused rule warnings (do not throw)
         used_rules = set()
         for rules in self.config.directory_map.values():
             for r in rules:
                 if r and r not in ("ignore",):
                     used_rules.add(r)
-        changed = True
-        while changed:
-            changed = False
-            for rule_name in list(used_rules):
-                for entry in self.config.structure_rules.get(rule_name, []):
-                    if entry.use_rule and entry.use_rule not in ("ignore",):
-                        if entry.use_rule not in used_rules:
-                            used_rules.add(entry.use_rule)
-                            changed = True
+
         for rule_name in self.config.structure_rules.keys():
             if rule_name not in used_rules:
                 warnings.append(

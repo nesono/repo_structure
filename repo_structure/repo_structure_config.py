@@ -194,8 +194,6 @@ def _build_rules(structure_rules_yaml: dict) -> StructureRuleMap:
 
 
 def _get_pattern(entry: dict) -> str:
-    if "p" in entry:
-        return entry["p"]
     if "require" in entry:
         return entry["require"]
     if "allow" in entry:
@@ -205,14 +203,11 @@ def _get_pattern(entry: dict) -> str:
 
 
 def _get_is_required(entry: dict) -> bool:
-    if "required" in entry:
-        return entry["required"]
-    if "require" in entry:
-        return True
     if "allow" in entry:
         return False
     if "forbid" in entry:
         return False
+    # if "require" in entry:
     return True
 
 
@@ -249,8 +244,6 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
 
 
 def _get_pattern_key(entry: dict) -> str:
-    if "p" in entry:
-        return "p"
     if "require" in entry:
         return "require"
     if "allow" in entry:
