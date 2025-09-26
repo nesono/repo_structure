@@ -5,7 +5,6 @@ from .repo_structure_full_scan import FullScanProcessor
 from .repo_structure_diff_scan import DiffScanProcessor
 from .repo_structure_lib import (
     Flags,
-    UnspecifiedEntryError,
     ConfigurationParseError,
     ScanIssue,
     MatchResult,
@@ -13,7 +12,6 @@ from .repo_structure_lib import (
 
 __all__ = [
     "Configuration",
-    "UnspecifiedEntryError",
     "ConfigurationParseError",
     "FullScanProcessor",
     "DiffScanProcessor",

@@ -11,17 +11,17 @@ from .repo_structure_config import (
 
 from .repo_structure_lib import (
     map_dir_to_rel_dir,
-    _skip_entry,
-    _to_entry,
-    _handle_use_rule,
-    _handle_if_exists,
-    _map_dir_to_entry_backlog,
+    skip_entry,
+    to_entry,
+    handle_use_rule,
+    handle_if_exists,
+    map_dir_to_entry_backlog,
     StructureRuleList,
     Flags,
     join_path_normalized,
     ScanIssue,
     MatchResult,
-    get_matching_item_index_safe,
+    get_matching_item_index,
 )
 
 
@@ -48,12 +48,13 @@ class FullScanProcessor:
             return parse_gitignore(git_ignore_path)
         return None
 
-    def _get_matching_item_index(
+    def get_matching_item_index(
         self,
         backlog: StructureRuleList,
         entry_path: str,
         is_dir: bool,
     ) -> MatchResult:
+        """Return a MatchResult of the a matching item in the backlog."""
         for i, v in enumerate(backlog):
             if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
                 if v.is_forbidden:
@@ -132,7 +133,7 @@ class FullScanProcessor:
 
         entries = self._get_sorted_entries(rel_dir)
         for os_entry in entries:
-            entry = _to_entry(os_entry, rel_dir)
+            entry = to_entry(os_entry, rel_dir)
 
             if self.flags.verbose:
                 print(f"Checking entry {entry.path}")
@@ -140,7 +141,7 @@ class FullScanProcessor:
             if self._should_skip_entry(entry):
                 continue
 
-            match_result = get_matching_item_index_safe(
+            match_result = get_matching_item_index(
                 backlog, entry.path, os_entry.is_dir(), self.flags.verbose
             )
 
@@ -162,7 +163,7 @@ class FullScanProcessor:
         return sorted(os.scandir(dir_path), key=lambda e: e.name)
 
     def _should_skip_entry(self, entry) -> bool:
-        return _skip_entry(
+        return skip_entry(
             entry,
             self.config.directory_map,
             self.config.configuration_file_name,
@@ -183,12 +184,12 @@ class FullScanProcessor:
         idx: int,
     ) -> list[ScanIssue]:
         errors: list[ScanIssue] = []
-        new_backlog = _handle_use_rule(
+        new_backlog = handle_use_rule(
             backlog[idx].use_rule,
             self.config.structure_rules,
             self.flags,
             entry.path,
-        ) or _handle_if_exists(backlog[idx], self.flags)
+        ) or handle_if_exists(backlog[idx], self.flags)
 
         subdirectory_path = join_path_normalized(rel_dir, entry.path)
         errors.extend(self._check_reldir_structure(subdirectory_path, new_backlog))
@@ -205,7 +206,7 @@ class FullScanProcessor:
         errors: list[ScanIssue] = []
 
         rel_dir = map_dir_to_rel_dir(map_dir)
-        backlog = _map_dir_to_entry_backlog(
+        backlog = map_dir_to_entry_backlog(
             self.config.directory_map, self.config.structure_rules, rel_dir
         )
 

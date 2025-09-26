@@ -9,24 +9,16 @@ from typing import Callable, Final, Literal
 BUILTIN_DIRECTORY_RULES: Final = ["ignore"]
 
 
-class UnspecifiedEntryError(Exception):
-    """Exception raised when unspecified entries are found."""
+class ConfigurationParseError(Exception):
+    """Raised when the configuration file is invalid."""
 
 
 class StructureRuleError(Exception):
-    """Structure rule related error."""
+    """Raised when the structure rules are invalid."""
 
 
 class TemplateError(Exception):
-    """Repo structure template related error."""
-
-
-class ConfigurationParseError(Exception):
-    """Thrown when configuration could not be parsed."""
-
-
-class ForbiddenEntryError(Exception):
-    """Thrown when a forbidden entry is found."""
+    """Raised when a template is invalid."""
 
 
 @dataclass
@@ -119,13 +111,14 @@ def map_dir_to_rel_dir(map_dir: str) -> str:
     return map_dir[1:-1]
 
 
-def _skip_entry(
+def skip_entry(
     entry: Entry,
     directory_map: DirectoryMap,
     config_file_name: str,
     git_ignore: Callable[[str], bool] | None = None,
     flags: Flags = Flags(),
 ) -> bool:
+    """Return True if the entry should be skipped/ignored."""
     skip_conditions = [
         (not flags.follow_symlinks and entry.is_symlink),
         (not flags.include_hidden and entry.path.startswith(".")),
@@ -149,7 +142,8 @@ def _skip_entry(
     return False
 
 
-def _to_entry(os_entry: DirEntry[str], rel_dir: str) -> Entry:
+def to_entry(os_entry: DirEntry[str], rel_dir: str) -> Entry:
+    """Convert an os.DirEntry to an internal Entry representation."""
     return Entry(
         path=os_entry.name,
         rel_dir=rel_dir,
@@ -158,31 +152,13 @@ def _to_entry(os_entry: DirEntry[str], rel_dir: str) -> Entry:
     )
 
 
-def _get_matching_item_index(
-    backlog: StructureRuleList,
-    entry_path: str,
-    is_dir: bool,
-    verbose: bool = False,
-) -> int:
-    for i, v in enumerate(backlog):
-        if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
-            if v.is_forbidden:
-                raise ForbiddenEntryError(f"Found forbidden entry: {entry_path}")
-            if verbose:
-                print(f"  Found match at index {i}: '{v.path.pattern}'")
-            return i
-
-    if is_dir:
-        entry_path += "/"
-    raise UnspecifiedEntryError(f"Found unspecified entry: '{entry_path}'")
-
-
-def _handle_use_rule(
+def handle_use_rule(
     use_rule: str,
     structure_rules: StructureRuleMap,
     flags: Flags,
     rel_path: str,
 ):
+    """Expand the use_rule into a list of RepoEntry items."""
     if use_rule:
         if flags.verbose:
             print(f"use_rule found for rel path '{rel_path}'")
@@ -193,7 +169,8 @@ def _handle_use_rule(
     return None
 
 
-def _handle_if_exists(backlog_entry: RepoEntry, flags: Flags):
+def handle_if_exists(backlog_entry: RepoEntry, flags: Flags):
+    """Convenience function - subject to be removed."""
     if backlog_entry.if_exists:
         if flags.verbose:
             print(f"if_exists found for rel path '{backlog_entry.path.pattern}'")
@@ -202,11 +179,12 @@ def _handle_if_exists(backlog_entry: RepoEntry, flags: Flags):
     return None  # pragma: no cover
 
 
-def _map_dir_to_entry_backlog(
+def map_dir_to_entry_backlog(
     directory_map: DirectoryMap,
     structure_rules: StructureRuleMap,
     map_dir: str,
 ) -> StructureRuleList:
+    """Get the active entry backlog for a given mapped directory."""
 
     def _get_use_rules_for_directory(
         directory_map: DirectoryMap, directory: str
@@ -254,7 +232,7 @@ class MatchResult:
     issue: ScanIssue | None = None
 
 
-def get_matching_item_index_safe(  # pylint: disable=duplicate-code
+def get_matching_item_index(  # pylint: disable=duplicate-code
     backlog: StructureRuleList,
     entry_path: str,
     is_dir: bool,

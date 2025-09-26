@@ -6,25 +6,23 @@ import os
 import re
 from unittest.mock import Mock, patch
 
-import pytest
 
 from .repo_structure_lib import (
     normalize_path,
     join_path_normalized,
     rel_dir_to_map_dir,
     map_dir_to_rel_dir,
-    _skip_entry,
-    _to_entry,
-    _get_matching_item_index,
-    _handle_use_rule,
-    _handle_if_exists,
-    _map_dir_to_entry_backlog,
+    handle_if_exists,
+    handle_use_rule,
+    map_dir_to_entry_backlog,
+    to_entry,
     _build_active_entry_backlog,
+    skip_entry,
+    MatchResult,
+    get_matching_item_index,
     Entry,
     RepoEntry,
     Flags,
-    UnspecifiedEntryError,
-    ForbiddenEntryError,
 )
 
 
@@ -155,49 +153,49 @@ class TestMapDirToRelDir:
 
 
 class TestSkipEntry:
-    """Test the _skip_entry function."""
+    """Test the skip_entry function."""
 
     def test_skip_entry_symlink_no_follow(self):
         """Test that symlinks are skipped when follow_symlinks is False."""
         entry = Entry(path="link", rel_dir="", is_dir=False, is_symlink=True)
         flags = Flags(follow_symlinks=False)
-        assert _skip_entry(entry, {}, "config.yaml", None, flags) is True
+        assert skip_entry(entry, {}, "config.yaml", None, flags) is True
 
     def test_skip_entry_symlink_follow(self):
         """Test that symlinks are not skipped when follow_symlinks is True."""
         entry = Entry(path="link", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags(follow_symlinks=True)
-        assert _skip_entry(entry, {}, "config.yaml", None, flags) is False
+        assert skip_entry(entry, {}, "config.yaml", None, flags) is False
 
     def test_skip_entry_hidden_no_include(self):
         """Test that hidden files are skipped when include_hidden is False."""
         entry = Entry(path=".hidden", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags(include_hidden=False)
-        assert _skip_entry(entry, {}, "config.yaml", None, flags) is True
+        assert skip_entry(entry, {}, "config.yaml", None, flags) is True
 
     def test_skip_entry_hidden_include(self):
         """Test that hidden files are not skipped when include_hidden is True."""
         entry = Entry(path=".hidden", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags(include_hidden=True)
-        assert _skip_entry(entry, {}, "config.yaml", None, flags) is False
+        assert skip_entry(entry, {}, "config.yaml", None, flags) is False
 
     def test_skip_entry_gitignore_file(self):
         """Test that .gitignore file is skipped."""
         entry = Entry(path=".gitignore", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags()
-        assert _skip_entry(entry, {}, "config.yaml", None, flags) is True
+        assert skip_entry(entry, {}, "config.yaml", None, flags) is True
 
     def test_skip_entry_git_dir(self):
         """Test that .git directory is skipped."""
         entry = Entry(path=".git", rel_dir="", is_dir=True, is_symlink=False)
         flags = Flags()
-        assert _skip_entry(entry, {}, "config.yaml", None, flags) is True
+        assert skip_entry(entry, {}, "config.yaml", None, flags) is True
 
     def test_skip_entry_config_file(self):
         """Test that config file is skipped."""
         entry = Entry(path="config.yaml", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags()
-        assert _skip_entry(entry, {}, "config.yaml", None, flags) is True
+        assert skip_entry(entry, {}, "config.yaml", None, flags) is True
 
     def test_skip_entry_git_ignore_function(self):
         """Test that entries matching gitignore are skipped."""
@@ -207,24 +205,24 @@ class TestSkipEntry:
             return path == "ignored.txt"
 
         flags = Flags()
-        assert _skip_entry(entry, {}, "config.yaml", git_ignore, flags) is True
+        assert skip_entry(entry, {}, "config.yaml", git_ignore, flags) is True
 
     def test_skip_entry_directory_in_map(self):
         """Test that directories in directory_map are skipped."""
         entry = Entry(path="subdir", rel_dir="app", is_dir=True, is_symlink=False)
         directory_map = {"/app/subdir/": ["rule1"]}
         flags = Flags()
-        assert _skip_entry(entry, directory_map, "config.yaml", None, flags) is True
+        assert skip_entry(entry, directory_map, "config.yaml", None, flags) is True
 
     def test_skip_entry_normal_file(self):
         """Test that normal files are not skipped."""
         entry = Entry(path="file.txt", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags()
-        assert _skip_entry(entry, {}, "config.yaml", None, flags) is False
+        assert skip_entry(entry, {}, "config.yaml", None, flags) is False
 
 
 class TestToEntry:
-    """Test the _to_entry function."""
+    """Test the to_entry function."""
 
     def test_to_entry_file(self):
         """Test conversion of file entry."""
@@ -233,7 +231,7 @@ class TestToEntry:
         mock_os_entry.is_dir.return_value = False
         mock_os_entry.is_symlink.return_value = False
 
-        entry = _to_entry(mock_os_entry, "app")
+        entry = to_entry(mock_os_entry, "app")
         assert entry.path == "file.txt"
         assert entry.rel_dir == "app"
         assert entry.is_dir is False
@@ -246,7 +244,7 @@ class TestToEntry:
         mock_os_entry.is_dir.return_value = True
         mock_os_entry.is_symlink.return_value = False
 
-        entry = _to_entry(mock_os_entry, "")
+        entry = to_entry(mock_os_entry, "")
         assert entry.path == "subdir"
         assert entry.rel_dir == ""
         assert entry.is_dir is True
@@ -267,8 +265,8 @@ class TestGetMatchingItemIndex:
             )
         ]
 
-        result = _get_matching_item_index(backlog, "file.txt", False)
-        assert result == 0
+        result = get_matching_item_index(backlog, "file.txt", False)
+        assert result == MatchResult(success=True, index=0, issue=None)
 
     def test_get_matching_item_index_found_directory(self):
         """Test finding a matching directory entry."""
@@ -281,56 +279,8 @@ class TestGetMatchingItemIndex:
             )
         ]
 
-        result = _get_matching_item_index(backlog, "subdir", True)
-        assert result == 0
-
-    def test_get_matching_item_index_forbidden_entry(self):
-        """Test that forbidden entries raise ForbiddenEntryError."""
-        backlog = [
-            RepoEntry(
-                path=re.compile(r"forbidden\.txt"),
-                is_dir=False,
-                is_required=False,
-                is_forbidden=True,
-            )
-        ]
-
-        with pytest.raises(
-            ForbiddenEntryError, match="Found forbidden entry: forbidden.txt"
-        ):
-            _get_matching_item_index(backlog, "forbidden.txt", False)
-
-    def test_get_matching_item_index_not_found_file(self):
-        """Test that unspecified file entries raise UnspecifiedEntryError."""
-        backlog = [
-            RepoEntry(
-                path=re.compile(r"other\.txt"),
-                is_dir=False,
-                is_required=False,
-                is_forbidden=False,
-            )
-        ]
-
-        with pytest.raises(
-            UnspecifiedEntryError, match="Found unspecified entry: 'missing.txt'"
-        ):
-            _get_matching_item_index(backlog, "missing.txt", False)
-
-    def test_get_matching_item_index_not_found_directory(self):
-        """Test that unspecified directory entries raise UnspecifiedEntryError with slash."""
-        backlog = [
-            RepoEntry(
-                path=re.compile(r"other"),
-                is_dir=True,
-                is_required=False,
-                is_forbidden=False,
-            )
-        ]
-
-        with pytest.raises(
-            UnspecifiedEntryError, match="Found unspecified entry: 'missing/'"
-        ):
-            _get_matching_item_index(backlog, "missing", True)
+        result = get_matching_item_index(backlog, "subdir", True)
+        assert result == MatchResult(success=True, index=0, issue=None)
 
     def test_get_matching_item_index_verbose_output(self, capsys):
         """Test verbose output when finding a match."""
@@ -343,13 +293,13 @@ class TestGetMatchingItemIndex:
             )
         ]
 
-        _get_matching_item_index(backlog, "file.txt", False, verbose=True)
+        get_matching_item_index(backlog, "file.txt", False, verbose=True)
         captured = capsys.readouterr()
         assert "Found match at index 0: 'file\\.txt'" in captured.out
 
 
 class TestHandleUseRule:
-    """Test the _handle_use_rule function."""
+    """Test the handle_use_rule function."""
 
     def test_handle_use_rule_with_rule(self):
         """Test handling when use_rule is provided."""
@@ -365,7 +315,7 @@ class TestHandleUseRule:
         }
         flags = Flags()
 
-        result = _handle_use_rule("python_files", structure_rules, flags, "app")
+        result = handle_use_rule("python_files", structure_rules, flags, "app")
         assert result is not None
         assert len(result) == 1
         assert result[0].path.pattern == ".*\\.py"
@@ -375,7 +325,7 @@ class TestHandleUseRule:
         structure_rules = {}
         flags = Flags()
 
-        result = _handle_use_rule("", structure_rules, flags, "app")
+        result = handle_use_rule("", structure_rules, flags, "app")
         assert result is None
 
     def test_handle_use_rule_verbose_output(self, capsys):
@@ -383,7 +333,7 @@ class TestHandleUseRule:
         structure_rules = {"test_rule": []}
         flags = Flags(verbose=True)
 
-        _handle_use_rule("test_rule", structure_rules, flags, "app")
+        handle_use_rule("test_rule", structure_rules, flags, "app")
         captured = capsys.readouterr()
         assert "use_rule found for rel path 'app'" in captured.out
 
@@ -410,7 +360,7 @@ class TestHandleIfExists:
         )
         flags = Flags()
 
-        result = _handle_if_exists(backlog_entry, flags)
+        result = handle_if_exists(backlog_entry, flags)
         assert result == if_exists_entries
 
     def test_handle_if_exists_empty(self):
@@ -420,7 +370,7 @@ class TestHandleIfExists:
         )
         flags = Flags()
 
-        result = _handle_if_exists(backlog_entry, flags)
+        result = handle_if_exists(backlog_entry, flags)
         assert result is None
 
     def test_handle_if_exists_verbose_output(self, capsys):
@@ -442,7 +392,7 @@ class TestHandleIfExists:
         )
         flags = Flags(verbose=True)
 
-        _handle_if_exists(backlog_entry, flags)
+        handle_if_exists(backlog_entry, flags)
         captured = capsys.readouterr()
         assert "if_exists found for rel path 'test_pattern'" in captured.out
 
@@ -545,6 +495,6 @@ class TestMapDirToEntryBacklog:
             ],
         }
 
-        result = _map_dir_to_entry_backlog(directory_map, structure_rules, "/app/")
+        result = map_dir_to_entry_backlog(directory_map, structure_rules, "/app/")
         assert len(result) == 1
         assert result[0].path.pattern == ".*\\.py"
