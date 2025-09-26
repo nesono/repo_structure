@@ -11,17 +11,17 @@ from .repo_structure_config import (
 from .repo_structure_lib import (
     rel_dir_to_map_dir,
     map_dir_to_rel_dir,
-    _skip_entry,
+    skip_entry,
     Entry,
-    _handle_use_rule,
-    _handle_if_exists,
+    handle_use_rule,
+    handle_if_exists,
     Flags,
-    _map_dir_to_entry_backlog,
+    map_dir_to_entry_backlog,
     StructureRuleList,
     normalize_path,
     join_path_normalized,
     ScanIssue,
-    get_matching_item_index_safe,
+    get_matching_item_index,
 )
 
 
@@ -67,7 +67,7 @@ class DiffScanProcessor:
     ) -> ScanIssue | None:
         """Check if path is valid in backlog and return ScanIssue if invalid."""
         for rel_dir, entry_name, is_dir in self._incremental_path_split(path):
-            if _skip_entry(
+            if skip_entry(
                 Entry(
                     path=entry_name, rel_dir=rel_dir, is_dir=is_dir, is_symlink=False
                 ),
@@ -77,7 +77,7 @@ class DiffScanProcessor:
             ):
                 return None
 
-            match_result = get_matching_item_index_safe(
+            match_result = get_matching_item_index(
                 backlog,
                 entry_name,
                 is_dir,
@@ -95,12 +95,12 @@ class DiffScanProcessor:
                 idx = match_result.index
                 assert idx is not None  # Type hint for mypy
                 backlog_match = backlog[idx]
-                backlog = _handle_use_rule(
+                backlog = handle_use_rule(
                     backlog_match.use_rule,
                     self.config.structure_rules,
                     self.flags,
                     entry_name,
-                ) or _handle_if_exists(backlog_match, self.flags)
+                ) or handle_if_exists(backlog_match, self.flags)
 
         return None
 
@@ -129,7 +129,7 @@ class DiffScanProcessor:
             entries are present.
         """
         map_dir = self._get_corresponding_map_dir(path)
-        backlog = _map_dir_to_entry_backlog(
+        backlog = map_dir_to_entry_backlog(
             self.config.directory_map,
             self.config.structure_rules,
             map_dir_to_rel_dir(map_dir),

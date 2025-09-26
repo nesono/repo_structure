@@ -120,59 +120,6 @@ def test_main_diff_scan_fail_abs_path():
     assert result.exit_code != 0
 
 
-def test_main_full_scan_warning_success():
-    """Test successful full_scan_warning command."""
-    runner = CliRunner()
-    result = runner.invoke(
-        repo_structure,
-        [
-            "--verbose",
-            "full-scan-warning",
-            "-r",
-            ".",
-            "-c",
-            "repo_structure/test_config_allow_all.yaml",
-        ],
-    )
-
-    assert result.exit_code == 0
-    assert "Running full scan (non-throwing)" in result.output
-
-
-def test_main_full_scan_warning_fail_bad_config():
-    """Test failing full_scan_warning due to bad configuration file."""
-    runner = CliRunner()
-    result = runner.invoke(
-        repo_structure,
-        [
-            "full-scan-warning",
-            "-r",
-            ".",
-            "-c",
-            "repo_structure/test_config_bad_config.yaml",
-        ],
-    )
-
-    assert result.exit_code != 0
-
-
-def test_main_full_scan_warning_fail():
-    """Test failing full_scan_warning due to missing file."""
-    runner = CliRunner()
-    result = runner.invoke(
-        repo_structure,
-        [
-            "full-scan-warning",
-            "-r",
-            ".",
-            "-c",
-            "repo_structure/test_config_fail.yaml",
-        ],
-    )
-
-    assert result.exit_code != 0
-
-
 def test_main_global_flags():
     """Test main command with global flags."""
     runner = CliRunner()
@@ -283,15 +230,6 @@ def test_main_diff_scan_help():
     assert "Run a check on a differential set" in result.output
 
 
-def test_main_full_scan_warning_help():
-    """Test full-scan-warning help command."""
-    runner = CliRunner()
-    result = runner.invoke(repo_structure, ["full-scan-warning", "--help"])
-
-    assert result.exit_code == 0
-    assert "Run a full scan and print warnings" in result.output
-
-
 def test_main_full_scan_with_warnings():
     """Test full_scan command that generates warnings."""
     runner = CliRunner()
@@ -299,25 +237,6 @@ def test_main_full_scan_with_warnings():
         repo_structure,
         [
             "full-scan",
-            "-r",
-            ".",
-            "-c",
-            "repo_structure/test_config_with_warnings.yaml",
-        ],
-    )
-
-    # Test succeeds if we see warnings output (may also have errors causing exit 1)
-    assert "Warnings:" in result.output
-    assert "unused_rule" in result.output
-
-
-def test_main_full_scan_warning_with_warnings():
-    """Test full_scan_warning command that generates warnings."""
-    runner = CliRunner()
-    result = runner.invoke(
-        repo_structure,
-        [
-            "full-scan-warning",
             "-r",
             ".",
             "-c",

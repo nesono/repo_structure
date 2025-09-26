@@ -8,7 +8,6 @@ import click
 
 from .repo_structure_lib import ConfigurationParseError, Flags, ScanIssue
 from .repo_structure_full_scan import (
-    scan_full_repository,
     FullScanProcessor,
 )
 from .repo_structure_diff_scan import DiffScanProcessor
@@ -95,9 +94,10 @@ def _perform_scan(
         _validate_directory_mapping(directory, config)
         processor = FullScanProcessor(repo_root, config, flags)
         errors = processor.scan_directory(directory)
-        warnings: list[ScanIssue] = []
-        return errors, warnings
-    return scan_full_repository(repo_root, config, flags)
+        return errors, []
+
+    processor = FullScanProcessor(repo_root, config, flags)
+    return processor.scan()
 
 
 def _print_scan_results(errors: list[ScanIssue], warnings: list[ScanIssue]) -> bool:
@@ -256,77 +256,6 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
                 err=True,
             )
         successful = False
-
-    click.echo(
-        "Checks have"
-        + (
-            click.style(" succeeded", fg="green")
-            if successful
-            else click.style(" FAILED", fg="red")
-        )
-    )
-
-    if not successful:
-        sys.exit(1)
-
-
-@repo_structure.command()
-@click.option(
-    "--repo-root",
-    "-r",
-    type=click.Path(exists=True, file_okay=False),
-    help="The path to the repository root.",
-    default=".",
-    show_default=True,
-)
-@click.option(
-    "--config-path",
-    "-c",
-    type=click.Path(exists=True),
-    help="The path to the configuration file.",
-    default="repo_structure.yaml",
-    show_default=True,
-)
-@click.pass_context
-def full_scan_warning(ctx: click.Context, repo_root: str, config_path: str) -> None:
-    """Run a full scan and print warnings and errors without throwing.
-
-    This behaves like full_scan, but uses scan_full_repository to aggregate
-    issues (errors and warnings) and prints them for downstream consumption.
-    """
-    click.echo("Running full scan (non-throwing)")
-
-    flags = ctx.obj
-    start_time = time.time()
-
-    try:
-        config = Configuration(config_path, False, None, flags.verbose)
-    except ConfigurationParseError as err:
-        click.echo(err, err=True)
-        sys.exit(1)
-
-    # Call the non-throwing scan and print results
-    errors, warnings = scan_full_repository(repo_root, config, flags)
-
-    # Print warnings first
-    if warnings:
-        click.echo(click.style("Warnings:", fg="yellow"))
-        for w in warnings:
-            loc = f" [{w.path}]" if getattr(w, "path", None) else ""
-            click.echo(click.style(f" - ({w.code}) {w.message}{loc}", fg="yellow"))
-
-    # Then errors
-    successful = True
-    if errors:
-        click.echo(click.style("Errors:", fg="red"))
-        for e in errors:
-            loc = f" [{e.path}]" if getattr(e, "path", None) else ""
-            click.echo(click.style(f" - ({e.code}) {e.message}{loc}", fg="red"))
-        successful = False
-
-    duration = time.time() - start_time
-    if flags.verbose:
-        click.echo(f"Full scan (non-throwing) took {duration:.2f} seconds")
 
     click.echo(
         "Checks have"
