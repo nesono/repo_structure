@@ -16,7 +16,7 @@ from .repo_structure_config import Configuration
 try:
     from ._version import version as VERSION
 except ModuleNotFoundError:  # pragma: no cover
-    VERSION = "ersion unknown"
+    VERSION = "version unknown"
 
 
 @click.group()
