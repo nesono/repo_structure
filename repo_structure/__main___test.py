@@ -247,3 +247,40 @@ def test_main_full_scan_with_warnings():
     # Test succeeds if we see warnings output (may also have errors causing exit 1)
     assert "Warnings:" in result.output
     assert "unused_rule" in result.output
+
+
+def test_main_full_scan_directory_success():
+    """Test full_scan command on a specific directory."""
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure,
+        [
+            "full-scan",
+            "-r",
+            ".",
+            "-c",
+            "repo_structure/test_config_allow_all.yaml",
+            "-d",
+            "repo_structure",
+        ],
+    )
+    assert "repo_structure" in result.output
+    assert result.exit_code == 0
+
+
+def test_main_full_scan_directory_fail():
+    """Test full_scan command on a specific directory."""
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure,
+        [
+            "full-scan",
+            "-r",
+            ".",
+            "-c",
+            "repo_structure/test_config_allow_all.yaml",
+            "-d",
+            "bad_directory",
+        ],
+    )
+    assert result.exit_code != 0

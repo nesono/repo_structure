@@ -91,6 +91,7 @@ def _perform_scan(
 ) -> tuple[list[ScanIssue], list[ScanIssue]]:
     """Perform the actual scan operation."""
     if directory:
+        directory = f'/{directory.strip("/")}/'
         _validate_directory_mapping(directory, config)
         processor = FullScanProcessor(repo_root, config, flags)
         errors = processor.scan_directory(directory)
