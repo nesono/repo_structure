@@ -95,8 +95,7 @@ def _perform_scan(
         _validate_directory_mapping(directory, config)
         processor = FullScanProcessor(repo_root, config, flags)
         errors = processor.scan_directory(directory)
-        warnings = processor._collect_warnings()  # pylint: disable=protected-access
-        return errors, warnings
+        return errors, []
     return scan_full_repository(repo_root, config, flags)
 
 
