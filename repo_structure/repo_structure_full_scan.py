@@ -20,7 +20,6 @@ from .repo_structure_lib import (
     Flags,
     join_path_normalized,
     ScanIssue,
-    MatchResult,
     get_matching_item_index,
 )
 
@@ -47,40 +46,6 @@ class FullScanProcessor:
         if os.path.isfile(git_ignore_path):
             return parse_gitignore(git_ignore_path)
         return None
-
-    def get_matching_item_index(
-        self,
-        backlog: StructureRuleList,
-        entry_path: str,
-        is_dir: bool,
-    ) -> MatchResult:
-        """Return a MatchResult of the a matching item in the backlog."""
-        for i, v in enumerate(backlog):
-            if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
-                if v.is_forbidden:
-                    return MatchResult(
-                        success=False,
-                        issue=ScanIssue(
-                            severity="error",
-                            code="forbidden_entry",
-                            message=f"Found forbidden entry: {entry_path}",
-                            path=entry_path,
-                        ),
-                    )
-                if self.flags.verbose:
-                    print(f"  Found match at index {i}: '{v.path.pattern}'")
-                return MatchResult(success=True, index=i)
-
-        display_path = entry_path + "/" if is_dir else entry_path
-        return MatchResult(
-            success=False,
-            issue=ScanIssue(
-                severity="error",
-                code="unspecified_entry",
-                message=f"Found unspecified entry: '{display_path}'",
-                path=entry_path,
-            ),
-        )
 
     def _check_required_entries_missing(
         self,
