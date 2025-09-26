@@ -13,8 +13,8 @@ from .repo_structure_lib import (
     map_dir_to_rel_dir,
     skip_entry,
     Entry,
-    handle_use_rule,
-    handle_if_exists,
+    expand_use_rule,
+    expand_if_exists,
     Flags,
     map_dir_to_entry_backlog,
     StructureRuleList,
@@ -95,12 +95,12 @@ class DiffScanProcessor:
                 idx = match_result.index
                 assert idx is not None  # Type hint for mypy
                 backlog_match = backlog[idx]
-                backlog = handle_use_rule(
+                backlog = expand_use_rule(
                     backlog_match.use_rule,
                     self.config.structure_rules,
                     self.flags,
                     entry_name,
-                ) or handle_if_exists(backlog_match, self.flags)
+                ) or expand_if_exists(backlog_match, self.flags)
 
         return None
 
