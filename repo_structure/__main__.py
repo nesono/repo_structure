@@ -8,7 +8,6 @@ import click
 
 from .repo_structure_lib import ConfigurationParseError, Flags, ScanIssue
 from .repo_structure_full_scan import (
-    scan_full_repository,
     FullScanProcessor,
 )
 from .repo_structure_diff_scan import DiffScanProcessor
@@ -96,7 +95,9 @@ def _perform_scan(
         processor = FullScanProcessor(repo_root, config, flags)
         errors = processor.scan_directory(directory)
         return errors, []
-    return scan_full_repository(repo_root, config, flags)
+
+    processor = FullScanProcessor(repo_root, config, flags)
+    return processor.scan()
 
 
 def _print_scan_results(errors: list[ScanIssue], warnings: list[ScanIssue]) -> bool:

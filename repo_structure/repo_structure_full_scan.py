@@ -296,16 +296,3 @@ class FullScanProcessor:
             List of scan issues found in the specified directory mapping
         """
         return self._process_map_dir_sync(map_dir)
-
-
-def scan_full_repository(
-    repo_root: str, config: Configuration, flags: Flags = Flags()
-) -> tuple[list[ScanIssue], list[ScanIssue]]:
-    """Scan the repository and return a list of issues (errors and warnings).
-
-    This function is a non-throwing variant intended for easier consumption.
-    It keeps the old assert_* behavior intact elsewhere.
-    """
-    assert repo_root is not None
-    processor = FullScanProcessor(repo_root, config, flags)
-    return processor.scan()

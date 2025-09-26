@@ -6,7 +6,7 @@ import pytest
 
 from .repo_structure_config import Configuration
 from .repo_structure_full_scan import (
-    scan_full_repository,
+    FullScanProcessor,
     ScanIssue,
 )
 from .repo_structure_lib import (
@@ -22,7 +22,8 @@ def _check_repo_directory_structure(
     flags: Flags = Flags(),
 ) -> tuple[list[ScanIssue], list[ScanIssue]]:
     """Check repository structure and return errors and warnings instead of asserting."""
-    return scan_full_repository(".", config, flags)
+    processor = FullScanProcessor(".", config, flags)
+    return processor.scan()
 
 
 @with_repo_structure_in_tmpdir("")
@@ -1059,7 +1060,8 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    _, warnings = scan_full_repository(".", config)
+    processor = FullScanProcessor(".", config, Flags())
+    _, warnings = processor.scan()
     assert any(
         "unused_rule" in i.message for i in warnings
     ), f"Expected unused rule warning, got: {warnings}"
