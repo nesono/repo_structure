@@ -175,7 +175,8 @@ def expand_if_exists(backlog_entry: RepoEntry, flags: Flags):
         if flags.verbose:
             print(f"if_exists found for rel path '{backlog_entry.path.pattern}'")
         return backlog_entry.if_exists
-    # the following line can not be reached given the current integration
+    # the following line can not be reached given a directory entry must be
+    # either `use_rule`, or `if_exists`
     return None  # pragma: no cover
 
 
