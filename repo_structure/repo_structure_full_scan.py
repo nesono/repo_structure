@@ -48,13 +48,12 @@ class FullScanProcessor:
             return parse_gitignore(git_ignore_path)
         return None
 
-    def _get_matching_item_index_safe(
+    def _get_matching_item_index(
         self,
         backlog: StructureRuleList,
         entry_path: str,
         is_dir: bool,
     ) -> MatchResult:
-        """Get matching item index."""
         for i, v in enumerate(backlog):
             if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
                 if v.is_forbidden:
@@ -87,9 +86,8 @@ class FullScanProcessor:
         rel_dir: str,
         entry_backlog: StructureRuleList,
     ) -> ScanIssue | None:
-        """Check for missing required entries and return a ScanIssue if any are found."""
 
-        def _report_missing_entries(
+        def _format_missing_entries_message(
             missing_files: list[str], missing_dirs: list[str]
         ) -> str:
             result = f"Required patterns missing in  directory '{rel_dir}':\n"
@@ -117,14 +115,14 @@ class FullScanProcessor:
             return ScanIssue(
                 severity="error",
                 code="missing_required_entries",
-                message=_report_missing_entries(
+                message=_format_missing_entries_message(
                     missing_required_files, missing_required_dirs
                 ),
                 path=rel_dir,
             )
         return None
 
-    def _check_invalid_repo_structure_recursive(
+    def _check_reldir_structure(
         self,
         rel_dir: str,
         backlog: StructureRuleList,
@@ -193,9 +191,7 @@ class FullScanProcessor:
         ) or _handle_if_exists(backlog[idx], self.flags)
 
         subdirectory_path = join_path_normalized(rel_dir, entry.path)
-        errors.extend(
-            self._check_invalid_repo_structure_recursive(subdirectory_path, new_backlog)
-        )
+        errors.extend(self._check_reldir_structure(subdirectory_path, new_backlog))
 
         missing_entry_issue = self._check_required_entries_missing(
             subdirectory_path, new_backlog
@@ -219,7 +215,7 @@ class FullScanProcessor:
             return errors
 
         # Check repository structure using non-throwing functions
-        structure_errors = self._check_invalid_repo_structure_recursive(
+        structure_errors = self._check_reldir_structure(
             rel_dir,
             backlog,
         )
@@ -300,17 +296,6 @@ class FullScanProcessor:
             List of scan issues found in the specified directory mapping
         """
         return self._process_map_dir_sync(map_dir)
-
-
-# Standalone function for backward compatibility with other modules
-def _get_matching_item_index_safe(
-    backlog: StructureRuleList,
-    entry_path: str,
-    is_dir: bool,
-    verbose: bool = False,
-) -> MatchResult:
-    """Get matching item index without raising exceptions, return result with potential issues."""
-    return get_matching_item_index_safe(backlog, entry_path, is_dir, verbose)
 
 
 def scan_full_repository(
