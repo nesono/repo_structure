@@ -30,6 +30,8 @@ class ConfigurationData:
     structure_rules: StructureRuleMap = field(default_factory=dict)
     directory_map: DirectoryMap = field(default_factory=dict)
     configuration_file_name: str = ""
+    structure_rule_descriptions: dict[str, str] = field(default_factory=dict)
+    directory_descriptions: dict[str, str] = field(default_factory=dict)
 
 
 class Configuration:
@@ -84,6 +86,10 @@ class Configuration:
                 yaml_dict.get("structure_rules", {})
             ),
             directory_map=_parse_directory_map(yaml_dict.get("directory_map", {})),
+            structure_rule_descriptions=yaml_dict.get(
+                "structure_rule_descriptions", {}
+            ),
+            directory_descriptions=yaml_dict.get("directory_descriptions", {}),
         )
         # Template parsing is expanded in-place and added as structure rules to the directory_map
         _parse_templates_to_configuration(
@@ -135,6 +141,16 @@ class Configuration:
     def configuration_file_name(self) -> str:
         """Property for configuration file name."""
         return self.config.configuration_file_name
+
+    @property
+    def structure_rule_descriptions(self) -> dict[str, str]:
+        """Property for structure rule descriptions."""
+        return self.config.structure_rule_descriptions
+
+    @property
+    def directory_descriptions(self) -> dict[str, str]:
+        """Property for directory descriptions."""
+        return self.config.directory_descriptions
 
 
 def _load_repo_structure_yaml(filename: str) -> dict:

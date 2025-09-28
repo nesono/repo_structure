@@ -20,6 +20,10 @@ structure_rules:
     - require: 'config\.schema\.json'
     - require: 'test_config_.*\.yaml'
 
+structure_rule_descriptions:
+  base_structure: "Core project files required for any repository including documentation, configuration, and tooling files"
+  python_package: "Standard Python package structure with modules, tests, and configuration files"
+
 directory_map:
   /:
     - use_rule: base_structure
@@ -27,3 +31,8 @@ directory_map:
     - use_rule: python_package
   /.github/:
     - use_rule: ignore
+
+directory_descriptions:
+  /: "Root directory containing project documentation, configuration files, and main project structure"
+  /repo_structure/: "Main Python package directory containing the core application logic and modules"
+  /.github/: "GitHub-specific configuration and workflow files - ignored from structure validation"

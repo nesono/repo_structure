@@ -28,6 +28,7 @@
         "properties": {
           "use_rule": { "type": "string" },
           "use_template": { "type": "string" },
+          "description": { "type": "string" },
           "parameters": {
             "type": "object",
             "additionalProperties": {
@@ -64,6 +65,22 @@
       "type": "object",
       "patternProperties": {
         "^(?!__).*": { "$ref": "#/$defs/directory_entries" }
+      },
+      "additionalProperties": false
+    },
+    "structure_rule_descriptions": {
+      "description": "Optional descriptions for structure rules",
+      "type": "object",
+      "patternProperties": {
+        "^(?!__).*": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "directory_descriptions": {
+      "description": "Optional descriptions for directory mappings",
+      "type": "object",
+      "patternProperties": {
+        "^/.*/$|^/$": { "type": "string" }
       },
       "additionalProperties": false
     },

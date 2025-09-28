@@ -284,3 +284,70 @@ def test_main_full_scan_directory_fail():
         ],
     )
     assert result.exit_code != 0
+
+
+def test_report_command_text():
+    """Test report command with text output."""
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure,
+        [
+            "report",
+            "-c",
+            "repo_structure/test_config_allow_all.yaml",
+            "-f",
+            "text",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Repository Structure Configuration Report" in result.output
+    assert "Total Directories:" in result.output
+    assert "Total Structure Rules:" in result.output
+
+
+def test_report_command_json():
+    """Test report command with JSON output."""
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure,
+        [
+            "report",
+            "-c",
+            "repo_structure/test_config_allow_all.yaml",
+            "-f",
+            "json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert '"total_directories"' in result.output
+    assert '"total_structure_rules"' in result.output
+
+
+def test_report_command_markdown():
+    """Test report command with Markdown output."""
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure,
+        [
+            "report",
+            "-c",
+            "repo_structure/test_config_allow_all.yaml",
+            "-f",
+            "markdown",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "# Repository Structure Configuration Report" in result.output
+    assert "**Total Directories:**" in result.output
+
+
+def test_report_command_help():
+    """Test report help command."""
+    runner = CliRunner()
+    result = runner.invoke(repo_structure, ["report", "--help"])
+
+    assert result.exit_code == 0
+    assert "Generate a report of the configuration structure" in result.output
