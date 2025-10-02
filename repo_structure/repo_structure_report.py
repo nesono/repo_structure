@@ -26,6 +26,7 @@ class StructureRuleReport:
     applied_directories: list[str]
     directory_descriptions: list[str]
     rule_count: int
+    patterns: list[str]
 
 
 @dataclass
@@ -109,6 +110,33 @@ def _generate_structure_rule_reports(
     directory_descriptions: dict[str, str],
 ) -> list[StructureRuleReport]:
     """Generate reports for each structure rule."""
+
+    def _format_pattern(entry) -> str:
+        """Format a RepoEntry as a human-readable pattern string."""
+        # Determine the pattern type
+        if entry.is_forbidden:
+            pattern_type = "forbid"
+        elif entry.is_required:
+            pattern_type = "require"
+        else:
+            pattern_type = "allow"
+
+        # Get the pattern string
+        pattern = entry.path.pattern
+
+        # Add directory indicator if needed
+        if entry.is_dir:
+            pattern += "/"
+
+        # Build the formatted string
+        result = f"{pattern_type}: {pattern}"
+
+        # Add use_rule if present
+        if entry.use_rule:
+            result += f" (use_rule: {entry.use_rule})"
+
+        return result
+
     reports = []
 
     for rule_name, rule_entries in structure_rules.items():
@@ -124,6 +152,9 @@ def _generate_structure_rule_reports(
             for directory in applied_directories
         ]
 
+        # Format patterns from rule entries
+        patterns = [_format_pattern(entry) for entry in rule_entries]
+
         reports.append(
             StructureRuleReport(
                 rule_name=rule_name,
@@ -133,6 +164,7 @@ def _generate_structure_rule_reports(
                 applied_directories=applied_directories,
                 directory_descriptions=directory_descs,
                 rule_count=len(rule_entries),
+                patterns=patterns,
             )
         )
 
@@ -174,6 +206,9 @@ def format_report_text(report: ConfigurationReport) -> str:
         lines.append(f"Rule: {rule_report.rule_name}")
         lines.append(f"  Description: {rule_report.description}")
         lines.append(f"  Entry Count: {rule_report.rule_count}")
+        lines.append("  Patterns:")
+        for pattern in rule_report.patterns:
+            lines.append(f"    - {pattern}")
         lines.append(
             f"  Applied to Directories: {', '.join(rule_report.applied_directories)}"
         )
@@ -254,6 +289,10 @@ def format_report_markdown(report: ConfigurationReport) -> str:
         lines.append("")
         lines.append(f"**Description:** {rule_report.description}  ")
         lines.append(f"**Entry Count:** {rule_report.rule_count}")
+        lines.append("")
+        lines.append("**Patterns:**")
+        for pattern in rule_report.patterns:
+            lines.append(f"- `{pattern}`")
         lines.append("")
         lines.append("**Applied to Directories:**")
         for directory, desc in zip(

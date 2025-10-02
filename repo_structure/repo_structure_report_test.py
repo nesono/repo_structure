@@ -353,3 +353,58 @@ directory_map:
     # Rules should be sorted
     rules = [r.rule_name for r in report.structure_rule_reports]
     assert rules == ["a_rule", "z_rule"]
+
+
+def test_pattern_formatting():
+    """Test that patterns are correctly formatted in structure rule reports."""
+    test_yaml = """
+structure_rules:
+  comprehensive_rule:
+    - description: 'Rule with various pattern types'
+    - require: 'README\\.md'
+    - allow: '.*\\.txt'
+    - forbid: 'secret\\.key'
+    - allow: 'docs/'
+      use_rule: comprehensive_rule
+
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: comprehensive_rule
+"""
+    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    report = generate_report(config)
+
+    # Get the structure rule report
+    rule_report = report.structure_rule_reports[0]
+
+    assert rule_report.rule_name == "comprehensive_rule"
+    assert len(rule_report.patterns) == 4
+
+    # Verify each pattern is formatted correctly
+    assert "require: README\\.md" in rule_report.patterns[0]
+    assert "allow: .*\\.txt" in rule_report.patterns[1]
+    assert "forbid: secret\\.key" in rule_report.patterns[2]
+    assert "allow: docs/" in rule_report.patterns[3]
+    assert "use_rule: comprehensive_rule" in rule_report.patterns[3]
+
+    # Verify patterns appear in text output
+    text_output = format_report_text(report)
+    assert "Patterns:" in text_output
+    assert "require: README\\.md" in text_output
+    assert "allow: .*\\.txt" in text_output
+    assert "forbid: secret\\.key" in text_output
+    assert "allow: docs/" in text_output
+    assert "use_rule: comprehensive_rule" in text_output
+
+    # Verify patterns appear in markdown output
+    markdown_output = format_report_markdown(report)
+    assert "**Patterns:**" in markdown_output
+    assert "require: README\\.md" in markdown_output
+
+    # Verify patterns appear in JSON output
+    json_output = format_report_json(report)
+    assert "patterns" in json_output
+    # Note: JSON escapes backslashes, so \. becomes \\.
+    assert "README" in json_output
+    assert "patterns" in json_output
