@@ -274,7 +274,6 @@ def format_report(
     """
     if format_type == "json":
         return format_report_json(report)
-    elif format_type == "markdown":
+    if format_type == "markdown":
         return format_report_markdown(report)
-    else:
-        return format_report_text(report)
+    return format_report_text(report)

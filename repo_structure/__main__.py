@@ -1,6 +1,8 @@
 """Ensure clean repository structure for your projects."""
 
 import sys
+from typing import cast
+from typing import Literal
 import time
 from pathlib import Path
 
@@ -55,7 +57,6 @@ def repo_structure(
     verbose: bool,
 ) -> None:
     """Ensure clean repository structure for your projects."""
-    click.echo("Repo-Structure started")
     flags = Flags()
     flags.follow_symlinks = follow_symlinks
     flags.include_hidden = include_hidden
@@ -282,7 +283,7 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
     show_default=True,
 )
 @click.option(
-    "--format",
+    "--output_format",
     "-f",
     type=click.Choice(["text", "json", "markdown"]),
     help="Output format for the report.",
@@ -298,7 +299,7 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
 )
 @click.pass_context
 def report(
-    ctx: click.Context, config_path: str, format: str, output: str | None
+    ctx: click.Context, config_path: str, output_format: str, output: str | None
 ) -> None:
     """Generate a report of the configuration structure.
 
@@ -311,16 +312,13 @@ def report(
 
     The report can be generated in text, JSON, or Markdown format.
     """
-    click.echo("Generating configuration report")
     flags = ctx.obj
 
     config = _load_configuration(config_path, flags.verbose)
     report_data = generate_report(config)
-    from typing import cast
-    from typing import Literal
 
     formatted_report = format_report(
-        report_data, cast(Literal["text", "json", "markdown"], format)
+        report_data, cast(Literal["text", "json", "markdown"], output_format)
     )
 
     if output:

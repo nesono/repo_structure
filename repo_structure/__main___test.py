@@ -138,7 +138,6 @@ def test_main_global_flags():
     )
 
     assert result.exit_code == 0
-    assert "Repo-Structure started" in result.output
 
 
 def test_main_include_hidden_default():
