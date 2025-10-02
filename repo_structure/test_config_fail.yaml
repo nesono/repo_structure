@@ -1,7 +1,9 @@
 structure_rules:
   fail_rule:
+    - description: "Test rule that requires non-existent file"
     - require: "non_existent_file.txt"
 
 directory_map:
   /:
+    - description: "Root directory that will fail validation"
     - use_rule: fail_rule

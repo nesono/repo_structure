@@ -1,7 +1,9 @@
 structure_rules:
   conflicting_test_config.yaml:
+    - description: "Test configuration for conflicting config file"
     - require: "conflicting_test_config.yaml"
 
 directory_map:
   /:
+    - description: "Root directory"
     - use_rule: conflicting_test_config.yaml

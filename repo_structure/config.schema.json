@@ -2,33 +2,59 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/nesono/repo_structure.git/config.schema.json",
   "$defs": {
+    "directory_entry_item": {
+      "type": "object",
+      "properties": {
+        "require": { "type": "string" },
+        "allow": { "type": "string" },
+        "forbid": { "type": "string" },
+        "if_exists": { "$ref": "#/$defs/if_exists_entries" },
+        "use_rule": { "type": "string" }
+      },
+      "additionalProperties": false,
+      "anyOf": [
+        { "required": ["require"] },
+        { "required": ["allow"] },
+        { "required": ["forbid"] }
+      ]
+    },
+    "if_exists_entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/directory_entry_item" }
+    },
     "directory_entries": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "require": { "type": "string" },
-          "allow": { "type": "string" },
-          "forbid": { "type": "string" },
-          "if_exists": { "$ref": "#/$defs/directory_entries" },
-          "use_rule": { "type": "string" }
-        },
-        "additionalProperties": false,
-        "anyOf": [
-          { "required": ["require"] },
-          { "required": ["allow"] },
-          { "required": ["forbid"] }
-        ]
-      }
+      "minItems": 1,
+      "prefixItems": [
+        {
+          "type": "object",
+          "properties": {
+            "description": { "type": "string" }
+          },
+          "required": ["description"],
+          "additionalProperties": false
+        }
+      ],
+      "items": { "$ref": "#/$defs/directory_entry_item" }
     },
     "directory_map_entry": {
       "type": "array",
+      "minItems": 1,
+      "prefixItems": [
+        {
+          "type": "object",
+          "properties": {
+            "description": { "type": "string" }
+          },
+          "required": ["description"],
+          "additionalProperties": false
+        }
+      ],
       "items": {
         "type": "object",
         "properties": {
           "use_rule": { "type": "string" },
           "use_template": { "type": "string" },
-          "description": { "type": "string" },
           "parameters": {
             "type": "object",
             "additionalProperties": {
@@ -65,22 +91,6 @@
       "type": "object",
       "patternProperties": {
         "^(?!__).*": { "$ref": "#/$defs/directory_entries" }
-      },
-      "additionalProperties": false
-    },
-    "structure_rule_descriptions": {
-      "description": "Optional descriptions for structure rules",
-      "type": "object",
-      "patternProperties": {
-        "^(?!__).*": { "type": "string" }
-      },
-      "additionalProperties": false
-    },
-    "directory_descriptions": {
-      "description": "Optional descriptions for directory mappings",
-      "type": "object",
-      "patternProperties": {
-        "^/.*/$|^/$": { "type": "string" }
       },
       "additionalProperties": false
     },

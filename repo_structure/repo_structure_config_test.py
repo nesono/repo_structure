@@ -16,6 +16,7 @@ def test_successful_parse():
     test_yaml = r"""
 structure_rules:
   basic_rule:
+    - description: 'Basic rules for common project files'
     - require: 'README\.md'
     - allow: '.*\.md'
     - forbid: 'CMakeLists\.txt'
@@ -23,6 +24,7 @@ structure_rules:
       if_exists:
         - require: 'CODEOWNERS'
   recursive_rule:
+    - description: 'Recursive Python package structure'
     - require: '.*\.py'
     - require: 'package/'
       if_exists:
@@ -30,6 +32,7 @@ structure_rules:
         use_rule: recursive_rule
 templates:
   software_component:
+    - description: 'Template for software component structure'
     - require: '{{component_name}}_component.cpp'
     - require: '{{component_name}}_component.h'
     - allow: '{{component_name}}_config.h'
@@ -45,13 +48,16 @@ templates:
     - allow: 'tests/.*_test.cpp'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: basic_rule
     - use_rule: recursive_rule
   /software_components/:
+    - description: 'Software components directory'
     - use_template: software_component
       parameters:
         component_name: ['lidar', 'camera', 'driver', 'control']
   /repo_struct/:
+    - description: 'Repository structure directory'
     - use_rule: ignore
     """
     # parsing should not throw using the above yaml
@@ -74,10 +80,12 @@ def test_fail_parse_bad_pattern():
     test_yaml = r"""
 structure_rules:
   bad_pattern_rule:
+    - description: 'Bad pattern rule'
     - require: "[^]*.md"
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: bad_pattern_rule
     """
 
@@ -90,10 +98,12 @@ def test_fail_parse_bad_schema():
     test_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure'
     - require: "README.md"
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
 
@@ -114,6 +124,7 @@ structure_rules:
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     with pytest.raises(ConfigurationParseError):
@@ -125,10 +136,12 @@ def test_fail_parse_dangling_use_rule_in_directory_map():
     test_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure'
     - require: "README.md"
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     - use_rule: python_package
     """
@@ -141,12 +154,14 @@ def test_fail_parse_dangling_use_rule_in_structure_rule():
     test_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure'
     - require: 'README.md'
     - allow: 'docs/'
       use_rule: python_package
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     with pytest.raises(ConfigurationParseError):
@@ -158,6 +173,7 @@ def test_fail_directory_structure_mixing_use_rule_and_files():
     test_config = r"""
 structure_rules:
   package:
+    - description: 'Package structure'
     - allow: "docs/"
       use_rule: documentation
       if_exists:
@@ -166,6 +182,7 @@ structure_rules:
         - allow: ".*"
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: package
 """
     with pytest.raises(ConfigurationParseError):
@@ -177,10 +194,12 @@ def test_fail_parse_bad_key_in_structure_rule():
     test_config = r"""
 structure_rules:
   bad_key_rule:
+    - description: 'Bad key rule'
     - require: "README.md"
       bad_key: '.*\.py'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: bad_key_rule
     """
     with pytest.raises(ConfigurationParseError):
@@ -192,9 +211,11 @@ def test_fail_directory_map_key_in_directory_map():
     test_config = """
 structure_rules:
     correct_rule:
+        - description: 'Correct rule'
         - require: 'unused_file'
 directory_map:
     /:
+        - description: 'Root directory'
         - foo: documentation
     """
     with pytest.raises(ConfigurationParseError):
@@ -206,9 +227,11 @@ def test_fail_directory_map_additional_key_in_directory_map():
     test_config = """
 structure_rules:
     correct_rule:
+        - description: 'Correct rule'
         - require: 'unused_file'
 directory_map:
     /:
+        - description: 'Root directory'
         - use_rule: correct_rule
         - foo: documentation
     """
@@ -221,13 +244,16 @@ def test_fail_use_rule_not_recursive():
     config_yaml = r"""
 structure_rules:
     license_rule:
+        - description: 'License rule'
         - require: 'LICENSE'
     bad_use_rule:
+        - description: 'Bad use rule'
         - allow: '.*/'
           use_rule: license_rule
 directory_map:
   /:
     # it doesn't matter here what we 'use', the test should fail always
+    - description: 'Root directory'
     - use_rule: bad_use_rule
     """
     with pytest.raises(ConfigurationParseError):
@@ -239,11 +265,14 @@ def test_fail_directory_map_missing_trailing_slash():
     config_yaml = r"""
 structure_rules:
     license_rule:
+        - description: 'License rule'
         - require: LICENSE
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: license_rule
   /missing_trailing_slash:
+    - description: 'Missing trailing slash'
     - use_rule: license_rule
     """
     with pytest.raises(ConfigurationParseError):
@@ -255,11 +284,14 @@ def test_fail_directory_map_missing_starting_slash():
     config_yaml = r"""
 structure_rules:
     license_rule:
+        - description: 'License rule'
         - require: LICENSE
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: license_rule
   missing_starting_slash/:
+    - description: 'Missing starting slash'
     - use_rule: license_rule
     """
     with pytest.raises(ConfigurationParseError):
@@ -271,9 +303,11 @@ def test_fail_use_template_missing_parameters():
     test_config = """
 templates:
     some_template:
+        - description: 'Some template'
         - require: '{{parameter_name}}.md'
 directory_map:
     /:
+        - description: 'Root directory'
         - use_template: some_template
     """
     with pytest.raises(ConfigurationParseError):
@@ -285,9 +319,11 @@ def test_fail_use_template_parameters_not_arrays():
     test_config = """
 templates:
     some_template:
+        - description: 'Some template'
         - require: '{{parameter_name}}.md'
 directory_map:
     /:
+        - description: 'Root directory'
         - use_template: some_template
           parameters:
             param_1: 'not_an_array'
@@ -301,9 +337,11 @@ def test_fail_use_template_bad_template_reference():
     test_config = """
 templates:
     some_template:
+        - description: 'Template description'
         - require: '{{parameter_name}}.md'
 directory_map:
     /:
+        - description: 'Root directory'
         - use_template: bad_reference
           parameters:
             param_1: ['some_param']
@@ -317,9 +355,11 @@ def test_fail_use_template_parameters_with_use_rule():
     test_config = """
 structure_rules:
     correct_rule:
+        - description: 'Correct rule'
         - require: 'some_file.md'
 directory_map:
     /:
+        - description: 'Root directory'
         - use_rule: correct_rule
           parameters:
             param_1: ['item1', 'item2']
@@ -333,9 +373,11 @@ def test_fail_double_underscore_prefix_structure_rule():
     test_config = """
 structure_rules:
     __incorrect_rule:
+        - description: 'Incorrect rule'
         - require: 'some_file.md'
 directory_map:
     /:
+        - description: 'Root directory'
         - use_rule: __incorrect_rule
     """
     with pytest.raises(ConfigurationParseError):
@@ -347,9 +389,11 @@ def test_fail_double_underscore_prefix_template():
     test_config = """
 templates:
     __incorrect_template:
+        - description: 'Incorrect template'
         - require: '{{parameter}}_some_file.md'
 directory_map:
     /:
+        - description: 'Root directory'
         - use_rule: __incorrect_template
           parameters:
             parameter: ['item1']
@@ -363,12 +407,14 @@ def test_fail_old_config_format():
     config_yaml = r"""
 structure_rules:
     license_rule:
-        files:
+        - description: 'License rule'
+        - files:
             - name: 'LICENSE'
-        dirs:
+        - dirs:
             - name: 'dirname'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: license_rule
     """
     with pytest.raises(ConfigurationParseError):

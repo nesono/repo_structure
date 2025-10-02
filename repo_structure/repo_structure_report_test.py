@@ -15,11 +15,13 @@ def test_generate_report_basic():
     test_yaml = """
 structure_rules:
   basic_rule:
+    - description: 'Basic rule for documentation'
     - require: 'README\\.md'
     - allow: '.*\\.txt'
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: basic_rule
 """
     config = Configuration(test_yaml, param1_is_yaml_string=True)
@@ -33,13 +35,13 @@ directory_map:
     # Check directory report
     dir_report = report.directory_reports[0]
     assert dir_report.directory == "/"
-    assert dir_report.description == "No description provided"
+    assert dir_report.description == "Root directory"
     assert dir_report.applied_rules == ["basic_rule"]
 
     # Check structure rule report
     rule_report = report.structure_rule_reports[0]
     assert rule_report.rule_name == "basic_rule"
-    assert rule_report.description == "No description provided"
+    assert rule_report.description == "Basic rule for documentation"
     assert rule_report.applied_directories == ["/"]
     assert rule_report.rule_count == 2
 
@@ -49,9 +51,11 @@ def test_generate_report_with_descriptions():
     test_yaml = """
 structure_rules:
   basic_rule:
+    - description: 'Basic rule for documentation'
     - require: 'README\\.md'
     - allow: '.*\\.txt'
   python_rule:
+    - description: 'Python package rule'
     - require: '__init__\\.py'
     - require: '.*\\.py'
 
@@ -61,8 +65,10 @@ structure_rule_descriptions:
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: basic_rule
   /src/:
+    - description: 'Source directory'
     - use_rule: python_rule
 
 directory_descriptions:
@@ -75,23 +81,23 @@ directory_descriptions:
     assert report.total_directories == 2
     assert report.total_structure_rules == 2
 
-    # Check directory descriptions are included
+    # Check directory descriptions are included (inline takes precedence over description sections)
     root_dir = next(d for d in report.directory_reports if d.directory == "/")
-    assert root_dir.description == "Root directory with documentation"
+    assert root_dir.description == "Root directory"
 
     src_dir = next(d for d in report.directory_reports if d.directory == "/src/")
-    assert src_dir.description == "Source code directory"
+    assert src_dir.description == "Source directory"
 
-    # Check structure rule descriptions are included
+    # Check structure rule descriptions are included (inline takes precedence)
     basic_rule = next(
         r for r in report.structure_rule_reports if r.rule_name == "basic_rule"
     )
-    assert basic_rule.description == "Basic documentation and text files"
+    assert basic_rule.description == "Basic rule for documentation"
 
     python_rule = next(
         r for r in report.structure_rule_reports if r.rule_name == "python_rule"
     )
-    assert python_rule.description == "Standard Python package structure"
+    assert python_rule.description == "Python package rule"
 
 
 def test_format_report_text():
@@ -99,10 +105,12 @@ def test_format_report_text():
     test_yaml = """
 structure_rules:
   basic_rule:
+    - description: 'Basic rule for documentation'
     - require: 'README\\.md'
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: basic_rule
 
 structure_rule_descriptions:
@@ -119,9 +127,9 @@ directory_descriptions:
     assert "Total Directories: 1" in text_output
     assert "Total Structure Rules: 1" in text_output
     assert "Directory: /" in text_output
-    assert "Root directory description" in text_output
+    assert "Root directory" in text_output
     assert "Rule: basic_rule" in text_output
-    assert "Basic rule description" in text_output
+    assert "Basic rule for documentation" in text_output
 
 
 def test_format_report_json():
@@ -129,10 +137,12 @@ def test_format_report_json():
     test_yaml = """
 structure_rules:
   basic_rule:
+    - description: 'Basic rule for documentation'
     - require: 'README\\.md'
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: basic_rule
 """
     config = Configuration(test_yaml, param1_is_yaml_string=True)
@@ -150,10 +160,12 @@ def test_format_report_markdown():
     test_yaml = """
 structure_rules:
   basic_rule:
+    - description: 'Basic rule for documentation'
     - require: 'README\\.md'
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: basic_rule
 
 structure_rule_descriptions:
@@ -167,7 +179,7 @@ structure_rule_descriptions:
     assert "**Total Directories:** 1" in markdown_output
     assert "### Directory: `/`" in markdown_output
     assert "### Rule: `basic_rule`" in markdown_output
-    assert "Basic rule description" in markdown_output
+    assert "Basic rule for documentation" in markdown_output
 
 
 def test_format_report_function():
@@ -175,10 +187,12 @@ def test_format_report_function():
     test_yaml = """
 structure_rules:
   basic_rule:
+    - description: 'Basic rule for documentation'
     - require: 'README\\.md'
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: basic_rule
 """
     config = Configuration(test_yaml, param1_is_yaml_string=True)
@@ -206,12 +220,15 @@ def test_multiple_rules_per_directory():
     test_yaml = """
 structure_rules:
   rule1:
+    - description: 'Documentation rule'
     - require: 'README\\.md'
   rule2:
+    - description: 'License rule'
     - require: 'LICENSE'
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: rule1
     - use_rule: rule2
 
@@ -236,10 +253,12 @@ def test_empty_configuration():
     test_yaml = """
 structure_rules:
   dummy_rule:
+    - description: 'Dummy rule'
     - allow: '.*'
 
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: ignore
 """
     config = Configuration(test_yaml, param1_is_yaml_string=True)
@@ -260,14 +279,18 @@ def test_sorting():
     test_yaml = """
 structure_rules:
   z_rule:
+    - description: 'Z rule'
     - require: 'README\\.md'
   a_rule:
+    - description: 'A rule'
     - require: 'LICENSE'
 
 directory_map:
   /z/:
+    - description: 'Z directory'
     - use_rule: z_rule
   /a/:
+    - description: 'A directory'
     - use_rule: a_rule
 """
     config = Configuration(test_yaml, param1_is_yaml_string=True)
