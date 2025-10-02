@@ -1,6 +1,7 @@
 # pylint: disable=duplicate-code
 """Tests for diff-scan subcommand."""
 
+
 from .repo_structure_lib import Flags
 from .repo_structure_config import Configuration
 from .repo_structure_diff_scan import DiffScanProcessor
@@ -11,11 +12,13 @@ def test_matching_regex():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with various file rules'
     - require: 'README\.md'
     - forbid: 'CMakeLists\.txt'
     - allow: 'LICENSE'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -37,11 +40,13 @@ def test_matching_regex_dir():
     config_yaml = r"""
 structure_rules:
   recursive_rule:
+    - description: 'Recursive Python rule'
     - require: 'main\.py'
     - require: 'python/'
       use_rule: recursive_rule
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: recursive_rule
     """
     config = Configuration(config_yaml, True)
@@ -58,12 +63,14 @@ def test_matching_regex_dir_if_exists():
     config_yaml = r"""
 structure_rules:
   recursive_rule:
+    - description: 'Recursive rule with if_exists'
     - require: 'main\.py'
     - require: 'python/'
       if_exists:
         - require: '.*'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: recursive_rule
     """
     config = Configuration(config_yaml, True)
@@ -77,11 +84,14 @@ def test_multi_use_rule():
     config_yaml = r"""
 structure_rules:
   base_structure:
+      - description: 'Base structure with README'
       - require: 'README\.md'
   python_package:
+      - description: 'Python package structure'
       - require: '.*\.py'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     - use_rule: python_package
     """
@@ -100,13 +110,16 @@ def test_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
   cpp_source:
+    - description: 'C++ source files'
     - require: '.*\.cpp'
     - allow: '.*/'
       use_rule: cpp_source
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     - use_rule: cpp_source
     """
@@ -131,17 +144,22 @@ def test_succeed_elaborate_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
   python_package:
+    - description: 'Python package structure'
     - require: '.*\.py'
     - allow: '.*/'
       use_rule: python_package
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
   /app/:
+    - description: 'Application directory'
     - use_rule: python_package
   /app/lib/sub_lib/tool/:
+    - description: 'Tool directory'
     - use_rule: python_package
     - use_rule: base_structure
     """
@@ -164,10 +182,19 @@ directory_map:
 
 def test_skip_file():
     """Test skipping file for diff scan."""
-    config_filname = "repo_structure.yaml"
-    config = Configuration(config_filname)
+    config_yaml = r"""
+structure_rules:
+    base_structure:
+    - description: 'Base structure with README'
+    - require: 'README\.md'
+directory_map:
+    /:
+    - description: 'Root directory'
+    - use_rule: base_structure
+"""
+    config = Configuration(config_yaml, param1_is_yaml_string=True)
     processor = DiffScanProcessor(config)
-    assert processor.check_path("repo_structure.yaml") is None
+    assert processor.check_path(".gitignore") is None
 
 
 def test_ignore_rule():
@@ -175,11 +202,14 @@ def test_ignore_rule():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
   /python/:
+    - description: 'Python directory'
     - use_rule: ignore
         """
     config = Configuration(config_yaml, True)
@@ -195,11 +225,13 @@ def test_check_paths_batch():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with various file rules'
     - require: 'README\.md'
     - forbid: 'CMakeLists\.txt'
     - allow: 'LICENSE'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)

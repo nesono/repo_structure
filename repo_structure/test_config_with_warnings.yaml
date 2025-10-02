@@ -1,8 +1,11 @@
 structure_rules:
   base_structure:
+    - description: "Base structure with README"
     - require: 'README\.md'
   unused_rule:
+    - description: "Unused rule for testing warnings"
     - allow: 'NEVER_MATCHES\.md'
 directory_map:
   /:
+    - description: "Root directory for warning test"
     - use_rule: base_structure

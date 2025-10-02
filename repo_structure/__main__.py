@@ -1,6 +1,8 @@
 """Ensure clean repository structure for your projects."""
 
 import sys
+from typing import cast
+from typing import Literal
 import time
 from pathlib import Path
 
@@ -12,6 +14,7 @@ from .repo_structure_full_scan import (
 )
 from .repo_structure_diff_scan import DiffScanProcessor
 from .repo_structure_config import Configuration
+from .repo_structure_report import generate_report, format_report
 
 try:
     from ._version import version as VERSION
@@ -54,7 +57,6 @@ def repo_structure(
     verbose: bool,
 ) -> None:
     """Ensure clean repository structure for your projects."""
-    click.echo("Repo-Structure started")
     flags = Flags()
     flags.follow_symlinks = follow_symlinks
     flags.include_hidden = include_hidden
@@ -269,6 +271,66 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
 
     if not successful:
         sys.exit(1)
+
+
+@repo_structure.command()
+@click.option(
+    "--config-path",
+    "-c",
+    type=click.Path(exists=True),
+    help="The path to the configuration file.",
+    default="repo_structure.yaml",
+    show_default=True,
+)
+@click.option(
+    "--output_format",
+    "-f",
+    type=click.Choice(["text", "json", "markdown"]),
+    help="Output format for the report.",
+    default="text",
+    show_default=True,
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    help="Output file path. If not specified, prints to stdout.",
+    default=None,
+)
+@click.pass_context
+def report(
+    ctx: click.Context, config_path: str, output_format: str, output: str | None
+) -> None:
+    """Generate a report of the configuration structure.
+
+    This command analyzes the configuration file and generates a comprehensive
+    report showing:
+    - Directory mappings and their descriptions
+    - Structure rules and their descriptions
+    - Which rules are applied to which directories
+    - Summary statistics
+
+    The report can be generated in text, JSON, or Markdown format.
+    """
+    flags = ctx.obj
+
+    config = _load_configuration(config_path, flags.verbose)
+    report_data = generate_report(config)
+
+    formatted_report = format_report(
+        report_data, cast(Literal["text", "json", "markdown"], output_format)
+    )
+
+    if output:
+        try:
+            with open(output, "w", encoding="utf-8") as f:
+                f.write(formatted_report)
+            click.echo(f"Report written to {output}")
+        except IOError as e:
+            click.echo(f"Error writing to file: {e}", err=True)
+            sys.exit(1)
+    else:
+        click.echo(formatted_report)
 
 
 # The following main check is very hard to get into unit

@@ -1,7 +1,9 @@
 structure_rules:
   some_rule:
+    - description: "Test rule that exists"
     - require: "LICENSE"
 
 directory_map:
   /:
+    - description: "Root directory with bad rule reference"
     - use_rule: bad_rule

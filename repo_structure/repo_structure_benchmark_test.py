@@ -12,11 +12,13 @@ from .repo_structure_config import Configuration
 ALLOW_ALL_CONFIG: Final = """
 structure_rules:
   allow_all:
+    - description: 'Allow all files and directories'
     - allow: '.*'
     - allow: '.*/'
       use_rule: allow_all
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: allow_all
 """
 

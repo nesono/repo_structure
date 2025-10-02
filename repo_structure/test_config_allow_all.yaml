@@ -1,11 +1,14 @@
 structure_rules:
   allow_all:
+    - description: "Allow all files and directories recursively"
     - allow: ".*"
     - allow: ".*/"
       use_rule: allow_all
 
 directory_map:
   /:
+    - description: "Root directory - allow all"
     - use_rule: allow_all
   /repo_structure/:
+    - description: "Package directory - allow all"
     - use_rule: allow_all

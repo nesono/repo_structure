@@ -45,9 +45,11 @@ def test_matching_regex():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with markdown files'
     - require: '.*\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -67,11 +69,13 @@ def test_required_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with Python directory'
     - require: 'python/'
       if_exists:
       - allow: '.*\.py'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
@@ -93,12 +97,14 @@ def test_unspecified_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with required files'
     - require: "README.md"
     - require: "python/"
       if_exists:
       - require: '.*'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
@@ -118,9 +124,11 @@ def test_missing_root_mapping():
     config_yaml = r"""
 structure_rules:
   base_structure:
+      - description: 'Base structure rule'
       - require: "irrelevant"
 directory_map:
   /some_dir/:
+    - description: 'Some directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -139,10 +147,12 @@ def test_missing_required_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with required files'
     - require: "LICENSE"
     - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -161,12 +171,14 @@ def test_missing_required_dir():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with Python directory'
     - require: 'README\.md'
     - require: 'python/'
       if_exists:
       - require: '.*'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
@@ -187,10 +199,12 @@ def test_fail_rule_precedence():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with wildcard'
     - require: '.*'
     - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
 """
     config = Configuration(config_yaml, True)
@@ -210,11 +224,14 @@ def test_multi_use_rule():
     config_yaml = r"""
 structure_rules:
   base_structure:
+      - description: 'Base structure with README'
       - require: 'README\.md'
   python_package:
+      - description: 'Python package structure'
       - require: '.*\.py'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     - use_rule: python_package
     """
@@ -234,11 +251,14 @@ def test_multi_use_rule_missing_py_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
+      - description: 'Base structure with README'
       - require: 'README\.md'
   python_package:
+      - description: 'Python package structure'
       - require: '.*\.py'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     - use_rule: python_package
     """
@@ -259,12 +279,14 @@ def test_conflicting_file_and_dir_names():
     config_yaml = r"""
 structure_rules:
   base_structure:
+      - description: 'Base structure with name patterns'
       - require: '.*name.*'
       - require: '.*name.*/'
         if_exists:
         - allow: '.*'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -283,9 +305,11 @@ def test_conflicting_dir_name():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with name pattern'
     - require: '.*name.*'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -305,11 +329,13 @@ def test_conflicting_file_name():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with directory pattern'
     - require: '.*name.*/'
       if_exists:
       - allow: '.*'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -329,9 +355,11 @@ def test_filename_with_bad_substring_match():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with name pattern'
     - require: '.*name'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -351,12 +379,14 @@ def test_required_file_in_optional_directory_no_entry():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with optional doc directory'
     - require: 'LICENSE'
     - allow: 'doc/'
       if_exists:
         - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -376,12 +406,14 @@ def test_required_file_in_optional_directory_with_entry():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with optional doc directory'
     - require: 'LICENSE'
     - allow: 'doc/'
       if_exists:
         - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -402,12 +434,14 @@ def test_required_file_in_optional_directory_with_entry_and_exists():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with optional doc directory'
     - require: 'LICENSE'
     - allow: 'doc/'
       if_exists:
         - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -429,13 +463,16 @@ def test_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
   cpp_source:
+    - description: 'C++ source files'
     - require: '.*\.cpp'
     - allow: '.*/'
       use_rule: cpp_source
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     - use_rule: cpp_source
     """
@@ -458,13 +495,16 @@ def test_fail_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
   python_package:
+    - description: 'Python package structure'
     - require: '.*\.py'
     - require: '.*/'
       use_rule: python_package
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     - use_rule: python_package
     """
@@ -490,16 +530,20 @@ def test_fail_directory_mapping_precedence():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
   python_package:
+    - description: 'Python package structure'
     - require: '.*\.py'
     - allow: '.*/'
       use_rule: python_package
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     - use_rule: python_package
   /lib/:
+    - description: 'Library directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -527,17 +571,22 @@ def test_succeed_elaborate_use_rule_recursive():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
   python_package:
+    - description: 'Python package structure'
     - require: '.*\.py'
     - allow: '.*/'
       use_rule: python_package
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
   /app/:
+    - description: 'Application directory'
     - use_rule: python_package
   /app/lib/sub_lib/tool/:
+    - description: 'Tool directory'
     - use_rule: python_package
     - use_rule: base_structure
     """
@@ -558,9 +607,11 @@ def test_succeed_ignored_hidden_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -581,10 +632,12 @@ def test_fail_hidden_file_required_despite_hidden_disabled():
     config_yaml = r"""
 structure_rules:
   base_structure:
+     - description: 'Base structure with hidden files'
      - require: '\.hidden\.md'
      - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -607,10 +660,12 @@ def test_fail_unspecified_hidden_files_when_hidden_enabled():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with hidden files'
     - require: '\.hidden.md'
     - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -633,9 +688,11 @@ def test_succeed_gitignored_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -655,9 +712,11 @@ def test_fail_unspecified_link():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -680,10 +739,12 @@ def test_succeed_specified_link():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with symlink'
     - require: 'README\.md'
     - require: 'link'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
@@ -711,6 +772,7 @@ def test_succeed_template_rule():
     config_yaml = r"""
 templates:
   component:
+    - description: 'Component template'
     - require: '{{component}}/'
       if_exists:
       - require: '{{component}}_component.py'
@@ -719,6 +781,7 @@ templates:
         - require: '{{component}}.techspec.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_template: component
       parameters:
         component: ['lidar', 'driver']
@@ -745,6 +808,7 @@ def test_fail_template_rule_missing_file():
     config_yaml = r"""
 templates:
   component:
+    - description: 'Component template'
     - require: '{{component}}/'
       if_exists:
       - require: '{{component}}_component.py'
@@ -753,6 +817,7 @@ templates:
         - require: '{{component}}.techspec.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_template: component
       parameters:
         component: ['lidar', 'driver']
@@ -779,6 +844,7 @@ def test_succeed_template_rule_if_exists():
     config_yaml = r"""
 templates:
   component:
+    - description: 'Component template'
     - require: '{{component}}/'
       if_exists:
       - require: '{{component}}_component.py'
@@ -787,6 +853,7 @@ templates:
           - require: '{{component}}.techspec.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_template: component
       parameters:
         component: ['lidar', 'driver']
@@ -822,6 +889,7 @@ def test_succeed_template_rule_subdirectory_map():
     config_yaml = r"""
 templates:
   component:
+    - description: 'Component template'
     - require: '{{component}}/'
       if_exists:
       - require: '{{component}}_component.py'
@@ -830,10 +898,12 @@ templates:
         - require: '{{component}}.techspec.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_template: component
       parameters:
         component: ['lidar', 'driver']
   /subdir/:
+    - description: 'Subdirectory'
     - use_template: component
       parameters:
         component: ['control', 'camera']
@@ -868,6 +938,7 @@ def test_fail_template_rule_subdirectory_map_missing_file():
     config_yaml = r"""
 templates:
   component:
+    - description: 'Component template'
     - require: '{{component}}/'
       if_exists:
       - require: '{{component}}_component.py'
@@ -876,10 +947,12 @@ templates:
         - require: '{{component}}.techspec.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_template: component
       parameters:
         component: ['lidar', 'driver']
   /subdir/:
+    - description: 'Subdirectory'
     - use_template: component
       parameters:
         component: ['control', 'camera']
@@ -915,6 +988,7 @@ def test_succeed_template_rule_multiple_expansions():
     config_yaml = r"""
 templates:
   example_template:
+    - description: 'Example template with multiple expansions'
     - require: '{{component}}/'
       if_exists:
       - require: '{{component}}_component.{{extension}}'
@@ -923,11 +997,13 @@ templates:
         - require: '{{component}}.techspec.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_template: example_template
       parameters:
         component: ['lidar', 'driver']
         extension: ['rs']
   /subdir/:
+    - description: 'Subdirectory'
     - use_template: example_template
       parameters:
         component: ['control', 'camera']
@@ -956,11 +1032,13 @@ def test_succeed_with_verbose():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
     - allow: 'doc/'
       use_rule: base_structure
 templates:
   component:
+    - description: 'Component template'
     - require: '{{component}}/'
       if_exists:
       - require: '{{component}}_component.py'
@@ -970,6 +1048,7 @@ templates:
           - forbid: 'CMakeLists\.txt'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_template: component
       parameters:
         component: ['lidar']
@@ -996,6 +1075,7 @@ def test_forbid_file():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with forbidden file'
     - require: 'README\.md'
     - forbid: 'CMakeLists\.txt'
     - require: 'python/'
@@ -1003,6 +1083,7 @@ structure_rules:
       - require: '.*\.py'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
@@ -1024,11 +1105,14 @@ def test_ignore_rule():
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
   /python/:
+    - description: 'Python directory'
     - use_rule: ignore
         """
     flags = Flags()
@@ -1052,11 +1136,14 @@ def test_warn_on_unused_structure_rule():  # pylint: disable=import-outside-topl
     config_yaml = r"""
 structure_rules:
   base_structure:
+    - description: 'Base structure with README'
     - require: 'README\\.md'
   unused_rule:
+    - description: 'Unused rule'
     - allow: 'NEVER_MATCHES\\.md'
 directory_map:
   /:
+    - description: 'Root directory'
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
