@@ -272,6 +272,56 @@ directory_map:
     dir_report = report.directory_reports[0]
     assert dir_report.directory == "/"
     assert dir_report.applied_rules == ["ignore"]
+    assert dir_report.rule_descriptions == [
+        "Builtin rule: Excludes this directory from structure validation"
+    ]
+
+
+def test_ignore_rule_description():
+    """Test that the ignore builtin rule gets proper description in reports."""
+    test_yaml = """
+structure_rules:
+  base_structure:
+    - description: 'Base structure rule'
+    - require: 'README\\.md'
+
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: base_structure
+  /.github/:
+    - description: 'GitHub directory'
+    - use_rule: ignore
+"""
+    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    report = generate_report(config)
+
+    # Find the .github directory report
+    github_report = next(
+        dr for dr in report.directory_reports if dr.directory == "/.github/"
+    )
+
+    assert github_report.applied_rules == ["ignore"]
+    assert github_report.rule_descriptions == [
+        "Builtin rule: Excludes this directory from structure validation"
+    ]
+
+    # Verify it appears correctly in formatted outputs
+    text_output = format_report_text(report)
+    assert (
+        "Builtin rule: Excludes this directory from structure validation" in text_output
+    )
+
+    json_output = format_report_json(report)
+    assert (
+        "Builtin rule: Excludes this directory from structure validation" in json_output
+    )
+
+    markdown_output = format_report_markdown(report)
+    assert (
+        "Builtin rule: Excludes this directory from structure validation"
+        in markdown_output
+    )
 
 
 def test_sorting():
