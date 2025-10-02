@@ -1,7 +1,6 @@
 # pylint: disable=duplicate-code
 """Tests for diff-scan subcommand."""
 
-import pytest
 
 from .repo_structure_lib import Flags
 from .repo_structure_config import Configuration
@@ -181,13 +180,21 @@ directory_map:
     assert issue.code == "unspecified_entry"
 
 
-@pytest.mark.skip(reason="Temporarily disabled")
 def test_skip_file():
     """Test skipping file for diff scan."""
-    config_filname = "repo_structure.yaml"
-    config = Configuration(config_filname)
+    config_yaml = r"""
+structure_rules:
+    base_structure:
+    - description: 'Base structure with README'
+    - require: 'README\.md'
+directory_map:
+    /:
+    - description: 'Root directory'
+    - use_rule: base_structure
+"""
+    config = Configuration(config_yaml, param1_is_yaml_string=True)
     processor = DiffScanProcessor(config)
-    assert processor.check_path("repo_structure.yaml") is None
+    assert processor.check_path(".gitignore") is None
 
 
 def test_ignore_rule():
