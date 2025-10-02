@@ -131,6 +131,56 @@ directory_map:
         Configuration(test_yaml, True)
 
 
+def test_fail_parse_missing_description_in_structure_rule():
+    """Test failing parsing when structure rule is missing description."""
+    test_yaml = r"""
+structure_rules:
+  base_structure:
+    - require: "README.md"
+
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: base_structure
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_yaml, True)
+
+
+def test_fail_parse_missing_description_in_directory_map():
+    """Test failing parsing when directory map is missing description."""
+    test_yaml = r"""
+structure_rules:
+  base_structure:
+    - description: 'Base structure'
+    - require: "README.md"
+
+directory_map:
+  /:
+    - use_rule: base_structure
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_yaml, True)
+
+
+def test_fail_parse_missing_description_in_template():
+    """Test failing parsing when template is missing description."""
+    test_yaml = r"""
+templates:
+  some_template:
+    - require: '{{param}}.md'
+
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_template: some_template
+      parameters:
+        param: ['test']
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_yaml, True)
+
+
 def test_fail_parse_dangling_use_rule_in_directory_map():
     """Test failing parsing of the structure rules with dangling use_rule."""
     test_yaml = r"""
