@@ -77,10 +77,16 @@ def _generate_directory_reports(
     reports = []
 
     for directory, rules in directory_map.items():
-        rule_descriptions = [
-            structure_rule_descriptions.get(rule, "No description provided")
-            for rule in rules
-        ]
+        rule_descriptions = []
+        for rule in rules:
+            if rule == "ignore":
+                rule_descriptions.append(
+                    "Builtin rule: Excludes this directory from structure validation"
+                )
+            else:
+                rule_descriptions.append(
+                    structure_rule_descriptions.get(rule, "No description provided")
+                )
 
         reports.append(
             DirectoryReport(
