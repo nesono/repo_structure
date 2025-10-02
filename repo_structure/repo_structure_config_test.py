@@ -181,6 +181,76 @@ directory_map:
         Configuration(test_yaml, True)
 
 
+def test_fail_parse_double_description_in_structure_rule():
+    """Test failing parsing when structure rule has two description entries."""
+    test_yaml = r"""
+structure_rules:
+  base_structure:
+    - description: 'First description'
+    - description: 'Second description'
+    - require: "README.md"
+
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: base_structure
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_yaml, True)
+
+
+def test_fail_parse_double_description_in_directory_map():
+    """Test failing parsing when directory map has two description entries."""
+    test_yaml = r"""
+structure_rules:
+  base_structure:
+    - description: 'Base structure'
+    - require: "README.md"
+
+directory_map:
+  /:
+    - description: 'First description'
+    - description: 'Second description'
+    - use_rule: base_structure
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_yaml, True)
+
+
+def test_fail_parse_description_not_first_in_structure_rule():
+    """Test failing parsing when description is not the first entry in structure rule."""
+    test_yaml = r"""
+structure_rules:
+  base_structure:
+    - require: "README.md"
+    - description: 'Base structure'
+
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: base_structure
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_yaml, True)
+
+
+def test_fail_parse_description_not_first_in_directory_map():
+    """Test failing parsing when description is not the first entry in directory map."""
+    test_yaml = r"""
+structure_rules:
+  base_structure:
+    - description: 'Base structure'
+    - require: "README.md"
+
+directory_map:
+  /:
+    - use_rule: base_structure
+    - description: 'Root directory'
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration(test_yaml, True)
+
+
 def test_fail_parse_dangling_use_rule_in_directory_map():
     """Test failing parsing of the structure rules with dangling use_rule."""
     test_yaml = r"""
