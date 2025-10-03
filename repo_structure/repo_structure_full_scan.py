@@ -21,6 +21,7 @@ from .repo_structure_lib import (
     join_path_normalized,
     ScanIssue,
     get_matching_item_index,
+    check_companion_files,
 )
 
 
@@ -117,6 +118,13 @@ class FullScanProcessor:
             idx = match_result.index
             assert idx is not None  # Type hint for mypy
             backlog[idx].count += 1
+
+            # Check for required companion files
+            companion_issue = check_companion_files(
+                entry.path, backlog[idx], rel_dir, self.flags.verbose
+            )
+            if companion_issue:
+                errors.append(companion_issue)
 
             if os_entry.is_dir():
                 errors.extend(self._process_subdirectory(rel_dir, entry, backlog, idx))

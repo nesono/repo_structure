@@ -354,3 +354,55 @@ def get_matching_item_index(
             path=entry_path,
         ),
     )
+
+
+def check_companion_files(
+    entry_name: str,
+    matched_entry: RepoEntry,
+    rel_dir: str,
+    verbose: bool = False,
+) -> ScanIssue | None:
+    """Check if required companion files exist for a matched entry.
+
+    Args:
+        entry_name: Name of the file that was matched
+        matched_entry: The RepoEntry that was matched
+        rel_dir: Relative directory where the file exists
+        verbose: Enable verbose output
+
+    Returns:
+        ScanIssue if a required companion is missing, None otherwise
+    """
+    if not matched_entry.requires_companion:
+        return None
+
+    # Extract captures from the matched pattern
+    captures = extract_pattern_captures(matched_entry.path, entry_name)
+    if not captures:
+        # Pattern doesn't have named groups, skip companion check
+        return None
+
+    # Expand companion requirements with captured values
+    expanded_companions = expand_companion_requirements(
+        matched_entry.requires_companion, captures
+    )
+
+    # Check if required companions exist
+    for companion in expanded_companions:
+        if not companion.is_required:
+            continue
+
+        companion_path = join_path_normalized(rel_dir, companion.path.pattern)
+
+        if verbose:
+            print(f"  Checking for required companion: {companion_path}")
+
+        if not os.path.exists(companion_path):
+            return ScanIssue(
+                severity="error",
+                code="missing_companion",
+                message=f"Missing required companion file: {companion.path.pattern}",
+                path=entry_name,
+            )
+
+    return None
