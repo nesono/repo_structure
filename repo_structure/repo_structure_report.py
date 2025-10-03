@@ -354,16 +354,16 @@ def format_report_markdown(report: ConfigurationReport) -> str:
         lines.append("## Repository Information")
         lines.append("")
         if report.repository_info.repository_name:
-            lines.append(f"**Repository:** {report.repository_info.repository_name}  ")
+            lines.append(f"**Repository:** {report.repository_info.repository_name}")
         if report.repository_info.branch:
-            lines.append(f"**Branch:** {report.repository_info.branch}  ")
+            lines.append(f"**Branch:** {report.repository_info.branch}")
         if report.repository_info.commit_hash:
-            lines.append(f"**Commit:** `{report.repository_info.commit_hash}`  ")
+            lines.append(f"**Commit:** `{report.repository_info.commit_hash}`")
         if report.repository_info.commit_date:
             lines.append(f"**Date:** {report.repository_info.commit_date}")
         lines.append("")
 
-    lines.append(f"**Total Directories:** {report.total_directories}  ")
+    lines.append(f"**Total Directories:** {report.total_directories}")
     lines.append(f"**Total Structure Rules:** {report.total_structure_rules}")
     lines.append("")
 
