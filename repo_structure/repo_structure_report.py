@@ -269,8 +269,6 @@ def format_report_text(report: ConfigurationReport) -> str:
             lines.append(f"Date: {report.repository_info.commit_date}")
         lines.append("")
 
-    lines.append(f"Total Directories: {report.total_directories}")
-    lines.append(f"Total Structure Rules: {report.total_structure_rules}")
     lines.append("")
 
     # Directory dimension
@@ -337,6 +335,32 @@ def format_report_json(report: ConfigurationReport) -> str:
     return json.dumps(report_dict, indent=2)
 
 
+def _format_repository_info_markdown(repo_info: RepositoryInfo) -> list[str]:
+    """Format repository information as a markdown table.
+
+    Args:
+        repo_info: The repository information to format.
+
+    Returns:
+        List of formatted lines for the repository info table.
+    """
+    lines = []
+    lines.append("## Repository Information")
+    lines.append("")
+    lines.append("| Property | Value |")
+    lines.append("|----------|-------|")
+    if repo_info.repository_name:
+        lines.append(f"| Repository | {repo_info.repository_name} |")
+    if repo_info.branch:
+        lines.append(f"| Branch | {repo_info.branch} |")
+    if repo_info.commit_hash:
+        lines.append(f"| Commit | `{repo_info.commit_hash}` |")
+    if repo_info.commit_date:
+        lines.append(f"| Date | {repo_info.commit_date} |")
+    lines.append("")
+    return lines
+
+
 def format_report_markdown(report: ConfigurationReport) -> str:
     """Format the report as Markdown.
 
@@ -374,21 +398,7 @@ def format_report_markdown(report: ConfigurationReport) -> str:
     lines.append("")
 
     if report.repository_info:
-        lines.append("## Repository Information")
-        lines.append("")
-        if report.repository_info.repository_name:
-            lines.append(f"**Repository:** {report.repository_info.repository_name}")
-        if report.repository_info.branch:
-            lines.append(f"**Branch:** {report.repository_info.branch}")
-        if report.repository_info.commit_hash:
-            lines.append(f"**Commit:** `{report.repository_info.commit_hash}`")
-        if report.repository_info.commit_date:
-            lines.append(f"**Date:** {report.repository_info.commit_date}")
-        lines.append("")
-
-    lines.append(f"**Total Directories:** {report.total_directories}")
-    lines.append(f"**Total Structure Rules:** {report.total_structure_rules}")
-    lines.append("")
+        lines.extend(_format_repository_info_markdown(report.repository_info))
 
     # Directory dimension
     lines.append("## Directory Mappings")
