@@ -7,10 +7,10 @@ exclude: |
   )$
 
 repos:
-  # - repo: https://github.com/nesono/repo_structure
-  #   rev: "v0.7.1"
-  #   hooks:
-  #     - id: diff
+  - repo: https://github.com/nesono/repo_structure
+    rev: "v0.7.1"
+    hooks:
+      - id: diff
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
