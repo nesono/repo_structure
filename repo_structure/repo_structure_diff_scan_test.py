@@ -1,6 +1,7 @@
 # pylint: disable=duplicate-code
 """Tests for diff-scan subcommand."""
 
+import os
 
 from .repo_structure_lib import Flags
 from .repo_structure_config import Configuration
@@ -263,3 +264,76 @@ directory_map:
     assert "invalid.py" in issue_paths
     assert "CMakeLists.txt" in issue_paths
     assert "another_invalid.txt" in issue_paths
+
+
+def test_requires_companion_check(tmp_path):
+    """Test that requires_companion validates companion files exist."""
+    test_yaml = r"""
+structure_rules:
+  cpp_with_headers:
+    - description: 'C++ files with required headers'
+    - allow: '(?P<base>.*)\.cpp'
+      requires_companion:
+        - require: '{{base}}.h'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_headers
+"""
+    # Create test files
+    (tmp_path / "widget.cpp").touch()
+    (tmp_path / "widget.h").touch()  # Has companion
+    (tmp_path / "engine.cpp").touch()  # Missing companion
+
+    # Change to tmp_path for the test
+    os.chdir(tmp_path)
+    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    scanner = DiffScanProcessor(config)
+
+    # widget.cpp should pass (has widget.h)
+    issue = scanner.check_path("widget.cpp")
+    assert issue is None
+
+    # engine.cpp should fail (missing engine.h)
+    issue = scanner.check_path("engine.cpp")
+    assert issue is not None
+    assert "engine.h" in issue.message
+    assert "Missing required companion" in issue.message
+
+
+def test_requires_companion_multiple(tmp_path):
+    """Test multiple companion requirements."""
+    test_yaml = r"""
+structure_rules:
+  cpp_with_test:
+    - description: 'C++ with header and test'
+    - allow: '(?P<base>.*)\.cpp'
+      requires_companion:
+        - require: '{{base}}.h'
+        - require: '{{base}}_test.cpp'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_test
+"""
+    # Create test files
+    (tmp_path / "lib.cpp").touch()
+    (tmp_path / "lib.h").touch()
+    (tmp_path / "lib_test.cpp").touch()  # Has all companions
+
+    (tmp_path / "util.cpp").touch()
+    (tmp_path / "util.h").touch()  # Missing test
+
+    # Change to tmp_path for the test
+    os.chdir(tmp_path)
+    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    scanner = DiffScanProcessor(config)
+
+    # lib.cpp should pass
+    issue = scanner.check_path("lib.cpp")
+    assert issue is None
+
+    # util.cpp should fail (missing util_test.cpp)
+    issue = scanner.check_path("util.cpp")
+    assert issue is not None
+    assert "util_test.cpp" in issue.message

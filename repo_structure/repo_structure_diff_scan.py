@@ -22,6 +22,7 @@ from .repo_structure_lib import (
     join_path_normalized,
     ScanIssue,
     get_matching_item_index,
+    check_companion_files,
 )
 
 
@@ -90,11 +91,18 @@ class DiffScanProcessor:
             if self.flags.verbose:
                 print(f"  Found match for path '{entry_name}'")
 
+            # Check for required companion files
+            idx = match_result.index
+            assert idx is not None  # Type hint for mypy
+            backlog_match = backlog[idx]
+
+            companion_issue = check_companion_files(
+                entry_name, backlog_match, rel_dir, self.flags.verbose
+            )
+            if companion_issue:
+                return companion_issue
+
             if is_dir:
-                # At this point we know match_result.index is not None since success is True
-                idx = match_result.index
-                assert idx is not None  # Type hint for mypy
-                backlog_match = backlog[idx]
                 backlog = expand_use_rule(
                     backlog_match.use_rule,
                     self.config.structure_rules,
