@@ -268,9 +268,9 @@ directory_map:
     report = generate_report(config)
 
     assert report.total_directories == 1
-    assert report.total_structure_rules == 1  # dummy_rule is counted
+    assert report.total_structure_rules == 2  # dummy_rule and ignore are counted
     assert len(report.directory_reports) == 1
-    assert len(report.structure_rule_reports) == 1
+    assert len(report.structure_rule_reports) == 2  # dummy_rule and ignore
 
     dir_report = report.directory_reports[0]
     assert dir_report.directory == "/"
@@ -278,6 +278,18 @@ directory_map:
     assert dir_report.rule_descriptions == [
         "Builtin rule: Excludes this directory from structure validation"
     ]
+
+    # Check that ignore rule has its own section
+    ignore_rule = next(
+        r for r in report.structure_rule_reports if r.rule_name == "ignore"
+    )
+    assert (
+        ignore_rule.description
+        == "Builtin rule: Excludes this directory from structure validation"
+    )
+    assert ignore_rule.rule_count == 0
+    assert ignore_rule.patterns == []
+    assert ignore_rule.applied_directories == ["/"]
 
 
 def test_ignore_rule_description():

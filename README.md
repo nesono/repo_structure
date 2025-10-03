@@ -86,6 +86,62 @@ The following modes are available with Repo Structure:
 Note that the full scan hooks might take longer time than you are willing to spend during `pre-commit`.
 You can enable then for the `pre-push` stage only, or you can run the tool in the terminal installed from pip.
 
+## Configuration Report
+
+You can generate a comprehensive report of your repository structure configuration that visualizes how directories are mapped to rules and what those rules enforce.
+
+### Generating Reports
+
+Generate reports using the command line:
+
+```bash
+repo_structure report --format markdown -o report.md
+repo_structure report --format text -o report.txt
+repo_structure report --format json -o report.json
+```
+
+By default, the report is output in text format to stdout. You can specify a custom configuration file:
+
+```bash
+repo_structure report --config-path path/to/config.yaml --format markdown -o report.md
+```
+
+### Report Contents
+
+The report includes:
+
+- **Repository Information**: Branch name, commit hash, and date
+- **Directory Mappings**: Shows each directory and which structure rules apply to it
+- **Structure Rules**: Details each rule's description, patterns, and which directories use it
+- **Cross-references**: In markdown format, rules and directories are linked for easy navigation
+
+### Example Markdown Report
+
+The markdown report generates clickable links between directories and rules:
+
+```markdown
+## Directory Mappings
+
+### Directory: `/` {#dir-root}
+
+**Applied Rules:**
+
+- [`base_structure`](#rule-base_structure): Core project files
+
+## Structure Rules
+
+### Rule: `base_structure` {#rule-base_structure}
+
+**Patterns:**
+
+- `require: LICENSE`
+- `require: README\.md`
+
+**Applied to Directories:**
+
+- [`/`](#dir-root): Root directory
+```
+
 ## Configuration Overall structure
 
 The configuration files consists of three sections:

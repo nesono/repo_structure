@@ -210,6 +210,28 @@ def _generate_structure_rule_reports(
 
     reports = []
 
+    # Check if 'ignore' rule is used anywhere
+    ignore_directories = [
+        directory for directory, rules in directory_map.items() if "ignore" in rules
+    ]
+
+    # Add built-in 'ignore' rule if it's used
+    if ignore_directories:
+        directory_descs = [
+            directory_descriptions.get(directory, "No description provided")
+            for directory in ignore_directories
+        ]
+        reports.append(
+            StructureRuleReport(
+                rule_name="ignore",
+                description="Builtin rule: Excludes this directory from structure validation",
+                applied_directories=ignore_directories,
+                directory_descriptions=directory_descs,
+                rule_count=0,
+                patterns=[],
+            )
+        )
+
     for rule_name, rule_entries in structure_rules.items():
         # Find directories that use this rule
         applied_directories = [
@@ -323,10 +345,13 @@ def _format_structure_rules_text(
     for rule_report in structure_rule_reports:
         lines.append(f"Rule: {rule_report.rule_name}")
         lines.append(f"  Description: {rule_report.description}")
-        lines.append(f"  Entry Count: {rule_report.rule_count}")
-        lines.append("  Patterns:")
-        for pattern in rule_report.patterns:
-            lines.append(f"    - {pattern}")
+
+        # Only show entry count and patterns if there are any
+        if rule_report.rule_count > 0:
+            lines.append(f"  Entry Count: {rule_report.rule_count}")
+            lines.append("  Patterns:")
+            for pattern in rule_report.patterns:
+                lines.append(f"    - {pattern}")
 
         display_dirs = [
             _normalize_directory_display(d) for d in rule_report.applied_directories
@@ -467,34 +492,48 @@ def format_report_markdown(report: ConfigurationReport) -> str:
     lines.append("")
     for dir_report in report.directory_reports:
         display_dir = _normalize_directory_display(dir_report.directory)
-        lines.append(f"### Directory: `{display_dir}`")
+        # Create anchor for this directory
+        dir_anchor = dir_report.directory.strip("/").replace("/", "-") or "root"
+        lines.append(f"### Directory: `{display_dir}` {{#dir-{dir_anchor}}}")
         lines.append("")
         lines.append(f"**Description:** {dir_report.description}")
         lines.append("")
         lines.append("**Applied Rules:**")
         for rule, desc in zip(dir_report.applied_rules, dir_report.rule_descriptions):
-            lines.append(f"- `{rule}`: {desc}")
+            # Link to the rule section
+            lines.append(f"- [`{rule}`](#rule-{rule}): {desc}")
         lines.append("")
 
     # Structure rule dimension
     lines.append("## Structure Rules")
     lines.append("")
     for rule_report in report.structure_rule_reports:
-        lines.append(f"### Rule: `{rule_report.rule_name}`")
+        # Create anchor for this rule
+        lines.append(
+            f"### Rule: `{rule_report.rule_name}` {{#rule-{rule_report.rule_name}}}"
+        )
         lines.append("")
         lines.append(f"**Description:** {rule_report.description}")
-        lines.append(f"**Entry Count:** {rule_report.rule_count}")
-        lines.append("")
-        lines.append("**Patterns:**")
-        for pattern in rule_report.patterns:
-            lines.append(f"- `{pattern}`")
-        lines.append("")
+
+        # Only show entry count and patterns if there are any
+        if rule_report.rule_count > 0:
+            lines.append(f"**Entry Count:** {rule_report.rule_count}")
+            lines.append("")
+            lines.append("**Patterns:**")
+            for pattern in rule_report.patterns:
+                lines.append(f"- `{pattern}`")
+            lines.append("")
+        else:
+            lines.append("")
+
         lines.append("**Applied to Directories:**")
         for directory, desc in zip(
             rule_report.applied_directories, rule_report.directory_descriptions
         ):
             display_dir = _normalize_directory_display(directory)
-            lines.append(f"- `{display_dir}`: {desc}")
+            # Link back to the directory section
+            dir_anchor = directory.strip("/").replace("/", "-") or "root"
+            lines.append(f"- [`{display_dir}`](#dir-{dir_anchor}): {desc}")
         lines.append("")
 
     return "\n".join(lines)
