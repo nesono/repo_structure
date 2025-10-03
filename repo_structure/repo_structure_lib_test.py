@@ -23,6 +23,9 @@ from .repo_structure_lib import (
     Entry,
     RepoEntry,
     Flags,
+    substitute_pattern_captures,
+    extract_pattern_captures,
+    expand_companion_requirements,
 )
 
 
@@ -498,3 +501,106 @@ class TestMapDirToEntryBacklog:
         result = map_dir_to_entry_backlog(directory_map, structure_rules, "/app/")
         assert len(result) == 1
         assert result[0].path.pattern == ".*\\.py"
+
+
+class TestPatternCaptureAndSubstitution:
+    """Test pattern capture and substitution functions."""
+
+    def test_substitute_pattern_captures_single_capture(self):
+        """Test substituting a single captured value."""
+        pattern_template = "{{base}}.h"
+        captures = {"base": "foo"}
+        result = substitute_pattern_captures(pattern_template, captures)
+        assert result == "foo.h"
+
+    def test_substitute_pattern_captures_multiple_captures(self):
+        """Test substituting multiple captured values."""
+        pattern_template = "{{dir}}/{{base}}.{{ext}}"
+        captures = {"dir": "src", "base": "main", "ext": "cpp"}
+        result = substitute_pattern_captures(pattern_template, captures)
+        assert result == "src/main.cpp"
+
+    def test_substitute_pattern_captures_no_captures(self):
+        """Test pattern with no placeholders."""
+        pattern_template = "fixed.txt"
+        captures = {"base": "foo"}
+        result = substitute_pattern_captures(pattern_template, captures)
+        assert result == "fixed.txt"
+
+    def test_extract_pattern_captures_simple(self):
+        """Test extracting captures from a simple pattern."""
+        pattern = re.compile(r"(?P<base>.*)\.cpp")
+        captures = extract_pattern_captures(pattern, "foo.cpp")
+        assert captures == {"base": "foo"}
+
+    def test_extract_pattern_captures_multiple_groups(self):
+        """Test extracting multiple capture groups."""
+        pattern = re.compile(r"(?P<dir>.*)/(?P<base>.*)\.(?P<ext>.*)")
+        captures = extract_pattern_captures(pattern, "src/main.cpp")
+        assert captures == {"dir": "src", "base": "main", "ext": "cpp"}
+
+    def test_extract_pattern_captures_no_match(self):
+        """Test extraction when pattern doesn't match."""
+        pattern = re.compile(r"(?P<base>.*)\.cpp")
+        captures = extract_pattern_captures(pattern, "foo.h")
+        assert captures is None
+
+    def test_extract_pattern_captures_partial_match(self):
+        """Test that partial matches don't count (uses fullmatch)."""
+        pattern = re.compile(r"(?P<base>.*)\.cpp")
+        captures = extract_pattern_captures(pattern, "foo.cpp.bak")
+        assert captures is None
+
+    def test_expand_companion_requirements_simple(self):
+        """Test expanding companion requirements with captures."""
+        companion_template = RepoEntry(
+            path=re.compile("{{base}}.h"),
+            is_dir=False,
+            is_required=True,
+            is_forbidden=False,
+        )
+        captures = {"base": "foo"}
+        expanded = expand_companion_requirements([companion_template], captures)
+
+        assert len(expanded) == 1
+        assert expanded[0].path.pattern == "foo.h"
+        assert expanded[0].is_required
+
+    def test_expand_companion_requirements_multiple(self):
+        """Test expanding multiple companion requirements."""
+        companions = [
+            RepoEntry(
+                path=re.compile("{{base}}.h"),
+                is_dir=False,
+                is_required=True,
+                is_forbidden=False,
+            ),
+            RepoEntry(
+                path=re.compile("{{base}}_test.cpp"),
+                is_dir=False,
+                is_required=False,
+                is_forbidden=False,
+            ),
+        ]
+        captures = {"base": "widget"}
+        expanded = expand_companion_requirements(companions, captures)
+
+        assert len(expanded) == 2
+        assert expanded[0].path.pattern == "widget.h"
+        assert expanded[0].is_required
+        assert expanded[1].path.pattern == "widget_test.cpp"
+        assert not expanded[1].is_required
+
+    def test_expand_companion_requirements_invalid_pattern(self):
+        """Test that invalid patterns after substitution are skipped."""
+        companion_template = RepoEntry(
+            path=re.compile("{{base}}\\.h"),  # Valid template
+            is_dir=False,
+            is_required=True,
+            is_forbidden=False,
+        )
+        captures = {"base": "foo(bar"}  # Will create invalid pattern "foo(bar.h"
+        expanded = expand_companion_requirements([companion_template], captures)
+
+        # Should skip the invalid pattern
+        assert len(expanded) == 0
