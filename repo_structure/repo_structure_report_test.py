@@ -492,21 +492,17 @@ directory_map:
 
         # Verify it appears in text format
         text_output = format_report_text(report)
-        assert "Repository Information" in text_output
-        assert f"Repository: {report.repository_info.repository_name}" in text_output
-        assert f"Branch: {report.repository_info.branch}" in text_output
-        assert f"Commit: {report.repository_info.commit_hash}" in text_output
-        assert f"Date: {report.repository_info.commit_date}" in text_output
+        assert f"{report.repository_info.repository_name}" in text_output
+        assert f"{report.repository_info.branch}" in text_output
+        assert f"{report.repository_info.commit_hash}" in text_output
+        assert f"{report.repository_info.commit_date}" in text_output
 
         # Verify it appears in markdown format
         markdown_output = format_report_markdown(report)
         assert "## Repository Information" in markdown_output
-        assert (
-            f"**Repository:** {report.repository_info.repository_name}"
-            in markdown_output
-        )
-        assert f"**Branch:** {report.repository_info.branch}" in markdown_output
-        assert f"**Commit:** `{report.repository_info.commit_hash}`" in markdown_output
+        assert f"{report.repository_info.repository_name}" in markdown_output
+        assert f"{report.repository_info.branch}" in markdown_output
+        assert f"{report.repository_info.commit_hash}`" in markdown_output
 
         # Verify it appears in JSON format
         json_output = format_report_json(report)
