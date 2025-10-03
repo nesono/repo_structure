@@ -350,6 +350,29 @@ def format_report_markdown(report: ConfigurationReport) -> str:
     lines.append("# Repository Structure Configuration Report")
     lines.append("")
 
+    lines.append("## Introduction")
+    lines.append("")
+    lines.append(
+        "This report provides a comprehensive view of your repository's "
+        "structure validation configuration. "
+        "It shows how directories are mapped to rules and what those rules enforce."
+    )
+    lines.append("")
+    lines.append(
+        "**Directory Maps** define which structure rules apply to specific "
+        "directories in your repository. "
+        "They map directory paths to the validation rules that govern their contents."
+    )
+    lines.append("")
+    lines.append(
+        "**Structure Rules** specify what files and directories are allowed, "
+        "required, or forbidden within a directory. "
+        "Each rule consists of patterns that match against file paths using "
+        "[Python regular expressions]"
+        "(https://docs.python.org/3/library/re.html#regular-expression-syntax)."
+    )
+    lines.append("")
+
     if report.repository_info:
         lines.append("## Repository Information")
         lines.append("")
