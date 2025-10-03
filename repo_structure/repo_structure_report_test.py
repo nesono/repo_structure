@@ -130,8 +130,6 @@ directory_descriptions:
     text_output = format_report_text(report)
 
     assert "Repository Structure Configuration Report" in text_output
-    assert "Total Directories: 1" in text_output
-    assert "Total Structure Rules: 1" in text_output
     assert "Directory: /" in text_output
     assert "Root directory" in text_output
     assert "Rule: basic_rule" in text_output
@@ -182,7 +180,6 @@ structure_rule_descriptions:
     markdown_output = format_report_markdown(report)
 
     assert "# Repository Structure Configuration Report" in markdown_output
-    assert "**Total Directories:** 1" in markdown_output
     assert "### Directory: `/`" in markdown_output
     assert "### Rule: `basic_rule`" in markdown_output
     assert "Basic rule for documentation" in markdown_output

@@ -269,8 +269,6 @@ def format_report_text(report: ConfigurationReport) -> str:
             lines.append(f"Date: {report.repository_info.commit_date}")
         lines.append("")
 
-    lines.append(f"Total Directories: {report.total_directories}")
-    lines.append(f"Total Structure Rules: {report.total_structure_rules}")
     lines.append("")
 
     # Directory dimension

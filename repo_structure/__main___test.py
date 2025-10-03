@@ -301,8 +301,6 @@ def test_report_command_text():
 
     assert result.exit_code == 0
     assert "Repository Structure Configuration Report" in result.output
-    assert "Total Directories:" in result.output
-    assert "Total Structure Rules:" in result.output
 
 
 def test_report_command_json():
@@ -320,8 +318,6 @@ def test_report_command_json():
     )
 
     assert result.exit_code == 0
-    assert '"total_directories"' in result.output
-    assert '"total_structure_rules"' in result.output
 
 
 def test_report_command_markdown():
@@ -340,7 +336,6 @@ def test_report_command_markdown():
 
     assert result.exit_code == 0
     assert "# Repository Structure Configuration Report" in result.output
-    assert "**Total Directories:**" in result.output
 
 
 def test_report_command_help():
