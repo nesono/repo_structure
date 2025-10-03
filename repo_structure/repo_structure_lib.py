@@ -112,6 +112,93 @@ def map_dir_to_rel_dir(map_dir: str) -> str:
     return map_dir[1:-1]
 
 
+def substitute_pattern_captures(pattern_template: str, captures: dict[str, str]) -> str:
+    """Substitute captured group values into a pattern template.
+
+    Args:
+        pattern_template: Pattern string with {{name}} placeholders
+        captures: Dictionary mapping capture group names to their values
+
+    Returns:
+        Pattern string with placeholders replaced by captured values
+
+    Example:
+        >>> substitute_pattern_captures("{{base}}.h", {"base": "foo"})
+        'foo.h'
+    """
+    result = pattern_template
+    for name, value in captures.items():
+        placeholder = f"{{{{{name}}}}}"
+        result = result.replace(placeholder, value)
+    return result
+
+
+def extract_pattern_captures(
+    pattern: re.Pattern, filename: str
+) -> dict[str, str] | None:
+    r"""Extract named group captures from a pattern match.
+
+    Args:
+        pattern: Compiled regex pattern with named groups
+        filename: Filename to match against the pattern
+
+    Returns:
+        Dictionary of captured group names to values, or None if no match
+
+    Example:
+        >>> pattern = re.compile(r'(?P<base>.*)\.cpp')
+        >>> extract_pattern_captures(pattern, 'foo.cpp')
+        {'base': 'foo'}
+    """
+    match = pattern.fullmatch(filename)
+    if match:
+        return match.groupdict()
+    return None
+
+
+def expand_companion_requirements(
+    companion_templates: list["RepoEntry"], captures: dict[str, str]
+) -> list["RepoEntry"]:
+    """Expand companion requirement templates with captured values.
+
+    Args:
+        companion_templates: List of RepoEntry templates with {{name}} placeholders
+        captures: Dictionary of captured group values
+
+    Returns:
+        List of RepoEntry objects with patterns substituted
+
+    Example:
+        If companion has pattern "{{base}}.h" and captures = {"base": "foo"},
+        returns RepoEntry with pattern "foo.h"
+    """
+    expanded = []
+    for template in companion_templates:
+        # Substitute captures in the pattern
+        expanded_pattern = substitute_pattern_captures(template.path.pattern, captures)
+
+        # Create a new RepoEntry with the expanded pattern
+        try:
+            compiled_pattern = re.compile(expanded_pattern)
+        except re.error:
+            # If pattern compilation fails, skip this companion
+            continue
+
+        expanded_entry = RepoEntry(
+            path=compiled_pattern,
+            is_dir=template.is_dir,
+            is_required=template.is_required,
+            is_forbidden=template.is_forbidden,
+            use_rule=template.use_rule,
+            if_exists=template.if_exists,
+            requires_companion=template.requires_companion,
+            count=0,
+        )
+        expanded.append(expanded_entry)
+
+    return expanded
+
+
 def skip_entry(
     entry: Entry,
     directory_map: DirectoryMap,
