@@ -275,6 +275,14 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
 
 @repo_structure.command()
 @click.option(
+    "--repo-root",
+    "-r",
+    type=click.Path(exists=True, file_okay=False),
+    help="The path to the repository root.",
+    default=".",
+    show_default=True,
+)
+@click.option(
     "--config-path",
     "-c",
     type=click.Path(exists=True),
@@ -299,12 +307,17 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
 )
 @click.pass_context
 def report(
-    ctx: click.Context, config_path: str, output_format: str, output: str | None
+    ctx: click.Context,
+    repo_root: str,
+    config_path: str,
+    output_format: str,
+    output: str | None,
 ) -> None:
     """Generate a report of the configuration structure.
 
     This command analyzes the configuration file and generates a comprehensive
     report showing:
+    - Repository information (name, branch, commit hash and date)
     - Directory mappings and their descriptions
     - Structure rules and their descriptions
     - Which rules are applied to which directories
@@ -315,7 +328,7 @@ def report(
     flags = ctx.obj
 
     config = _load_configuration(config_path, flags.verbose)
-    report_data = generate_report(config)
+    report_data = generate_report(config, repo_root)
 
     formatted_report = format_report(
         report_data, cast(Literal["text", "json", "markdown"], output_format)
