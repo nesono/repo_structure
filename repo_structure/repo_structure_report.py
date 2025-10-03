@@ -386,7 +386,7 @@ def format_report_markdown(report: ConfigurationReport) -> str:
     for rule_report in report.structure_rule_reports:
         lines.append(f"### Rule: `{rule_report.rule_name}`")
         lines.append("")
-        lines.append(f"**Description:** {rule_report.description}  ")
+        lines.append(f"**Description:** {rule_report.description}")
         lines.append(f"**Entry Count:** {rule_report.rule_count}")
         lines.append("")
         lines.append("**Patterns:**")
