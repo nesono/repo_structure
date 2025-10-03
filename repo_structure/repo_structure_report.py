@@ -242,6 +242,106 @@ def _generate_structure_rule_reports(
     return sorted(reports, key=lambda x: x.rule_name)
 
 
+def _normalize_directory_display(directory: str) -> str:
+    """Normalize directory path for display with trailing slash.
+
+    Args:
+        directory: Directory path to normalize
+
+    Returns:
+        Normalized directory path with trailing slash (or '/' for root)
+    """
+    display_dir = directory.lstrip("/").rstrip("/")
+    if not display_dir:
+        return "/"
+    return display_dir + "/"
+
+
+def _format_repository_info_text(repo_info: RepositoryInfo) -> list[str]:
+    """Format repository information section for text output.
+
+    Args:
+        repo_info: Repository information to format
+
+    Returns:
+        List of formatted text lines
+    """
+    lines = []
+    lines.append("Repository Information")
+    lines.append("-" * 22)
+    if repo_info.repository_name:
+        lines.append(f"Repository: {repo_info.repository_name}")
+    if repo_info.branch:
+        lines.append(f"Branch: {repo_info.branch}")
+    if repo_info.commit_hash:
+        lines.append(f"Commit: {repo_info.commit_hash}")
+    if repo_info.commit_date:
+        lines.append(f"Date: {repo_info.commit_date}")
+    lines.append("")
+    return lines
+
+
+def _format_directory_mappings_text(
+    directory_reports: list[DirectoryReport],
+) -> list[str]:
+    """Format directory mappings section for text output.
+
+    Args:
+        directory_reports: List of directory reports to format
+
+    Returns:
+        List of formatted text lines
+    """
+    lines = []
+    lines.append("Directory Mappings")
+    lines.append("-" * 20)
+    for dir_report in directory_reports:
+        display_dir = _normalize_directory_display(dir_report.directory)
+        lines.append(f"Directory: {display_dir}")
+        lines.append(f"  Description: {dir_report.description}")
+        lines.append(f"  Applied Rules: {', '.join(dir_report.applied_rules)}")
+        for rule, desc in zip(dir_report.applied_rules, dir_report.rule_descriptions):
+            lines.append(f"    - {rule}: {desc}")
+        lines.append("")
+    return lines
+
+
+def _format_structure_rules_text(
+    structure_rule_reports: list[StructureRuleReport],
+) -> list[str]:
+    """Format structure rules section for text output.
+
+    Args:
+        structure_rule_reports: List of structure rule reports to format
+
+    Returns:
+        List of formatted text lines
+    """
+    lines = []
+    lines.append("Structure Rules")
+    lines.append("-" * 15)
+    for rule_report in structure_rule_reports:
+        lines.append(f"Rule: {rule_report.rule_name}")
+        lines.append(f"  Description: {rule_report.description}")
+        lines.append(f"  Entry Count: {rule_report.rule_count}")
+        lines.append("  Patterns:")
+        for pattern in rule_report.patterns:
+            lines.append(f"    - {pattern}")
+
+        display_dirs = [
+            _normalize_directory_display(d) for d in rule_report.applied_directories
+        ]
+        lines.append(f"  Applied to Directories: {', '.join(display_dirs)}")
+
+        for directory, desc in zip(
+            rule_report.applied_directories, rule_report.directory_descriptions
+        ):
+            display_dir = _normalize_directory_display(directory)
+            lines.append(f"    - {display_dir}: {desc}")
+        lines.append("")
+    return lines
+
+
 def format_report_text(report: ConfigurationReport) -> str:
     """Format the report as plain text.
 
@@ -257,57 +357,11 @@ def format_report_text(report: ConfigurationReport) -> str:
     lines.append("")
 
     if report.repository_info:
-        lines.append("Repository Information")
-        lines.append("-" * 22)
-        if report.repository_info.repository_name:
-            lines.append(f"Repository: {report.repository_info.repository_name}")
-        if report.repository_info.branch:
-            lines.append(f"Branch: {report.repository_info.branch}")
-        if report.repository_info.commit_hash:
-            lines.append(f"Commit: {report.repository_info.commit_hash}")
-        if report.repository_info.commit_date:
-            lines.append(f"Date: {report.repository_info.commit_date}")
-        lines.append("")
+        lines.extend(_format_repository_info_text(report.repository_info))
 
     lines.append("")
-
-    # Directory dimension
-    lines.append("Directory Mappings")
-    lines.append("-" * 20)
-    for dir_report in report.directory_reports:
-        display_dir = dir_report.directory.rstrip("/")
-        if not display_dir:  # Handle root directory
-            display_dir = "/"
-        lines.append(f"Directory: {display_dir}")
-        lines.append(f"  Description: {dir_report.description}")
-        lines.append(f"  Applied Rules: {', '.join(dir_report.applied_rules)}")
-        for rule, desc in zip(dir_report.applied_rules, dir_report.rule_descriptions):
-            lines.append(f"    - {rule}: {desc}")
-        lines.append("")
-
-    # Structure rule dimension
-    lines.append("Structure Rules")
-    lines.append("-" * 15)
-    for rule_report in report.structure_rule_reports:
-        lines.append(f"Rule: {rule_report.rule_name}")
-        lines.append(f"  Description: {rule_report.description}")
-        lines.append(f"  Entry Count: {rule_report.rule_count}")
-        lines.append("  Patterns:")
-        for pattern in rule_report.patterns:
-            lines.append(f"    - {pattern}")
-        display_dirs = [
-            d.rstrip("/") if d.rstrip("/") else "/"
-            for d in rule_report.applied_directories
-        ]
-        lines.append(f"  Applied to Directories: {', '.join(display_dirs)}")
-        for directory, desc in zip(
-            rule_report.applied_directories, rule_report.directory_descriptions
-        ):
-            display_dir = directory.rstrip("/")
-            if not display_dir:
-                display_dir = "/"
-            lines.append(f"    - {display_dir}: {desc}")
-        lines.append("")
+    lines.extend(_format_directory_mappings_text(report.directory_reports))
+    lines.extend(_format_structure_rules_text(report.structure_rule_reports))
 
     return "\n".join(lines)
 
@@ -412,9 +466,7 @@ def format_report_markdown(report: ConfigurationReport) -> str:
     lines.append("## Directory Mappings")
     lines.append("")
     for dir_report in report.directory_reports:
-        display_dir = dir_report.directory.rstrip("/")
-        if not display_dir:  # Handle root directory
-            display_dir = "/"
+        display_dir = _normalize_directory_display(dir_report.directory)
         lines.append(f"### Directory: `{display_dir}`")
         lines.append("")
         lines.append(f"**Description:** {dir_report.description}")
@@ -441,9 +493,7 @@ def format_report_markdown(report: ConfigurationReport) -> str:
         for directory, desc in zip(
             rule_report.applied_directories, rule_report.directory_descriptions
         ):
-            display_dir = directory.rstrip("/")
-            if not display_dir:
-                display_dir = "/"
+            display_dir = _normalize_directory_display(directory)
             lines.append(f"- `{display_dir}`: {desc}")
         lines.append("")
 
