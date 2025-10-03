@@ -275,7 +275,10 @@ def format_report_text(report: ConfigurationReport) -> str:
     lines.append("Directory Mappings")
     lines.append("-" * 20)
     for dir_report in report.directory_reports:
-        lines.append(f"Directory: {dir_report.directory}")
+        display_dir = dir_report.directory.rstrip("/")
+        if not display_dir:  # Handle root directory
+            display_dir = "/"
+        lines.append(f"Directory: {display_dir}")
         lines.append(f"  Description: {dir_report.description}")
         lines.append(f"  Applied Rules: {', '.join(dir_report.applied_rules)}")
         for rule, desc in zip(dir_report.applied_rules, dir_report.rule_descriptions):
@@ -292,13 +295,18 @@ def format_report_text(report: ConfigurationReport) -> str:
         lines.append("  Patterns:")
         for pattern in rule_report.patterns:
             lines.append(f"    - {pattern}")
-        lines.append(
-            f"  Applied to Directories: {', '.join(rule_report.applied_directories)}"
-        )
+        display_dirs = [
+            d.rstrip("/") if d.rstrip("/") else "/"
+            for d in rule_report.applied_directories
+        ]
+        lines.append(f"  Applied to Directories: {', '.join(display_dirs)}")
         for directory, desc in zip(
             rule_report.applied_directories, rule_report.directory_descriptions
         ):
-            lines.append(f"    - {directory}: {desc}")
+            display_dir = directory.rstrip("/")
+            if not display_dir:
+                display_dir = "/"
+            lines.append(f"    - {display_dir}: {desc}")
         lines.append("")
 
     return "\n".join(lines)
@@ -404,7 +412,10 @@ def format_report_markdown(report: ConfigurationReport) -> str:
     lines.append("## Directory Mappings")
     lines.append("")
     for dir_report in report.directory_reports:
-        lines.append(f"### Directory: `{dir_report.directory}`")
+        display_dir = dir_report.directory.rstrip("/")
+        if not display_dir:  # Handle root directory
+            display_dir = "/"
+        lines.append(f"### Directory: `{display_dir}`")
         lines.append("")
         lines.append(f"**Description:** {dir_report.description}")
         lines.append("")
@@ -430,7 +441,10 @@ def format_report_markdown(report: ConfigurationReport) -> str:
         for directory, desc in zip(
             rule_report.applied_directories, rule_report.directory_descriptions
         ):
-            lines.append(f"- `{directory}`: {desc}")
+            display_dir = directory.rstrip("/")
+            if not display_dir:
+                display_dir = "/"
+            lines.append(f"- `{display_dir}`: {desc}")
         lines.append("")
 
     return "\n".join(lines)
