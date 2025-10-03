@@ -9,7 +9,8 @@
         "allow": { "type": "string" },
         "forbid": { "type": "string" },
         "if_exists": { "$ref": "#/$defs/if_exists_entries" },
-        "use_rule": { "type": "string" }
+        "use_rule": { "type": "string" },
+        "requires_companion": { "$ref": "#/$defs/companion_entries" }
       },
       "additionalProperties": false,
       "anyOf": [
@@ -17,6 +18,10 @@
         { "required": ["allow"] },
         { "required": ["forbid"] }
       ]
+    },
+    "companion_entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/directory_entry_item" }
     },
     "if_exists_entries": {
       "type": "array",

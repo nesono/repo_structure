@@ -265,12 +265,16 @@ def _get_is_required(entry: dict) -> bool:
 
 def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     if_exists = []
+    requires_companion = []
     entry_pattern = _get_pattern(entry)
 
     is_required = _get_is_required(entry)
 
     if "if_exists" in entry:
         if_exists = entry["if_exists"]
+
+    if "requires_companion" in entry:
+        requires_companion = entry["requires_companion"]
 
     is_dir = entry_pattern.endswith("/")
     entry_pattern = entry_pattern[0:-1] if is_dir else entry_pattern
@@ -291,6 +295,9 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     )
     for sub_entry in if_exists:
         result.if_exists.append(_parse_entry_to_repo_entry(sub_entry))
+
+    for sub_entry in requires_companion:
+        result.requires_companion.append(_parse_entry_to_repo_entry(sub_entry))
 
     return result
 
@@ -322,6 +329,10 @@ def _expand_template_entry(
         if "if_exists" in entry:
             entry["if_exists"] = _expand_template_entry(
                 entry["if_exists"], expansion_key, expansion_var
+            )
+        if "requires_companion" in entry:
+            entry["requires_companion"] = _expand_template_entry(
+                entry["requires_companion"], expansion_key, expansion_var
             )
         expanded_yaml.append(entry)
     return expanded_yaml

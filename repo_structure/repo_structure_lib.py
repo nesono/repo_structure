@@ -22,7 +22,7 @@ class TemplateError(Exception):
 
 
 @dataclass
-class RepoEntry:
+class RepoEntry:  # pylint: disable=too-many-instance-attributes
     """Wrapper for entries in the directory structure, that store the path
     as a string together with the entry type."""
 
@@ -32,6 +32,7 @@ class RepoEntry:
     is_forbidden: bool
     use_rule: str = ""
     if_exists: list["RepoEntry"] = field(default_factory=list)
+    requires_companion: list["RepoEntry"] = field(default_factory=list)
     count: int = 0
 
 
