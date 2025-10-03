@@ -1,5 +1,10 @@
 """Tests for repo_structure report functionality."""
 
+import tempfile
+import os
+import subprocess
+from pathlib import Path
+
 from .repo_structure_config import Configuration
 from .repo_structure_report import (
     generate_report,
@@ -7,6 +12,7 @@ from .repo_structure_report import (
     format_report_json,
     format_report_markdown,
     format_report,
+    get_repository_info,
 )
 
 
@@ -408,3 +414,136 @@ directory_map:
     # Note: JSON escapes backslashes, so \. becomes \\.
     assert "README" in json_output
     assert "patterns" in json_output
+
+
+def test_get_repository_info_non_git_directory():
+    """Test get_repository_info returns None for non-git directories."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        repo_info = get_repository_info(tmpdir)
+        assert repo_info is None
+
+
+def test_get_repository_info_git_repository():
+    """Test get_repository_info returns correct information for git repositories."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Initialize a git repository
+        subprocess.run(["git", "init"], cwd=tmpdir, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmpdir,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmpdir,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create an initial commit
+        test_file = Path(tmpdir) / "test.txt"
+        test_file.write_text("test")
+        subprocess.run(["git", "add", "."], cwd=tmpdir, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=tmpdir,
+            check=True,
+            capture_output=True,
+        )
+
+        # Get repository info
+        repo_info = get_repository_info(tmpdir)
+
+        # Verify the information
+        assert repo_info is not None
+        assert repo_info.repository_name == os.path.basename(tmpdir)
+        assert repo_info.branch  # Should have a branch (usually main or master)
+        assert repo_info.commit_hash  # Should have a commit hash
+        assert len(repo_info.commit_hash) == 40  # Git hash is 40 characters
+        assert repo_info.commit_date  # Should have a commit date
+
+
+def test_report_with_repository_info():
+    """Test that repository information appears in reports."""
+    test_yaml = """
+structure_rules:
+  basic_rule:
+    - description: 'Basic rule for documentation'
+    - require: 'README\\.md'
+
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: basic_rule
+"""
+    config = Configuration(test_yaml, param1_is_yaml_string=True)
+
+    # Generate report with current repository (should be a git repo)
+    report = generate_report(config, ".")
+
+    # Check that repository info is present (assuming we're in a git repo)
+    if report.repository_info:
+        assert report.repository_info.repository_name
+        assert report.repository_info.branch
+        assert report.repository_info.commit_hash
+        assert report.repository_info.commit_date
+
+        # Verify it appears in text format
+        text_output = format_report_text(report)
+        assert "Repository Information" in text_output
+        assert f"Repository: {report.repository_info.repository_name}" in text_output
+        assert f"Branch: {report.repository_info.branch}" in text_output
+        assert f"Commit: {report.repository_info.commit_hash}" in text_output
+        assert f"Date: {report.repository_info.commit_date}" in text_output
+
+        # Verify it appears in markdown format
+        markdown_output = format_report_markdown(report)
+        assert "## Repository Information" in markdown_output
+        assert (
+            f"**Repository:** {report.repository_info.repository_name}"
+            in markdown_output
+        )
+        assert f"**Branch:** {report.repository_info.branch}" in markdown_output
+        assert f"**Commit:** `{report.repository_info.commit_hash}`" in markdown_output
+
+        # Verify it appears in JSON format
+        json_output = format_report_json(report)
+        assert "repository_info" in json_output
+        assert report.repository_info.repository_name in json_output
+        assert report.repository_info.commit_hash in json_output
+
+
+def test_report_without_repository_info():
+    """Test that reports work correctly when repository info is unavailable."""
+    test_yaml = """
+structure_rules:
+  basic_rule:
+    - description: 'Basic rule for documentation'
+    - require: 'README\\.md'
+
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: basic_rule
+"""
+    config = Configuration(test_yaml, param1_is_yaml_string=True)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Generate report in a non-git directory
+        report = generate_report(config, tmpdir)
+
+        # Repository info should be None
+        assert report.repository_info is None
+
+        # Verify text output doesn't include repository section
+        text_output = format_report_text(report)
+        assert "Repository Information" not in text_output
+
+        # Verify markdown output doesn't include repository section
+        markdown_output = format_report_markdown(report)
+        assert "## Repository Information" not in markdown_output
+
+        # Verify JSON output has null repository_info
+        json_output = format_report_json(report)
+        assert '"repository_info": null' in json_output

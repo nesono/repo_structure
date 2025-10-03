@@ -1,10 +1,22 @@
 """Report generation functionality for repo structure configuration."""
 
 import json
+import subprocess
+import os
 from dataclasses import dataclass
-from typing import Literal, Any
+from typing import Literal, Any, Optional
 from .repo_structure_config import Configuration
 from .repo_structure_lib import DirectoryMap, StructureRuleMap
+
+
+@dataclass
+class RepositoryInfo:
+    """Repository metadata information."""
+
+    repository_name: Optional[str]
+    branch: Optional[str]
+    commit_hash: Optional[str]
+    commit_date: Optional[str]
 
 
 @dataclass
@@ -37,13 +49,69 @@ class ConfigurationReport:
     structure_rule_reports: list[StructureRuleReport]
     total_directories: int
     total_structure_rules: int
+    repository_info: Optional[RepositoryInfo]
 
 
-def generate_report(config: Configuration) -> ConfigurationReport:
+def get_repository_info(repo_root: str = ".") -> Optional[RepositoryInfo]:
+    """Get repository metadata from git.
+
+    Args:
+        repo_root: Root directory of the repository (defaults to current directory)
+
+    Returns:
+        RepositoryInfo object with git metadata, or None if not a git repository
+    """
+
+    def run_git_command(args: list[str]) -> Optional[str]:
+        """Run a git command and return output, or None on failure."""
+        try:
+            result = subprocess.run(
+                ["git"] + args,
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=5,
+            )
+            return result.stdout.strip()
+        except (
+            subprocess.CalledProcessError,
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+        ):
+            return None
+
+    # Check if it's a git repository
+    if run_git_command(["rev-parse", "--git-dir"]) is None:
+        return None
+
+    # Get repository name from the top-level directory
+    repo_path = run_git_command(["rev-parse", "--show-toplevel"])
+    repo_name = os.path.basename(repo_path) if repo_path else None
+
+    # Get current branch
+    branch = run_git_command(["branch", "--show-current"])
+
+    # Get commit hash
+    commit_hash = run_git_command(["rev-parse", "HEAD"])
+
+    # Get commit date
+    commit_date = run_git_command(["log", "-1", "--format=%ci", "HEAD"])
+
+    return RepositoryInfo(
+        repository_name=repo_name,
+        branch=branch,
+        commit_hash=commit_hash,
+        commit_date=commit_date,
+    )
+
+
+def generate_report(config: Configuration, repo_root: str = ".") -> ConfigurationReport:
     """Generate a comprehensive report of the configuration.
 
     Args:
         config: The configuration to generate a report for.
+        repo_root: Root directory of the repository (defaults to current directory)
 
     Returns:
         A complete configuration report with directory and structure rule information.
@@ -61,11 +129,14 @@ def generate_report(config: Configuration) -> ConfigurationReport:
         config.directory_descriptions,
     )
 
+    repository_info = get_repository_info(repo_root)
+
     return ConfigurationReport(
         directory_reports=directory_reports,
         structure_rule_reports=structure_rule_reports,
         total_directories=len(directory_reports),
         total_structure_rules=len(structure_rule_reports),
+        repository_info=repository_info,
     )
 
 
@@ -184,6 +255,20 @@ def format_report_text(report: ConfigurationReport) -> str:
     lines.append("Repository Structure Configuration Report")
     lines.append("=" * 45)
     lines.append("")
+
+    if report.repository_info:
+        lines.append("Repository Information")
+        lines.append("-" * 22)
+        if report.repository_info.repository_name:
+            lines.append(f"Repository: {report.repository_info.repository_name}")
+        if report.repository_info.branch:
+            lines.append(f"Branch: {report.repository_info.branch}")
+        if report.repository_info.commit_hash:
+            lines.append(f"Commit: {report.repository_info.commit_hash}")
+        if report.repository_info.commit_date:
+            lines.append(f"Date: {report.repository_info.commit_date}")
+        lines.append("")
+
     lines.append(f"Total Directories: {report.total_directories}")
     lines.append(f"Total Structure Rules: {report.total_structure_rules}")
     lines.append("")
@@ -264,6 +349,20 @@ def format_report_markdown(report: ConfigurationReport) -> str:
     lines = []
     lines.append("# Repository Structure Configuration Report")
     lines.append("")
+
+    if report.repository_info:
+        lines.append("## Repository Information")
+        lines.append("")
+        if report.repository_info.repository_name:
+            lines.append(f"**Repository:** {report.repository_info.repository_name}  ")
+        if report.repository_info.branch:
+            lines.append(f"**Branch:** {report.repository_info.branch}  ")
+        if report.repository_info.commit_hash:
+            lines.append(f"**Commit:** `{report.repository_info.commit_hash}`  ")
+        if report.repository_info.commit_date:
+            lines.append(f"**Date:** {report.repository_info.commit_date}")
+        lines.append("")
+
     lines.append(f"**Total Directories:** {report.total_directories}  ")
     lines.append(f"**Total Structure Rules:** {report.total_structure_rules}")
     lines.append("")
