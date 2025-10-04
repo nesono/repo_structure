@@ -22,6 +22,8 @@ from .repo_structure_lib import (
     ScanIssue,
     get_matching_item_index,
     check_companion_files,
+    extract_pattern_captures,
+    expand_companion_requirements,
 )
 
 
@@ -118,6 +120,15 @@ class FullScanProcessor:
             idx = match_result.index
             assert idx is not None  # Type hint for mypy
             backlog[idx].count += 1
+
+            # If this entry has companion requirements, add them to the backlog
+            if backlog[idx].requires_companion:
+                captures = extract_pattern_captures(backlog[idx].path, entry.path)
+                if captures:
+                    expanded_companions = expand_companion_requirements(
+                        backlog[idx].requires_companion, captures
+                    )
+                    backlog.extend(expanded_companions)
 
             # Check for required companion files
             companion_issue = check_companion_files(

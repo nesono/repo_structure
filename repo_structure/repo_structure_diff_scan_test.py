@@ -281,7 +281,6 @@ structure_rules:
     - allow: '(?P<base>.*)\.cpp'
       requires_companion:
         - require: '{{base}}.h'
-    - allow: '.*\.h'
 directory_map:
   /:
     - description: 'Root directory'
@@ -320,8 +319,6 @@ structure_rules:
       requires_companion:
         - require: '{{base}}.h'
         - require: '{{base}}_test.cpp'
-    - allow: '.*\.h'
-    - allow: '.*_test\.cpp'
 directory_map:
   /:
     - description: 'Root directory'
@@ -357,7 +354,6 @@ structure_rules:
     - allow: '(?P<base>.*)\.cpp'
       requires_companion:
         - require: 'include/{{base}}.h'
-    - allow: '.*\.cpp'
     - allow: 'include/'
       if_exists:
         - allow: '.*\.h'
