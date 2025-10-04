@@ -33,8 +33,6 @@ Installation with pip:
 pip install repo-structure
 ```
 
-#### Windows Installation
-
 On Windows, you can install using pip in Command Prompt, PowerShell, or Windows Terminal:
 
 ```cmd
