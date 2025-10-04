@@ -1,11 +1,10 @@
 # pylint: disable=duplicate-code
 """Tests for diff-scan subcommand."""
 
-import os
-
 from .repo_structure_lib import Flags
 from .repo_structure_config import Configuration
 from .repo_structure_diff_scan import DiffScanProcessor
+from .repo_structure_test_lib import with_repo_structure_in_tmpdir
 
 
 def test_matching_regex():
@@ -266,7 +265,14 @@ directory_map:
     assert "another_invalid.txt" in issue_paths
 
 
-def test_requires_companion_check(tmp_path):
+@with_repo_structure_in_tmpdir(
+    """
+widget.cpp
+widget.h
+engine.cpp
+"""
+)
+def test_requires_companion_check():
     """Test that requires_companion validates companion files exist."""
     test_yaml = r"""
 structure_rules:
@@ -275,18 +281,12 @@ structure_rules:
     - allow: '(?P<base>.*)\.cpp'
       requires_companion:
         - require: '{{base}}.h'
+    - allow: '.*\.h'
 directory_map:
   /:
     - description: 'Root directory'
     - use_rule: cpp_with_headers
 """
-    # Create test files
-    (tmp_path / "widget.cpp").touch()
-    (tmp_path / "widget.h").touch()  # Has companion
-    (tmp_path / "engine.cpp").touch()  # Missing companion
-
-    # Change to tmp_path for the test
-    os.chdir(tmp_path)
     config = Configuration(test_yaml, param1_is_yaml_string=True)
     scanner = DiffScanProcessor(config)
 
@@ -301,7 +301,16 @@ directory_map:
     assert "Missing required companion" in issue.message
 
 
-def test_requires_companion_multiple(tmp_path):
+@with_repo_structure_in_tmpdir(
+    """
+lib.cpp
+lib.h
+lib_test.cpp
+util.cpp
+util.h
+"""
+)
+def test_requires_companion_multiple():
     """Test multiple companion requirements."""
     test_yaml = r"""
 structure_rules:
@@ -311,25 +320,17 @@ structure_rules:
       requires_companion:
         - require: '{{base}}.h'
         - require: '{{base}}_test.cpp'
+    - allow: '.*\.h'
+    - allow: '.*_test\.cpp'
 directory_map:
   /:
     - description: 'Root directory'
     - use_rule: cpp_with_test
 """
-    # Create test files
-    (tmp_path / "lib.cpp").touch()
-    (tmp_path / "lib.h").touch()
-    (tmp_path / "lib_test.cpp").touch()  # Has all companions
-
-    (tmp_path / "util.cpp").touch()
-    (tmp_path / "util.h").touch()  # Missing test
-
-    # Change to tmp_path for the test
-    os.chdir(tmp_path)
     config = Configuration(test_yaml, param1_is_yaml_string=True)
     scanner = DiffScanProcessor(config)
 
-    # lib.cpp should pass
+    # lib.cpp should pass (has both companions)
     issue = scanner.check_path("lib.cpp")
     assert issue is None
 
@@ -339,7 +340,15 @@ directory_map:
     assert "util_test.cpp" in issue.message
 
 
-def test_requires_companion_subdirectory(tmp_path):
+@with_repo_structure_in_tmpdir(
+    """
+widget.cpp
+include/
+include/widget.h
+engine.cpp
+"""
+)
+def test_requires_companion_subdirectory():
     """Test that companions can be in subdirectories."""
     test_yaml = r"""
 structure_rules:
@@ -348,21 +357,15 @@ structure_rules:
     - allow: '(?P<base>.*)\.cpp'
       requires_companion:
         - require: 'include/{{base}}.h'
-    - allow: 'include/.*\.h'
+    - allow: '.*\.cpp'
+    - allow: 'include/'
+      if_exists:
+        - allow: '.*\.h'
 directory_map:
   /:
     - description: 'Root directory'
     - use_rule: cpp_with_header_in_include
 """
-    # Create test files
-    (tmp_path / "widget.cpp").touch()
-    (tmp_path / "include").mkdir()
-    (tmp_path / "include" / "widget.h").touch()  # Has companion in subdir
-
-    (tmp_path / "engine.cpp").touch()  # Missing companion in subdir
-
-    # Change to tmp_path for the test
-    os.chdir(tmp_path)
     config = Configuration(test_yaml, param1_is_yaml_string=True)
     scanner = DiffScanProcessor(config)
 
