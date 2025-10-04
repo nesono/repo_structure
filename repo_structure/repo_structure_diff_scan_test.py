@@ -337,3 +337,40 @@ directory_map:
     issue = scanner.check_path("util.cpp")
     assert issue is not None
     assert "util_test.cpp" in issue.message
+
+
+def test_requires_companion_subdirectory(tmp_path):
+    """Test that companions can be in subdirectories."""
+    test_yaml = r"""
+structure_rules:
+  cpp_with_header_in_include:
+    - description: 'C++ with header in include subdir'
+    - allow: '(?P<base>.*)\.cpp'
+      requires_companion:
+        - require: 'include/{{base}}.h'
+    - allow: 'include/.*\.h'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_header_in_include
+"""
+    # Create test files
+    (tmp_path / "widget.cpp").touch()
+    (tmp_path / "include").mkdir()
+    (tmp_path / "include" / "widget.h").touch()  # Has companion in subdir
+
+    (tmp_path / "engine.cpp").touch()  # Missing companion in subdir
+
+    # Change to tmp_path for the test
+    os.chdir(tmp_path)
+    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    scanner = DiffScanProcessor(config)
+
+    # widget.cpp should pass (has include/widget.h)
+    issue = scanner.check_path("widget.cpp")
+    assert issue is None
+
+    # engine.cpp should fail (missing include/engine.h)
+    issue = scanner.check_path("engine.cpp")
+    assert issue is not None
+    assert "include/engine.h" in issue.message

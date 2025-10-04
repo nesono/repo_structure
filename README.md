@@ -295,6 +295,26 @@ structure_rules:
     - allow: '.*\.md'
 ```
 
+#### Companions in Subdirectories
+
+Companion files can be located in subdirectories by including path separators in the companion pattern:
+
+```yaml
+structure_rules:
+  cpp_with_header_in_include:
+    - description: "C++ with headers in include/ subdirectory"
+    - allow: '(?P<base>.*)\.cpp'
+      requires_companion:
+        - require: "include/{{base}}.h"
+    - allow: 'include/.*\.h'
+directory_map:
+  /src/:
+    - description: "Source directory"
+    - use_rule: cpp_with_header_in_include
+```
+
+This ensures that `src/widget.cpp` requires `src/include/widget.h` to exist.
+
 ## Pattern Matching Order
 
 Patterns are matched in the order they are declared. Once a rule is matched,
