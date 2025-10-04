@@ -206,6 +206,14 @@ def _generate_structure_rule_reports(
         if entry.use_rule:
             result += f" (use_rule: {entry.use_rule})"
 
+        # Add requires_companion if present
+        if entry.requires_companion:
+            companion_patterns = []
+            for companion in entry.requires_companion:
+                comp_type = "require" if companion.is_required else "allow"
+                companion_patterns.append(f"{comp_type}: {companion.path.pattern}")
+            result += f" (requires_companion: [{', '.join(companion_patterns)}])"
+
         return result
 
     reports = []
