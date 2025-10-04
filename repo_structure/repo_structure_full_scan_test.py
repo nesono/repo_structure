@@ -1152,3 +1152,74 @@ directory_map:
     assert any(
         "unused_rule" in i.message for i in warnings
     ), f"Expected unused rule warning, got: {warnings}"
+
+
+@with_repo_structure_in_tmpdir(
+    """
+widget.cpp
+widget.h
+engine.cpp
+"""
+)
+def test_requires_companion_full_scan():
+    """Test that full scan detects missing companion files."""
+    config_yaml = r"""
+structure_rules:
+  cpp_with_headers:
+    - description: 'C++ files with required headers'
+    - allow: '(?P<base>.*)\.cpp'
+      requires_companion:
+        - require: '{{base}}.h'
+    - allow: '.*\.h'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_headers
+"""
+    config = Configuration(config_yaml, True)
+    errors, _ = _check_repo_directory_structure(config)
+
+    # Should have error for engine.cpp missing engine.h
+    assert len(errors) == 1
+    assert errors[0].path == "engine.cpp"
+    assert "engine.h" in errors[0].message
+    assert "Missing required companion" in errors[0].message
+    assert errors[0].code == "missing_companion"
+
+
+@with_repo_structure_in_tmpdir(
+    """
+widget.cpp
+widget.h
+include/
+include/engine.h
+engine.cpp
+"""
+)
+def test_requires_companion_subdirectory_full_scan():
+    """Test that full scan detects missing companions in subdirectories."""
+    config_yaml = r"""
+structure_rules:
+  cpp_with_header_in_include:
+    - description: 'C++ with header in include subdir'
+    - allow: '(?P<base>.*)\.cpp'
+      requires_companion:
+        - require: 'include/{{base}}.h'
+    - allow: '.*\.cpp'
+    - allow: '.*\.h'
+    - allow: 'include/'
+      if_exists:
+        - allow: '.*\.h'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_header_in_include
+"""
+    config = Configuration(config_yaml, True)
+    errors, _ = _check_repo_directory_structure(config)
+
+    # Should have error for widget.cpp missing include/widget.h companion
+    assert len(errors) == 1
+    assert errors[0].path == "widget.cpp"
+    assert "include/widget.h" in errors[0].message
+    assert errors[0].code == "missing_companion"
