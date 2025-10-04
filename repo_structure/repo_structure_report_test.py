@@ -553,3 +553,53 @@ directory_map:
         # Verify JSON output has null repository_info
         json_output = format_report_json(report)
         assert '"repository_info": null' in json_output
+
+
+def test_companion_requirements_in_report():
+    """Test that companion requirements are properly displayed in reports."""
+    test_yaml = r"""
+structure_rules:
+  cpp_with_companions:
+    - description: 'C++ files with required header and test companions'
+    - allow: '(?P<base>.*)\.cpp'
+      requires_companion:
+        - require: '{{base}}.h'
+        - require: '{{base}}_test.cpp'
+    - allow: '.*\.h'
+    - allow: '.*_test\.cpp'
+
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_companions
+"""
+    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    report = generate_report(config)
+
+    # Get the structure rule report
+    rule_report = report.structure_rule_reports[0]
+
+    assert rule_report.rule_name == "cpp_with_companions"
+    assert len(rule_report.patterns) == 3
+
+    # Verify companion requirements are in the pattern
+    cpp_pattern = rule_report.patterns[0]
+    assert "allow: (?P<base>.*)\\.cpp" in cpp_pattern
+    assert "requires_companion" in cpp_pattern
+    assert "require: {{base}}.h" in cpp_pattern
+    assert "require: {{base}}_test.cpp" in cpp_pattern
+
+    # Verify in text output
+    text_output = format_report_text(report)
+    assert "requires_companion" in text_output
+    assert "{{base}}.h" in text_output
+    assert "{{base}}_test.cpp" in text_output
+
+    # Verify in markdown output
+    markdown_output = format_report_markdown(report)
+    assert "requires_companion" in markdown_output
+    assert "{{base}}.h" in markdown_output
+
+    # Verify in JSON output
+    json_output = format_report_json(report)
+    assert "requires_companion" in json_output
