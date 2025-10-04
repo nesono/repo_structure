@@ -230,6 +230,73 @@ structure_rules:
       use_rule: example_rule_with_recursion
 ```
 
+### Companion Files
+
+Structure rules can enforce that certain files require companion files to exist. This is useful for ensuring that implementation files have corresponding headers, tests, or documentation.
+
+Use the `requires_companion` keyword along with named capture groups in your patterns:
+
+```yaml
+structure_rules:
+  cpp_with_headers:
+    - description: "C++ files with required headers"
+    - allow: '(?P<base>.*)\.cpp'
+      requires_companion:
+        - require: "{{base}}.h"
+    - allow: '.*\.h'
+directory_map:
+  /src/:
+    - description: "Source directory"
+    - use_rule: cpp_with_headers
+```
+
+In this example:
+
+- Any `.cpp` file must have a corresponding `.h` file with the same base name
+- `widget.cpp` requires `widget.h` to exist
+- `engine.cpp` requires `engine.h` to exist
+
+#### Named Capture Groups
+
+Companion files use Python regex named capture groups to extract parts of the filename:
+
+- `(?P<name>pattern)` - Creates a named group that can be referenced in companion patterns
+- `{{name}}` - Placeholder in companion pattern that gets replaced with the captured value
+
+#### Multiple Companions
+
+You can require multiple companion files:
+
+```yaml
+structure_rules:
+  cpp_with_header_and_test:
+    - description: "C++ files with headers and tests"
+    - allow: '(?P<base>.*)\.cpp'
+      requires_companion:
+        - require: "{{base}}.h"
+        - require: "{{base}}_test.cpp"
+    - allow: '.*\.h'
+    - allow: '.*_test\.cpp'
+```
+
+This ensures that `foo.cpp` requires both `foo.h` and `foo_test.cpp` to exist.
+
+#### Optional Companions
+
+Use `allow` instead of `require` for optional companion files:
+
+```yaml
+structure_rules:
+  cpp_with_optional_docs:
+    - description: "C++ with required header, optional docs"
+    - allow: '(?P<base>.*)\.cpp'
+      requires_companion:
+        - require: "{{base}}.h"
+        - allow: "{{base}}.md" # Optional documentation
+    - allow: '.*\.h'
+    - allow: '.*\.md'
+```
+
 ## Pattern Matching Order
 
 Patterns are matched in the order they are declared. Once a rule is matched,
