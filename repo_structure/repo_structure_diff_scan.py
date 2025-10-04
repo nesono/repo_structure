@@ -23,6 +23,8 @@ from .repo_structure_lib import (
     ScanIssue,
     get_matching_item_index,
     check_companion_files,
+    extract_pattern_captures,
+    expand_companion_requirements,
 )
 
 
@@ -95,6 +97,15 @@ class DiffScanProcessor:
             idx = match_result.index
             assert idx is not None  # Type hint for mypy
             backlog_match = backlog[idx]
+
+            # If this entry has companion requirements, add them to the backlog
+            if backlog_match.requires_companion:
+                captures = extract_pattern_captures(backlog_match.path, entry_name)
+                if captures:
+                    expanded_companions = expand_companion_requirements(
+                        backlog_match.requires_companion, captures
+                    )
+                    backlog.extend(expanded_companions)
 
             companion_issue = check_companion_files(
                 entry_name, backlog_match, rel_dir, self.flags.verbose

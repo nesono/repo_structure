@@ -18,7 +18,9 @@ structure_rules:
     - description: "Standard Python package structure with modules, tests, and configuration files"
     - require: '__main__\.py'
     - require: '__init__\.py'
-    - require: '.*\.py'
+    - allow: '(?P<base>.*)\.py'
+      requires_companion:
+        - allow: '{{base}}_test\.py'
     - require: 'config\.schema\.json'
     - require: 'test_config_.*\.yaml'
 

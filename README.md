@@ -240,7 +240,7 @@ structure_rules:
     - description: "C++ files with required headers"
     - allow: '(?P<base>.*)\.cpp'
       requires_companion:
-        - require: "{{base}}.h"
+        - require: '{{base}}\.h'
     - allow: '.*\.h'
 directory_map:
   /src/:
