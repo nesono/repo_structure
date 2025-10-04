@@ -33,12 +33,7 @@ Installation with pip:
 pip install repo-structure
 ```
 
-On Windows, you can install using pip in Command Prompt, PowerShell, or Windows Terminal:
-
-```cmd
-pip install repo-structure
-```
-
+On Windows, you can install using pip in Command Prompt, PowerShell, or Windows Terminal.
 For Windows users using pre-commit, ensure you have Python and Git properly installed. The tool works seamlessly across Windows, macOS, and Linux with automatic path normalization.
 
 A basic consumption with pre-commit looks like the following.
