@@ -191,7 +191,7 @@ def expand_companion_requirements(
             is_forbidden=template.is_forbidden,
             use_rule=template.use_rule,
             if_exists=template.if_exists,
-            requires_companion=template.requires_companion,
+            requires_companion=[],  # Don't inherit companion requirements
             count=0,
         )
         expanded.append(expanded_entry)
@@ -356,7 +356,7 @@ def get_matching_item_index(
     )
 
 
-def check_companion_files(
+def check_companion_files(  # pylint: disable=too-many-locals,too-many-nested-blocks
     entry_name: str,
     matched_entry: RepoEntry,
     rel_dir: str,
@@ -392,12 +392,33 @@ def check_companion_files(
         if not companion.is_required:
             continue
 
-        companion_path = join_path_normalized(rel_dir, companion.path.pattern)
+        # The companion pattern may include subdirectory paths (e.g., "include/foo.h")
+        # We need to check if a file matching this pattern exists relative to rel_dir
+        companion_found = False
+        base_dir = rel_dir if rel_dir else "."
 
-        if verbose:
-            print(f"  Checking for required companion: {companion_path}")
+        # Walk through directory tree to find files matching the pattern
+        if os.path.isdir(base_dir):
+            for root, _dirs, files in os.walk(base_dir):
+                for filename in files:
+                    # Get path relative to base_dir
+                    file_abs = os.path.join(root, filename)
+                    file_rel = os.path.relpath(file_abs, base_dir)
+                    # Normalize to use forward slashes
+                    file_rel_normalized = normalize_path(file_rel)
 
-        if not os.path.exists(companion_path):
+                    # Check if this file matches the companion pattern
+                    if companion.path.fullmatch(file_rel_normalized):
+                        companion_found = True
+                        if verbose:
+                            print(f"  Found companion: {file_rel_normalized}")
+                        break
+                if companion_found:
+                    break
+
+        if not companion_found:
+            if verbose:
+                print(f"  Missing companion matching pattern: {companion.path.pattern}")
             return ScanIssue(
                 severity="error",
                 code="missing_companion",
