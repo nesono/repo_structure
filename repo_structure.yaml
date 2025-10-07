@@ -20,6 +20,7 @@ structure_rules:
     - require: '__init__\.py'
     # Specify files that don't need a companion first
     - allow: '_version\.py'
+    # TODO: Add test for the schema
     - allow: 'repo_structure_schema\.py'
     - allow: 'repo_structure_test_lib\.py'
     - allow: '.*_test\.py'
