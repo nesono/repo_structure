@@ -18,7 +18,12 @@ structure_rules:
     - description: "Standard Python package structure with modules, tests, and configuration files"
     - require: '__main__\.py'
     - require: '__init__\.py'
+    # Specify files that don't need a companion first
+    - allow: '_version\.py'
+    - allow: 'repo_structure_schema\.py'
+    - allow: 'repo_structure_test_lib\.py'
     - allow: '.*_test\.py'
+    # Specify the companion
     - allow: '(?P<base>.*)\.py'
       requires_companion:
         - require: '{{base}}_test\.py'
