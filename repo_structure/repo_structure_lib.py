@@ -191,7 +191,7 @@ def expand_companion_requirements(
             is_forbidden=template.is_forbidden,
             use_rule=template.use_rule,
             if_exists=template.if_exists,
-            requires_companion=[],  # Don't inherit companion requirements
+            requires_companion=[],
             count=0,
         )
         expanded.append(expanded_entry)

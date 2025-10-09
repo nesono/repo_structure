@@ -103,7 +103,6 @@ class DiffScanProcessor:
             backlog_match = backlog[idx]
 
             # Construct full directory path by combining base_dir and rel_dir
-            # Companions are verified by check_companion_files, not added to backlog
             full_rel_dir = (
                 join_path_normalized(base_dir, rel_dir) if base_dir else rel_dir
             )

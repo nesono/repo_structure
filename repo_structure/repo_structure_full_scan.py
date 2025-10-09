@@ -120,7 +120,6 @@ class FullScanProcessor:
             backlog[idx].count += 1
 
             # Check for required companion files
-            # Companions are verified by check_companion_files, not added to backlog
             companion_issue = check_companion_files(
                 entry.path, backlog[idx], rel_dir, self.flags.verbose
             )
@@ -175,8 +174,8 @@ class FullScanProcessor:
             errors.append(missing_entry_issue)
         return errors
 
-    def _process_map_dir_sync(self, map_dir: str) -> list[ScanIssue]:
-        """Process a single map directory entry and return issues instead of raising exceptions."""
+    def _process_map_dir(self, map_dir: str) -> list[ScanIssue]:
+        """Process a single map directory entry and return issues."""
         errors: list[ScanIssue] = []
 
         rel_dir = map_dir_to_rel_dir(map_dir)
@@ -220,7 +219,7 @@ class FullScanProcessor:
         else:
             # Process each mapped directory independently, collecting errors
             for map_dir in self.config.directory_map:
-                map_dir_errors = self._process_map_dir_sync(map_dir)
+                map_dir_errors = self._process_map_dir(map_dir)
                 errors.extend(map_dir_errors)
         return errors
 
@@ -261,4 +260,4 @@ class FullScanProcessor:
         Returns:
             List of scan issues found in the specified directory mapping
         """
-        return self._process_map_dir_sync(map_dir)
+        return self._process_map_dir(map_dir)
