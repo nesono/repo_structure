@@ -285,6 +285,11 @@ def map_dir_to_entry_backlog(
     return _build_active_entry_backlog(use_rules, structure_rules)
 
 
+def _has_template_substitution(pattern: str) -> bool:
+    """Check if a pattern contains template substitution placeholders like {{name}}."""
+    return "{{" in pattern and "}}" in pattern
+
+
 def _build_active_entry_backlog(
     active_use_rules: list[str], structure_rules: StructureRuleMap
 ) -> StructureRuleList:
@@ -292,7 +297,26 @@ def _build_active_entry_backlog(
     for rule in active_use_rules:
         if rule == "ignore":
             continue
-        result += structure_rules[rule]
+        rules = structure_rules[rule]
+        result += rules
+
+        # Add companions without template substitution to initial backlog
+        for entry in rules:
+            if entry.requires_companion:
+                for companion in entry.requires_companion:
+                    # Only add if no template substitution needed
+                    if not _has_template_substitution(companion.path.pattern):
+                        companion_copy = RepoEntry(
+                            path=companion.path,
+                            is_dir=companion.is_dir,
+                            is_required=False,  # Mark as optional
+                            is_forbidden=companion.is_forbidden,
+                            use_rule=companion.use_rule,
+                            if_exists=companion.if_exists,
+                            requires_companion=[],
+                            count=0,
+                        )
+                        result.append(companion_copy)
     return result
 
 

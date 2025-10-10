@@ -373,3 +373,40 @@ directory_map:
     issue = scanner.check_path("engine.cpp")
     assert issue is not None
     assert "include/engine.h" in issue.message
+
+
+@with_repo_structure_in_tmpdir(
+    """
+widget.cpp
+include/
+include/gadget.h
+"""
+)
+def test_requires_companion_no_expansion():
+    """Test that requires_companion works without named groups in diff-scan."""
+    test_yaml = r"""
+structure_rules:
+    cpp_with_header_in_include:
+    - description: 'C++ with header in include subdir'
+    - allow: 'widget\.cpp'
+      requires_companion:
+        - require: 'include/'
+        - require: 'include/gadget.h'
+    - allow: 'include/'
+      if_exists:
+        - allow: '.*\.h'
+directory_map:
+    /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_header_in_include
+"""
+    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    scanner = DiffScanProcessor(config)
+
+    # widget.cpp should pass (has both companions)
+    issue = scanner.check_path("widget.cpp")
+    assert issue is None
+
+    # include/gadget.h should pass
+    issue = scanner.check_path("include/gadget.h")
+    assert issue is None

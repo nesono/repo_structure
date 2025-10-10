@@ -164,6 +164,11 @@ class FullScanProcessor:
             entry.path,
         ) or expand_if_exists(backlog[idx], self.flags)
 
+        # If directory has no rules, skip checking its contents
+        # (Companions will validate required files inside)
+        if new_backlog is None:
+            return errors
+
         subdirectory_path = join_path_normalized(rel_dir, entry.path)
         errors.extend(self._check_reldir_structure(subdirectory_path, new_backlog))
 
