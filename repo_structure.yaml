@@ -26,7 +26,7 @@ structure_rules:
     - allow: '.*_test\.py'
     # Specify the companion
     - allow: '(?P<base>.*)\.py'
-      requires_companion:
+      companion:
         - require: '{{base}}_test\.py'
     - require: 'config\.schema\.json'
     - require: 'test_config_.*\.yaml'

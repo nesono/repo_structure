@@ -272,14 +272,14 @@ widget.h
 engine.cpp
 """
 )
-def test_requires_companion_check():
-    """Test that requires_companion validates companion files exist."""
+def test_companion_check():
+    """Test that companion validates companion files exist."""
     test_yaml = r"""
 structure_rules:
   cpp_with_headers:
     - description: 'C++ files with required headers'
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: '{{base}}.h'
 directory_map:
   /:
@@ -309,14 +309,14 @@ util.cpp
 util.h
 """
 )
-def test_requires_companion_multiple():
+def test_companion_multiple():
     """Test multiple companion requirements."""
     test_yaml = r"""
 structure_rules:
   cpp_with_test:
     - description: 'C++ with header and test'
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: '{{base}}.h'
         - require: '{{base}}_test.cpp'
 directory_map:
@@ -345,14 +345,14 @@ include/widget.h
 engine.cpp
 """
 )
-def test_requires_companion_subdirectory():
+def test_companion_subdirectory():
     """Test that companions can be in subdirectories."""
     test_yaml = r"""
 structure_rules:
   cpp_with_header_in_include:
     - description: 'C++ with header in include subdir'
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: 'include/{{base}}.h'
     - allow: 'include/'
       if_exists:
@@ -382,14 +382,14 @@ include/
 include/gadget.h
 """
 )
-def test_requires_companion_no_expansion():
-    """Test that requires_companion works without named groups in diff-scan."""
+def test_companion_no_expansion():
+    """Test that companion works without named groups in diff-scan."""
     test_yaml = r"""
 structure_rules:
     cpp_with_header_in_include:
     - description: 'C++ with header in include subdir'
     - allow: 'widget\.cpp'
-      requires_companion:
+      companion:
         - require: 'include/'
         - require: 'include/gadget.h'
     - allow: 'include/'

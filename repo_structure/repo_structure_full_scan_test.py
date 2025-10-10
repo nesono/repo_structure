@@ -1161,14 +1161,14 @@ widget.h
 engine.cpp
 """
 )
-def test_requires_companion_full_scan():
+def test_companion_full_scan():
     """Test that full scan detects missing companion files."""
     config_yaml = r"""
 structure_rules:
   cpp_with_headers:
     - description: 'C++ files with required headers'
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: '{{base}}.h'
 directory_map:
   /:
@@ -1196,14 +1196,14 @@ include/engine.h
 engine.cpp
 """
 )
-def test_requires_companion_subdirectory_full_scan():
+def test_companion_subdirectory_full_scan():
     """Test that full scan detects missing companions in subdirectories."""
     config_yaml = r"""
 structure_rules:
   cpp_with_header_in_include:
     - description: 'C++ with header in include subdir'
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: 'include/{{base}}.h'
 directory_map:
   /:
@@ -1230,14 +1230,14 @@ include/
 include/gadget.h
 """
 )
-def test_requires_companion_no_expansion():
-    """Test that requires_companion works without named groups."""
+def test_companion_no_expansion():
+    """Test that companion works without named groups."""
     config_yaml = r"""
 structure_rules:
     cpp_with_header_in_include:
     - description: 'C++ with header in include subdir'
     - allow: 'widget\.cpp'
-      requires_companion:
+      companion:
         - require: 'include/'
         - require: 'include/gadget.h'
 directory_map:

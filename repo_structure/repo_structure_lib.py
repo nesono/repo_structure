@@ -32,7 +32,7 @@ class RepoEntry:  # pylint: disable=too-many-instance-attributes
     is_forbidden: bool
     use_rule: str = ""
     if_exists: list["RepoEntry"] = field(default_factory=list)
-    requires_companion: list["RepoEntry"] = field(default_factory=list)
+    companion: list["RepoEntry"] = field(default_factory=list)
     count: int = 0
 
 
@@ -191,7 +191,7 @@ def expand_companion_requirements(
             is_forbidden=template.is_forbidden,
             use_rule=template.use_rule,
             if_exists=template.if_exists,
-            requires_companion=[],
+            companion=[],
             count=0,
         )
         expanded.append(expanded_entry)
@@ -302,8 +302,8 @@ def _build_active_entry_backlog(
 
         # Add companions without template substitution to initial backlog
         for entry in rules:
-            if entry.requires_companion:
-                for companion in entry.requires_companion:
+            if entry.companion:
+                for companion in entry.companion:
                     # Only add if no template substitution needed
                     if not _has_template_substitution(companion.path.pattern):
                         companion_copy = RepoEntry(
@@ -313,7 +313,7 @@ def _build_active_entry_backlog(
                             is_forbidden=companion.is_forbidden,
                             use_rule=companion.use_rule,
                             if_exists=companion.if_exists,
-                            requires_companion=[],
+                            companion=[],
                             count=0,
                         )
                         result.append(companion_copy)
@@ -397,7 +397,7 @@ def check_companion_files(  # pylint: disable=too-many-locals,too-many-nested-bl
     Returns:
         ScanIssue if a required companion is missing, None otherwise
     """
-    if not matched_entry.requires_companion:
+    if not matched_entry.companion:
         return None
 
     # Extract captures from the matched pattern
@@ -408,7 +408,7 @@ def check_companion_files(  # pylint: disable=too-many-locals,too-many-nested-bl
 
     # Expand companion requirements with captured values
     expanded_companions = expand_companion_requirements(
-        matched_entry.requires_companion, captures
+        matched_entry.companion, captures
     )
 
     # Check if required companions exist

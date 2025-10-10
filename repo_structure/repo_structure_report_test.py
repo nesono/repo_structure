@@ -562,7 +562,7 @@ structure_rules:
   cpp_with_companions:
     - description: 'C++ files with required header and test companions'
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: '{{base}}.h'
         - require: '{{base}}_test.cpp'
     - allow: '.*\.h'
@@ -585,21 +585,21 @@ directory_map:
     # Verify companion requirements are in the pattern
     cpp_pattern = rule_report.patterns[0]
     assert "allow: (?P<base>.*)\\.cpp" in cpp_pattern
-    assert "requires_companion" in cpp_pattern
+    assert "companion" in cpp_pattern
     assert "require: {{base}}.h" in cpp_pattern
     assert "require: {{base}}_test.cpp" in cpp_pattern
 
     # Verify in text output
     text_output = format_report_text(report)
-    assert "requires_companion" in text_output
+    assert "companion" in text_output
     assert "{{base}}.h" in text_output
     assert "{{base}}_test.cpp" in text_output
 
     # Verify in markdown output
     markdown_output = format_report_markdown(report)
-    assert "requires_companion" in markdown_output
+    assert "companion" in markdown_output
     assert "{{base}}.h" in markdown_output
 
     # Verify in JSON output
     json_output = format_report_json(report)
-    assert "requires_companion" in json_output
+    assert "companion" in json_output
