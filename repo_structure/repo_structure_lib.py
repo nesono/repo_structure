@@ -380,7 +380,37 @@ def get_matching_item_index(
     )
 
 
-def check_companion_files(  # pylint: disable=too-many-locals,too-many-nested-blocks
+def _find_matching_file_in_directory(
+    base_dir: str, pattern: re.Pattern, verbose: bool
+) -> bool:
+    """Find a file matching the pattern in the directory tree.
+
+    Args:
+        base_dir: Base directory to search in
+        pattern: Compiled regex pattern to match against
+        verbose: Enable verbose output
+
+    Returns:
+        True if a matching file is found, False otherwise
+    """
+    if not os.path.isdir(base_dir):
+        return False
+
+    for root, _dirs, files in os.walk(base_dir):
+        for filename in files:
+            file_abs = os.path.join(root, filename)
+            file_rel = os.path.relpath(file_abs, base_dir)
+            file_rel_normalized = normalize_path(file_rel)
+
+            if pattern.fullmatch(file_rel_normalized):
+                if verbose:
+                    print(f"  Found companion: {file_rel_normalized}")
+                return True
+
+    return False
+
+
+def check_companion_files(
     entry_name: str,
     matched_entry: RepoEntry,
     rel_dir: str,
@@ -412,35 +442,13 @@ def check_companion_files(  # pylint: disable=too-many-locals,too-many-nested-bl
     )
 
     # Check if required companions exist
+    base_dir = rel_dir if rel_dir else "."
     for companion in expanded_companions:
         if not companion.is_required:
             continue
 
-        # The companion pattern may include subdirectory paths (e.g., "include/foo.h")
-        # We need to check if a file matching this pattern exists relative to rel_dir
-        companion_found = False
-        base_dir = rel_dir if rel_dir else "."
-
-        # Walk through directory tree to find files matching the pattern
-        if os.path.isdir(base_dir):
-            for root, _dirs, files in os.walk(base_dir):
-                for filename in files:
-                    # Get path relative to base_dir
-                    file_abs = os.path.join(root, filename)
-                    file_rel = os.path.relpath(file_abs, base_dir)
-                    # Normalize to use forward slashes
-                    file_rel_normalized = normalize_path(file_rel)
-
-                    # Check if this file matches the companion pattern
-                    if companion.path.fullmatch(file_rel_normalized):
-                        companion_found = True
-                        if verbose:
-                            print(f"  Found companion: {file_rel_normalized}")
-                        break
-                if companion_found:
-                    break
-
-        if not companion_found:
+        # Search for file matching the companion pattern
+        if not _find_matching_file_in_directory(base_dir, companion.path, verbose):
             if verbose:
                 print(f"  Missing companion matching pattern: {companion.path.pattern}")
             return ScanIssue(
