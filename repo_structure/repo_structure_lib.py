@@ -4,6 +4,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from os import DirEntry
+from pathlib import Path
 from typing import Callable, Final, Literal
 
 BUILTIN_DIRECTORY_RULES: Final = ["ignore"]
@@ -32,7 +33,7 @@ class RepoEntry:  # pylint: disable=too-many-instance-attributes
     is_forbidden: bool
     use_rule: str = ""
     if_exists: list["RepoEntry"] = field(default_factory=list)
-    requires_companion: list["RepoEntry"] = field(default_factory=list)
+    companion: list["RepoEntry"] = field(default_factory=list)
     count: int = 0
 
 
@@ -72,12 +73,12 @@ def normalize_path(path: str) -> str:
 def join_path_normalized(*parts: str) -> str:
     """Join path parts and normalize separators for cross-platform compatibility.
 
-    Equivalent to os.path.join but ensures forward slashes in the result.
+    Uses pathlib.Path but ensures forward slashes in the result.
     """
     if not parts:
         return ""
-    joined = os.path.join(*parts)
-    return normalize_path(joined)
+    joined = Path(*parts)
+    return normalize_path(str(joined))
 
 
 def rel_dir_to_map_dir(rel_dir: str):
@@ -191,7 +192,7 @@ def expand_companion_requirements(
             is_forbidden=template.is_forbidden,
             use_rule=template.use_rule,
             if_exists=template.if_exists,
-            requires_companion=template.requires_companion,
+            companion=[],
             count=0,
         )
         expanded.append(expanded_entry)
@@ -285,6 +286,11 @@ def map_dir_to_entry_backlog(
     return _build_active_entry_backlog(use_rules, structure_rules)
 
 
+def _has_template_substitution(pattern: str) -> bool:
+    """Check if a pattern contains template substitution placeholders like {{name}}."""
+    return "{{" in pattern and "}}" in pattern
+
+
 def _build_active_entry_backlog(
     active_use_rules: list[str], structure_rules: StructureRuleMap
 ) -> StructureRuleList:
@@ -292,7 +298,26 @@ def _build_active_entry_backlog(
     for rule in active_use_rules:
         if rule == "ignore":
             continue
-        result += structure_rules[rule]
+        rules = structure_rules[rule]
+        result += rules
+
+        # Add companions without template substitution to initial backlog
+        for entry in rules:
+            if entry.companion:
+                for companion in entry.companion:
+                    # Only add if no template substitution needed
+                    if not _has_template_substitution(companion.path.pattern):
+                        companion_copy = RepoEntry(
+                            path=companion.path,
+                            is_dir=companion.is_dir,
+                            is_required=False,  # Mark as optional
+                            is_forbidden=companion.is_forbidden,
+                            use_rule=companion.use_rule,
+                            if_exists=companion.if_exists,
+                            companion=[],
+                            count=0,
+                        )
+                        result.append(companion_copy)
     return result
 
 
@@ -356,6 +381,37 @@ def get_matching_item_index(
     )
 
 
+def _find_matching_file_in_directory(
+    base_dir: str, pattern: re.Pattern, verbose: bool
+) -> bool:
+    """Find a file matching the pattern in the directory tree.
+
+    Args:
+        base_dir: Base directory to search in
+        pattern: Compiled regex pattern to match against
+        verbose: Enable verbose output
+
+    Returns:
+        True if a matching file is found, False otherwise
+    """
+    base_path = Path(base_dir)
+    if not base_path.is_dir():
+        return False
+
+    for root, _dirs, files in os.walk(base_dir):
+        for filename in files:
+            file_abs = Path(root) / filename
+            file_rel = file_abs.relative_to(base_path)
+            file_rel_normalized = normalize_path(str(file_rel))
+
+            if pattern.fullmatch(file_rel_normalized):
+                if verbose:
+                    print(f"  Found companion: {file_rel_normalized}")
+                return True
+
+    return False
+
+
 def check_companion_files(
     entry_name: str,
     matched_entry: RepoEntry,
@@ -373,7 +429,7 @@ def check_companion_files(
     Returns:
         ScanIssue if a required companion is missing, None otherwise
     """
-    if not matched_entry.requires_companion:
+    if not matched_entry.companion:
         return None
 
     # Extract captures from the matched pattern
@@ -384,20 +440,19 @@ def check_companion_files(
 
     # Expand companion requirements with captured values
     expanded_companions = expand_companion_requirements(
-        matched_entry.requires_companion, captures
+        matched_entry.companion, captures
     )
 
     # Check if required companions exist
+    base_dir = rel_dir if rel_dir else "."
     for companion in expanded_companions:
         if not companion.is_required:
             continue
 
-        companion_path = join_path_normalized(rel_dir, companion.path.pattern)
-
-        if verbose:
-            print(f"  Checking for required companion: {companion_path}")
-
-        if not os.path.exists(companion_path):
+        # Search for file matching the companion pattern
+        if not _find_matching_file_in_directory(base_dir, companion.path, verbose):
+            if verbose:
+                print(f"  Missing companion matching pattern: {companion.path.pattern}")
             return ScanIssue(
                 severity="error",
                 code="missing_companion",

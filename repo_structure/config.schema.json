@@ -10,7 +10,7 @@
         "forbid": { "type": "string" },
         "if_exists": { "$ref": "#/$defs/if_exists_entries" },
         "use_rule": { "type": "string" },
-        "requires_companion": { "$ref": "#/$defs/companion_entries" }
+        "companion": { "$ref": "#/$defs/companion_entries" }
       },
       "additionalProperties": false,
       "anyOf": [

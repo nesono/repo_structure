@@ -1,7 +1,6 @@
 """Library functions for repo structure directory verification."""
 
-import os
-
+from pathlib import Path
 from typing import Iterator
 
 from .repo_structure_config import (
@@ -64,9 +63,15 @@ class DiffScanProcessor:
             yield rel_dir, part, is_directory
 
     def _check_path_in_backlog(
-        self, backlog: StructureRuleList, path: str
+        self, backlog: StructureRuleList, path: str, base_dir: str = ""
     ) -> ScanIssue | None:
-        """Check if path is valid in backlog and return ScanIssue if invalid."""
+        """Check if path is valid in backlog and return ScanIssue if invalid.
+
+        Args:
+            backlog: List of structure rules to check against
+            path: Path to check (relative to base_dir)
+            base_dir: Base directory that path is relative to (relative to repo root)
+        """
         for rel_dir, entry_name, is_dir in self._incremental_path_split(path):
             if skip_entry(
                 Entry(
@@ -96,8 +101,12 @@ class DiffScanProcessor:
             assert idx is not None  # Type hint for mypy
             backlog_match = backlog[idx]
 
+            # Construct full directory path by combining base_dir and rel_dir
+            full_rel_dir = (
+                join_path_normalized(base_dir, rel_dir) if base_dir else rel_dir
+            )
             companion_issue = check_companion_files(
-                entry_name, backlog_match, rel_dir, self.flags.verbose
+                entry_name, backlog_match, full_rel_dir, self.flags.verbose
             )
             if companion_issue:
                 return companion_issue
@@ -147,8 +156,9 @@ class DiffScanProcessor:
                 print("backlog empty - returning success")
             return None
 
-        rel_path = os.path.relpath(path, map_dir_to_rel_dir(map_dir))
-        issue = self._check_path_in_backlog(backlog, rel_path)
+        base_dir = map_dir_to_rel_dir(map_dir)
+        rel_path = str(Path(path).relative_to(base_dir)) if base_dir else path
+        issue = self._check_path_in_backlog(backlog, rel_path, base_dir)
         if issue:
             # Update the message to include the original path and map_dir context
             if issue.code == "unspecified_entry":

@@ -272,16 +272,15 @@ widget.h
 engine.cpp
 """
 )
-def test_requires_companion_check():
-    """Test that requires_companion validates companion files exist."""
+def test_companion_check():
+    """Test that companion validates companion files exist."""
     test_yaml = r"""
 structure_rules:
   cpp_with_headers:
     - description: 'C++ files with required headers'
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: '{{base}}.h'
-    - allow: '.*\.h'
 directory_map:
   /:
     - description: 'Root directory'
@@ -310,18 +309,16 @@ util.cpp
 util.h
 """
 )
-def test_requires_companion_multiple():
+def test_companion_multiple():
     """Test multiple companion requirements."""
     test_yaml = r"""
 structure_rules:
   cpp_with_test:
     - description: 'C++ with header and test'
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: '{{base}}.h'
         - require: '{{base}}_test.cpp'
-    - allow: '.*\.h'
-    - allow: '.*_test\.cpp'
 directory_map:
   /:
     - description: 'Root directory'
@@ -348,16 +345,15 @@ include/widget.h
 engine.cpp
 """
 )
-def test_requires_companion_subdirectory():
+def test_companion_subdirectory():
     """Test that companions can be in subdirectories."""
     test_yaml = r"""
 structure_rules:
   cpp_with_header_in_include:
     - description: 'C++ with header in include subdir'
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: 'include/{{base}}.h'
-    - allow: '.*\.cpp'
     - allow: 'include/'
       if_exists:
         - allow: '.*\.h'
@@ -377,3 +373,40 @@ directory_map:
     issue = scanner.check_path("engine.cpp")
     assert issue is not None
     assert "include/engine.h" in issue.message
+
+
+@with_repo_structure_in_tmpdir(
+    """
+widget.cpp
+include/
+include/gadget.h
+"""
+)
+def test_companion_no_expansion():
+    """Test that companion works without named groups in diff-scan."""
+    test_yaml = r"""
+structure_rules:
+    cpp_with_header_in_include:
+    - description: 'C++ with header in include subdir'
+    - allow: 'widget\.cpp'
+      companion:
+        - require: 'include/'
+        - require: 'include/gadget.h'
+    - allow: 'include/'
+      if_exists:
+        - allow: '.*\.h'
+directory_map:
+    /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_header_in_include
+"""
+    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    scanner = DiffScanProcessor(config)
+
+    # widget.cpp should pass (has both companions)
+    issue = scanner.check_path("widget.cpp")
+    assert issue is None
+
+    # include/gadget.h should pass
+    issue = scanner.check_path("include/gadget.h")
+    assert issue is None

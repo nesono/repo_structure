@@ -227,15 +227,15 @@ structure_rules:
 
 Structure rules can enforce that certain files require companion files to exist. This is useful for ensuring that implementation files have corresponding headers, tests, or documentation.
 
-Use the `requires_companion` keyword along with named capture groups in your patterns:
+Use the `companion` keyword along with named capture groups in your patterns:
 
 ```yaml
 structure_rules:
   cpp_with_headers:
     - description: "C++ files with required headers"
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
-        - require: "{{base}}.h"
+      companion:
+        - require: '{{base}}\.h'
     - allow: '.*\.h'
 directory_map:
   /src/:
@@ -265,7 +265,7 @@ structure_rules:
   cpp_with_header_and_test:
     - description: "C++ files with headers and tests"
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: "{{base}}.h"
         - require: "{{base}}_test.cpp"
     - allow: '.*\.h'
@@ -283,7 +283,7 @@ structure_rules:
   cpp_with_optional_docs:
     - description: "C++ with required header, optional docs"
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: "{{base}}.h"
         - allow: "{{base}}.md" # Optional documentation
     - allow: '.*\.h'
@@ -299,7 +299,7 @@ structure_rules:
   cpp_with_header_in_include:
     - description: "C++ with headers in include/ subdirectory"
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: "include/{{base}}.h"
     - allow: 'include/.*\.h'
 directory_map:

@@ -551,14 +551,14 @@ def test_fail_config_file_structure_rule_conflict():
         Configuration("conflicting_test_config.yaml")
 
 
-def test_requires_companion_parsing():
-    """Test that requires_companion is properly parsed in the schema and config."""
+def test_companion_parsing():
+    """Test that companion is properly parsed in the schema and config."""
     test_yaml = r"""
 structure_rules:
   cpp_with_headers:
     - description: 'C++ files with required headers'
     - allow: '(?P<base>.*)\.cpp'
-      requires_companion:
+      companion:
         - require: '{{base}}.h'
 directory_map:
   /:
@@ -574,9 +574,9 @@ directory_map:
     # Find the .cpp pattern
     cpp_rule = next((r for r in rules if r.path.pattern.endswith(r"\.cpp")), None)
     assert cpp_rule is not None
-    assert len(cpp_rule.requires_companion) == 1
+    assert len(cpp_rule.companion) == 1
 
     # Check the companion requirement
-    companion = cpp_rule.requires_companion[0]
+    companion = cpp_rule.companion[0]
     assert companion.path.pattern == "{{base}}.h"
     assert companion.is_required

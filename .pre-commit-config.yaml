@@ -7,10 +7,13 @@ exclude: |
   )$
 
 repos:
-  - repo: https://github.com/nesono/repo_structure
-    rev: "v0.8.0"
+  - repo: local
     hooks:
       - id: diff
+        name: Enforce Repository Structure
+        entry: repo_structure diff-scan
+        language: system
+        args: ["--config-path", "repo_structure.yaml"]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
