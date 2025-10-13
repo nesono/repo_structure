@@ -72,14 +72,12 @@ repos:
 
 The following modes are available with Repo Structure:
 
-| ID                   | Description                                                                                                      |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `diff`               | Ensure that all added or modified files are allowed by the repo structure configuration                          |
-| `diff-debug`         | Ensure that all added or modified files are allowed by the repo structure configuration with tracing enabled     |
-| `full`               | Run a full scan ensuring that all allowed and required files exist                                               |
-| `full-debug`         | Run a full scan ensuring that all allowed and required files exist with tracing enabled                          |
-| `full-warning`       | Run a full scan ensuring that all allowed and required files exist and warn of unused rules                      |
-| `full-warning-debug` | Run a full scan ensuring that all allowed and required files exist and warn of unused rules with tracing enabled |
+| ID           | Description                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------ |
+| `diff`       | Ensure that all added or modified files are allowed by the repo structure configuration                      |
+| `diff-debug` | Ensure that all added or modified files are allowed by the repo structure configuration with tracing enabled |
+| `full`       | Run a full scan ensuring that all allowed and required files exist                                           |
+| `full-debug` | Run a full scan ensuring that all allowed and required files exist with tracing enabled                      |
 
 Note that the full scan hooks might take longer time than you are willing to spend during `pre-commit`.
 You can enable then for the `pre-push` stage only, or you can run the tool in the terminal installed from pip.
