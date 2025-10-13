@@ -2,8 +2,8 @@
 
 # pylint: disable=too-few-public-methods
 
-import os
 import re
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 
@@ -90,12 +90,12 @@ class TestJoinPathNormalized:
     def test_join_path_normalized_with_empty_strings(self):
         """Test joining with empty string parts."""
         result = join_path_normalized("", "file.txt")
-        # This should behave like os.path.join but normalized
-        expected = normalize_path(os.path.join("", "file.txt"))
+        # This should behave like Path() / operator but normalized
+        expected = normalize_path(str(Path("") / "file.txt"))
         assert result == expected
 
     def test_join_path_normalized_windows_style(self):
-        """Test that result is normalized even if os.path.join returns backslashes."""
+        """Test that result is normalized even if Path returns backslashes."""
         # This test ensures our function works correctly on Windows
         parts = ["path", "to", "file"]
         result = join_path_normalized(*parts)

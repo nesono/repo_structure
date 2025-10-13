@@ -2,8 +2,8 @@
 
 import json
 import subprocess
-import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal, Any, Optional
 from .repo_structure_config import Configuration
 from .repo_structure_lib import DirectoryMap, StructureRuleMap
@@ -87,7 +87,7 @@ def get_repository_info(repo_root: str = ".") -> Optional[RepositoryInfo]:
 
     # Get repository name from the top-level directory
     repo_path = run_git_command(["rev-parse", "--show-toplevel"])
-    repo_name = os.path.basename(repo_path) if repo_path else None
+    repo_name = Path(repo_path).name if repo_path else None
 
     # Get current branch
     branch = run_git_command(["branch", "--show-current"])

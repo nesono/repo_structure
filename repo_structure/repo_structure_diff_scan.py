@@ -1,7 +1,6 @@
 """Library functions for repo structure directory verification."""
 
-import os
-
+from pathlib import Path
 from typing import Iterator
 
 from .repo_structure_config import (
@@ -158,7 +157,7 @@ class DiffScanProcessor:
             return None
 
         base_dir = map_dir_to_rel_dir(map_dir)
-        rel_path = os.path.relpath(path, base_dir) if base_dir else path
+        rel_path = str(Path(path).relative_to(base_dir)) if base_dir else path
         issue = self._check_path_in_backlog(backlog, rel_path, base_dir)
         if issue:
             # Update the message to include the original path and map_dir context

@@ -2,6 +2,7 @@
 
 import os
 
+from pathlib import Path
 from typing import Callable
 from gitignore_parser import parse_gitignore
 
@@ -43,9 +44,9 @@ class FullScanProcessor:
 
     def _get_git_ignore(self) -> Callable[[str], bool] | None:
         """Get gitignore parser, cached for the lifetime of the scan."""
-        git_ignore_path = os.path.join(self.repo_root, ".gitignore")
-        if os.path.isfile(git_ignore_path):
-            return parse_gitignore(git_ignore_path)
+        git_ignore_path = Path(self.repo_root) / ".gitignore"
+        if git_ignore_path.is_file():
+            return parse_gitignore(str(git_ignore_path))
         return None
 
     def _check_required_entries_missing(
@@ -132,7 +133,7 @@ class FullScanProcessor:
         return errors
 
     def _get_sorted_entries(self, rel_dir: str) -> list[os.DirEntry]:
-        dir_path = os.path.join(self.repo_root, rel_dir)
+        dir_path = Path(self.repo_root) / rel_dir
         return sorted(os.scandir(dir_path), key=lambda e: e.name)
 
     def _should_skip_entry(self, entry) -> bool:

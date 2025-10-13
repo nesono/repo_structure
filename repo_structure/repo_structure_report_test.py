@@ -1,7 +1,6 @@
 """Tests for repo_structure report functionality."""
 
 import tempfile
-import os
 import subprocess
 from pathlib import Path
 
@@ -466,7 +465,7 @@ def test_get_repository_info_git_repository():
 
         # Verify the information
         assert repo_info is not None
-        assert repo_info.repository_name == os.path.basename(tmpdir)
+        assert repo_info.repository_name == Path(tmpdir).name
         assert repo_info.branch  # Should have a branch (usually main or master)
         assert repo_info.commit_hash  # Should have a commit hash
         assert len(repo_info.commit_hash) == 40  # Git hash is 40 characters

@@ -4,6 +4,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from os import DirEntry
+from pathlib import Path
 from typing import Callable, Final, Literal
 
 BUILTIN_DIRECTORY_RULES: Final = ["ignore"]
@@ -72,12 +73,12 @@ def normalize_path(path: str) -> str:
 def join_path_normalized(*parts: str) -> str:
     """Join path parts and normalize separators for cross-platform compatibility.
 
-    Equivalent to os.path.join but ensures forward slashes in the result.
+    Uses pathlib.Path but ensures forward slashes in the result.
     """
     if not parts:
         return ""
-    joined = os.path.join(*parts)
-    return normalize_path(joined)
+    joined = Path(*parts)
+    return normalize_path(str(joined))
 
 
 def rel_dir_to_map_dir(rel_dir: str):
@@ -393,14 +394,15 @@ def _find_matching_file_in_directory(
     Returns:
         True if a matching file is found, False otherwise
     """
-    if not os.path.isdir(base_dir):
+    base_path = Path(base_dir)
+    if not base_path.is_dir():
         return False
 
     for root, _dirs, files in os.walk(base_dir):
         for filename in files:
-            file_abs = os.path.join(root, filename)
-            file_rel = os.path.relpath(file_abs, base_dir)
-            file_rel_normalized = normalize_path(file_rel)
+            file_abs = Path(root) / filename
+            file_rel = file_abs.relative_to(base_path)
+            file_rel_normalized = normalize_path(str(file_rel))
 
             if pattern.fullmatch(file_rel_normalized):
                 if verbose:
