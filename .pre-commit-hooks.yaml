@@ -14,22 +14,6 @@
   pass_filenames: false
   args: ["--config-path", "repo_structure.yaml"]
   stages: [manual]
-- id: full-warning
-  name: Enforce Repository Structure
-  entry: repo_structure full-scan-warning --repo-root .
-  description: Ensuring the repository structure contains all entries, including `required`, from the configuration
-  language: python
-  pass_filenames: false
-  args: ["--config-path", "repo_structure.yaml"]
-  stages: [manual]
-- id: full-warning-debug
-  name: Enforce Repository Structure
-  entry: repo_structure --verbose full-scan-warning --repo-root .
-  description: Ensuring the repository structure contains all entries, including `required`, from the configuration - with debug tracing
-  language: python
-  pass_filenames: false
-  args: ["--config-path", "repo_structure.yaml"]
-  stages: [manual]
 - id: diff
   name: Enforce Repository Structure
   entry: repo_structure diff-scan
