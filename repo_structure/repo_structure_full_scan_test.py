@@ -1252,3 +1252,39 @@ directory_map:
 
     assert len(errors) == 0
     assert len(warnings) == 0
+
+
+@with_repo_structure_in_tmpdir(
+    """
+controller.py
+controller_test.py
+service.rs
+service_test.rs
+utils.cpp
+utils_test.cpp
+"""
+)
+def test_companion_with_template_parameters():
+    """Test that companions can use both template parameters and capture groups."""
+    config_yaml = r"""
+templates:
+    module_with_test:
+        - description: 'Module with test file using template extension'
+        - allow: '.*_test\.{{ext}}'
+        - allow: '(?P<name>.*)\.{{ext}}'
+          companion:
+            - require: '{{name}}_test\.{{ext}}'
+directory_map:
+    /:
+        - description: 'Root directory with multiple file types'
+        - use_template: module_with_test
+          parameters:
+            ext: ['py', 'rs', 'cpp']
+"""
+    flags = Flags()
+    flags.verbose = True
+    config = Configuration(config_yaml, True)
+    errors, warnings = _check_repo_directory_structure(config, flags)
+
+    assert len(errors) == 0
+    assert len(warnings) == 0
