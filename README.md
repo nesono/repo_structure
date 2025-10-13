@@ -65,7 +65,7 @@ repos:
 
 ## Available Repo Check Modes
 
-The following modes are available with Repo Structure:
+The following modes are available with Repo Structure
 
 | ID           | Description                                                                                                  |
 | ------------ | ------------------------------------------------------------------------------------------------------------ |
