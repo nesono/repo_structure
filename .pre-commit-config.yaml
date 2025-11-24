@@ -9,7 +9,7 @@ exclude: |
 repos:
   - repo: local
     hooks:
-      - id: diff
+      - id: repo-structure-diff
         name: Enforce Repository Structure
         entry: repo_structure diff-scan
         language: system
