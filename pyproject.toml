@@ -47,6 +47,9 @@ where = ["."]
 include = ["repo_structure"]
 exclude = ["repo_structure/*_test.py"]
 
+[tool.setuptools.package-data]
+repo_structure = ["*.json"]
+
 [tool.setuptools_scm]
 version_file = "repo_structure/_version.py"
 
