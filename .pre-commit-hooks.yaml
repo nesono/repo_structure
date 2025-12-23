@@ -1,4 +1,4 @@
-- id: full
+- id: repo-structure-full
   name: Enforce Repository Structure
   entry: repo_structure full-scan --repo-root .
   description: Ensuring the repository structure contains all entries, including `required`, from the configuration
@@ -6,7 +6,7 @@
   pass_filenames: false
   args: ["--config-path", "repo_structure.yaml"]
   stages: [manual]
-- id: full-debug
+- id: repo-structure-full-debug
   name: Enforce Repository Structure
   entry: repo_structure --verbose full-scan --repo-root .
   description: Ensuring the repository structure contains all entries, including `required`, from the configuration - with debug tracing
@@ -14,13 +14,13 @@
   pass_filenames: false
   args: ["--config-path", "repo_structure.yaml"]
   stages: [manual]
-- id: diff
+- id: repo-structure-diff
   name: Enforce Repository Structure
   entry: repo_structure diff-scan
   description: Ensuring the repository structure does not contain files that are not listed in the configuration file
   language: python
   args: ["--config-path", "repo_structure.yaml"]
-- id: diff-debug
+- id: repo-structure-diff-debug
   name: Enforce Repository Structure
   entry: repo_structure --verbose diff-scan
   description: Ensuring the repository structure does not contain files that are not listed in the configuration file - with debug tracing
