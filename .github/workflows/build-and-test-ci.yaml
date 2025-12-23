@@ -19,7 +19,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -36,6 +36,7 @@ jobs:
           pytest --cov --cov-report xml:coverage.xml
 
       - name: Get Coverage
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: orgoro/coverage@v3.2
         with:
           coverageFile: coverage.xml
