@@ -9,9 +9,9 @@ exclude: |
 repos:
   - repo: local
     hooks:
-      - id: diff
+      - id: repo-structure-diff
         name: Enforce Repository Structure
-        entry: repo_structure diff-scan
+        entry: uv run repo_structure diff-scan
         language: system
         args: ["--config-path", "repo_structure.yaml"]
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -22,7 +22,7 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.18.2"
+    rev: "v1.19.1"
     hooks:
       - id: mypy
   - repo: https://github.com/pre-commit/mirrors-prettier
@@ -30,14 +30,14 @@ repos:
     hooks:
       - id: prettier
   - repo: https://github.com/psf/black
-    rev: 25.9.0
+    rev: 25.12.0
     hooks:
       - id: black
   - repo: local
     hooks:
       - id: pylint-uv
         name: pylint (uv)
-        entry: uv run pylint
+        entry: uv run --extra dev pylint
         language: system
         types: [python]
         pass_filenames: true
@@ -48,7 +48,7 @@ repos:
         args: [-w]
         exclude: "MODULE.bazel.lock"
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: "v0.45.0"
+    rev: "v0.47.0"
     hooks:
       - id: markdownlint-fix
   - repo: https://github.com/Yelp/detect-secrets
@@ -57,10 +57,10 @@ repos:
       - id: detect-secrets
         exclude: .pre-commit-config.yaml
   - repo: https://github.com/zricethezav/gitleaks
-    rev: "v8.28.0"
+    rev: "v8.30.0"
     hooks:
       - id: gitleaks
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.13.3"
+    rev: "v0.14.10"
     hooks:
       - id: ruff
