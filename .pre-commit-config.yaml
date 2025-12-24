@@ -11,7 +11,7 @@ repos:
     hooks:
       - id: repo-structure-diff
         name: Enforce Repository Structure
-        entry: repo_structure diff-scan
+        entry: uv run repo_structure diff-scan
         language: system
         args: ["--config-path", "repo_structure.yaml"]
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -37,7 +37,7 @@ repos:
     hooks:
       - id: pylint-uv
         name: pylint (uv)
-        entry: uv run pylint
+        entry: uv run --extra dev pylint
         language: system
         types: [python]
         pass_filenames: true
