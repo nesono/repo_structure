@@ -458,26 +458,9 @@ The rule can
 
 ## Building from Source
 
-### Using Poetry
-
-- `poetry install`
-- `poetry run pytest`
-
-### Using Python Venv
-
-- `python3.11 -m venv .venv`
-- `source .venv/bin/activate`
-- `pip install -e .[dev]`
-- `pytest *_test.py`
-
-### Using Conda
-
-- `conda create -n .conda_env python=3.11`
-- `conda activate .conda_env`
-- `pip install -e .[dev]`
-- `pytest *_test.py`
-
 ### Using uv
+
+We only support `uv` as a build tool as of now.
 
 - `uv python install 3.10`
 - `uv pip install -e '.[dev]'`
