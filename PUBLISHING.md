@@ -1,4 +1,6 @@
-# Creating a New Release
+# Publishing `repo_structure`
+
+## Creating a New Release
 
 Simple check list to go through for creating a new release
 
@@ -7,3 +9,7 @@ Simple check list to go through for creating a new release
 
 Important to note is that the time between merging the PR with the new release
 version and the creation of the new release should be minimal.
+
+## Publishing to the Bazel Central Registry
+
+...
