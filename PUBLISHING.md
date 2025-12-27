@@ -5,11 +5,5 @@
 Simple check list to go through for creating a new release
 
 - [ ] Create new release on GitHub (with the new tag)
-- [ ] Create and land a PR with updated version in `.pre-commit.config.yaml` e.g. using `pre-commit autoupdate`
 
-Important to note is that the time between merging the PR with the new release
-version and the creation of the new release should be minimal.
-
-## Publishing to the Bazel Central Registry
-
-...
+The rest will run automatically (we consume the `repo_structure` pre-commit hook locally, so no update for pre-commit is needed.
