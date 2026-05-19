@@ -298,8 +298,10 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
     show_default=True,
 )
 @click.option(
+    "--output-format",
     "--output_format",
     "-f",
+    "output_format",
     type=click.Choice(["text", "json", "markdown"]),
     help="Output format for the report.",
     default="text",
