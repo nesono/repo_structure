@@ -1,4 +1,4 @@
-"""Check the repository directory strucgure against your configuration."""
+"""Check the repository directory structure against your configuration."""
 
 from .repo_structure_config import Configuration
 from .repo_structure_full_scan import FullScanProcessor
