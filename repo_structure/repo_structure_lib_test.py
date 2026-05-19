@@ -591,16 +591,19 @@ class TestPatternCaptureAndSubstitution:
         assert expanded[1].path.pattern == "widget_test.cpp"
         assert not expanded[1].is_required
 
-    def test_expand_companion_requirements_invalid_pattern(self):
-        """Test that invalid patterns after substitution are skipped."""
+    def test_expand_companion_requirements_escapes_capture_metacharacters(self):
+        """Capture values containing regex metacharacters are escaped, not interpreted."""
         companion_template = RepoEntry(
-            path=re.compile("{{base}}\\.h"),  # Valid template
+            path=re.compile("{{base}}\\.h"),
             is_dir=False,
             is_required=True,
             is_forbidden=False,
         )
-        captures = {"base": "foo(bar"}  # Will create invalid pattern "foo(bar.h"
+        # A literal "foo(bar" capture would have previously yielded an invalid
+        # pattern; re.escape now keeps it as a literal match string.
+        captures = {"base": "foo(bar"}
         expanded = expand_companion_requirements([companion_template], captures)
 
-        # Should skip the invalid pattern
-        assert len(expanded) == 0
+        assert len(expanded) == 1
+        # The resulting compiled pattern matches the literal "foo(bar.h"
+        assert expanded[0].path.fullmatch("foo(bar.h") is not None
