@@ -264,17 +264,8 @@ def _get_is_required(entry: dict) -> bool:
 
 
 def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
-    if_exists = []
-    companion = []
     entry_pattern = _get_pattern(entry)
-
     is_required = _get_is_required(entry)
-
-    if "if_exists" in entry:
-        if_exists = entry["if_exists"]
-
-    if "companion" in entry:
-        companion = entry["companion"]
 
     is_dir = entry_pattern.endswith("/")
     entry_pattern = entry_pattern[0:-1] if is_dir else entry_pattern
@@ -291,12 +282,12 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
         is_dir=is_dir,
         is_required=is_required,
         is_forbidden="forbid" in entry,
-        use_rule=entry["use_rule"] if "use_rule" in entry else "",
+        use_rule=entry.get("use_rule", ""),
     )
-    for sub_entry in if_exists:
+    for sub_entry in entry.get("if_exists", []):
         result.if_exists.append(_parse_entry_to_repo_entry(sub_entry))
 
-    for sub_entry in companion:
+    for sub_entry in entry.get("companion", []):
         result.companion.append(_parse_entry_to_repo_entry(sub_entry))
 
     return result
