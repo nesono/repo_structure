@@ -17,12 +17,14 @@ from .repo_structure_lib import (
     expand_use_rule,
     expand_if_exists,
     map_dir_to_entry_backlog,
+    Entry,
     StructureRuleList,
     Flags,
     join_path_normalized,
     ScanIssue,
     get_matching_item_index,
     check_companion_files,
+    MatchFailure,
 )
 
 
@@ -117,12 +119,11 @@ class FullScanProcessor:
                 backlog, entry.path, os_entry.is_dir(), self.flags.verbose
             )
 
-            if not match_result.success:
+            if isinstance(match_result, MatchFailure):
                 self._handle_match_failure(match_result, entry, errors)
                 continue
 
             idx = match_result.index
-            assert idx is not None  # Type hint for mypy
             backlog[idx].count += 1
 
             # Check for required companion files
@@ -150,10 +151,14 @@ class FullScanProcessor:
             self.flags,
         )
 
-    def _handle_match_failure(self, match_result, entry, errors: list[ScanIssue]):
-        if match_result.issue:
-            match_result.issue.path = join_path_normalized(entry.rel_dir, entry.path)
-            errors.append(match_result.issue)
+    def _handle_match_failure(
+        self,
+        match_result: MatchFailure,
+        entry: Entry,
+        errors: list[ScanIssue],
+    ) -> None:
+        match_result.issue.path = join_path_normalized(entry.rel_dir, entry.path)
+        errors.append(match_result.issue)
 
     def _process_subdirectory(
         self,

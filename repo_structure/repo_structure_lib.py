@@ -339,13 +339,21 @@ class ScanIssue:
     path: str | None = None
 
 
-@dataclass
-class MatchResult:
-    """Result of attempting to match an entry against backlog rules."""
+@dataclass(frozen=True)
+class MatchSuccess:
+    """Successful match: holds the index of the matched backlog entry."""
 
-    success: bool
-    index: int | None = None
-    issue: ScanIssue | None = None
+    index: int
+
+
+@dataclass(frozen=True)
+class MatchFailure:
+    """Failed match: holds the resulting ScanIssue."""
+
+    issue: ScanIssue
+
+
+MatchResult = MatchSuccess | MatchFailure
 
 
 def get_matching_item_index(
@@ -358,28 +366,26 @@ def get_matching_item_index(
     for i, v in enumerate(backlog):
         if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
             if v.is_forbidden:
-                return MatchResult(
-                    success=False,
+                return MatchFailure(
                     issue=ScanIssue(
                         severity="error",
                         code="forbidden_entry",
                         message=f"Found forbidden entry: {entry_path}",
                         path=entry_path,
-                    ),
+                    )
                 )
             if verbose:
                 print(f"  Found match at index {i}: '{v.path.pattern}'")
-            return MatchResult(success=True, index=i)
+            return MatchSuccess(index=i)
 
     display_path = entry_path + "/" if is_dir else entry_path
-    return MatchResult(
-        success=False,
+    return MatchFailure(
         issue=ScanIssue(
             severity="error",
             code="unspecified_entry",
             message=f"Found unspecified entry: '{display_path}'",
             path=entry_path,
-        ),
+        )
     )
 
 

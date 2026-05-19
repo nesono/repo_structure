@@ -18,7 +18,7 @@ from .repo_structure_lib import (
     to_entry,
     _build_active_entry_backlog,
     skip_entry,
-    MatchResult,
+    MatchSuccess,
     get_matching_item_index,
     Entry,
     RepoEntry,
@@ -269,7 +269,7 @@ class TestGetMatchingItemIndex:
         ]
 
         result = get_matching_item_index(backlog, "file.txt", False)
-        assert result == MatchResult(success=True, index=0, issue=None)
+        assert result == MatchSuccess(index=0)
 
     def test_get_matching_item_index_found_directory(self):
         """Test finding a matching directory entry."""
@@ -283,7 +283,7 @@ class TestGetMatchingItemIndex:
         ]
 
         result = get_matching_item_index(backlog, "subdir", True)
-        assert result == MatchResult(success=True, index=0, issue=None)
+        assert result == MatchSuccess(index=0)
 
     def test_get_matching_item_index_verbose_output(self, capsys):
         """Test verbose output when finding a match."""

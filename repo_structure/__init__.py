@@ -8,6 +8,8 @@ from .repo_structure_lib import (
     ConfigurationParseError,
     ScanIssue,
     MatchResult,
+    MatchSuccess,
+    MatchFailure,
 )
 
 __all__ = [
@@ -17,6 +19,8 @@ __all__ = [
     "DiffScanProcessor",
     "ScanIssue",
     "MatchResult",
+    "MatchSuccess",
+    "MatchFailure",
     "Flags",
 ]
 
