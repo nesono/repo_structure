@@ -285,7 +285,7 @@ class TestGetMatchingItemIndex:
         result = get_matching_item_index(backlog, "subdir", True)
         assert result == MatchSuccess(index=0)
 
-    def test_get_matching_item_index_verbose_output(self, capsys):
+    def test_get_matching_item_index_verbose_output(self, caplog):
         """Test verbose output when finding a match."""
         backlog = [
             RepoEntry(
@@ -296,9 +296,9 @@ class TestGetMatchingItemIndex:
             )
         ]
 
-        get_matching_item_index(backlog, "file.txt", False, verbose=True)
-        captured = capsys.readouterr()
-        assert "Found match at index 0: 'file\\.txt'" in captured.out
+        with caplog.at_level("DEBUG", logger="repo_structure.repo_structure_lib"):
+            get_matching_item_index(backlog, "file.txt", False, verbose=True)
+        assert "Found match at index 0: 'file\\.txt'" in caplog.text
 
 
 class TestHandleUseRule:
@@ -331,14 +331,14 @@ class TestHandleUseRule:
         result = expand_use_rule("", structure_rules, flags, "app")
         assert result is None
 
-    def test_handle_use_rule_verbose_output(self, capsys):
+    def test_handle_use_rule_verbose_output(self, caplog):
         """Test verbose output when use_rule is found."""
         structure_rules = {"test_rule": []}
         flags = Flags(verbose=True)
 
-        expand_use_rule("test_rule", structure_rules, flags, "app")
-        captured = capsys.readouterr()
-        assert "use_rule found for rel path 'app'" in captured.out
+        with caplog.at_level("DEBUG", logger="repo_structure.repo_structure_lib"):
+            expand_use_rule("test_rule", structure_rules, flags, "app")
+        assert "use_rule found for rel path 'app'" in caplog.text
 
 
 class TestHandleIfExists:
@@ -376,7 +376,7 @@ class TestHandleIfExists:
         result = expand_if_exists(backlog_entry, flags)
         assert result is None
 
-    def test_handle_if_exists_verbose_output(self, capsys):
+    def test_handle_if_exists_verbose_output(self, caplog):
         """Test verbose output when if_exists is found."""
         if_exists_entries = [
             RepoEntry(
@@ -395,9 +395,9 @@ class TestHandleIfExists:
         )
         flags = Flags(verbose=True)
 
-        expand_if_exists(backlog_entry, flags)
-        captured = capsys.readouterr()
-        assert "if_exists found for rel path 'test_pattern'" in captured.out
+        with caplog.at_level("DEBUG", logger="repo_structure.repo_structure_lib"):
+            expand_if_exists(backlog_entry, flags)
+        assert "if_exists found for rel path 'test_pattern'" in caplog.text
 
 
 class TestBuildActiveEntryBacklog:

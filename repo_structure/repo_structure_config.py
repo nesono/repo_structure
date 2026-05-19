@@ -1,7 +1,7 @@
 """Library functions for repo structure config parsing."""
 
 import copy
-import pprint
+import logging
 import re
 from dataclasses import dataclass, field
 from typing import TextIO, Any
@@ -21,6 +21,8 @@ from .repo_structure_lib import (
     TemplateError,
 )
 from .repo_structure_schema import get_json_schema
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -65,7 +67,8 @@ class Configuration:
             ConfigurationParseError: Raised for errors during the configuration parsing process.
         """
         if verbose:
-            print("Loading configuration")
+            logging.getLogger(__package__).setLevel(logging.DEBUG)
+        _LOGGER.debug("Loading configuration")
         if param1_is_yaml_string:
             yaml_dict = _load_repo_structure_yamls(config_file)
         else:
@@ -86,11 +89,8 @@ class Configuration:
             raise ConfigurationParseError(f"Bad config: {e.message}") from e
         except SchemaError as e:
             raise ConfigurationParseError(f"Bad schema: {e.message}") from e
-        if verbose:
-            print("Configuration validated successfully")
-
-        if verbose:
-            print("Parsing configuration data")
+        _LOGGER.debug("Configuration validated successfully")
+        _LOGGER.debug("Parsing configuration data")
 
         structure_rules, structure_rule_descriptions = _parse_structure_rules(
             yaml_dict.get("structure_rules", {})
@@ -122,15 +122,12 @@ class Configuration:
 
             self.config.configuration_file_name = config_file
 
-        if verbose:
-            # Print the parsed configuration pretty
-            pprint.pprint(self.config.directory_map, indent=2)
-            pprint.pprint(self.config.structure_rules, indent=2)
-            print(
-                f"Structure rules count: {len(self.config.structure_rules.keys())}, "
-                f"Directory map count: {len(self.config.directory_map.keys())}"
-            )
-            print("Configuration parsed successfully")
+        _LOGGER.debug(
+            "Structure rules count: %d, Directory map count: %d",
+            len(self.config.structure_rules),
+            len(self.config.directory_map),
+        )
+        _LOGGER.debug("Configuration parsed successfully")
 
     def _validate_directory_map_use_rules(self):
         existing_rules = self.config.structure_rules.keys()
