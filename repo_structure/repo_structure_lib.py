@@ -205,9 +205,11 @@ def skip_entry(
     directory_map: DirectoryMap,
     config_file_name: str,
     git_ignore: Callable[[str], bool] | None = None,
-    flags: Flags = Flags(),
+    flags: Flags | None = None,
 ) -> bool:
     """Return True if the entry should be skipped/ignored."""
+    if flags is None:
+        flags = Flags()
     skip_conditions = [
         (not flags.follow_symlinks and entry.is_symlink),
         (not flags.include_hidden and entry.path.startswith(".")),
