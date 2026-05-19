@@ -2,9 +2,9 @@
 
 import json
 import subprocess
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Literal, Any, Optional
+from typing import Literal
 from .repo_structure_config import Configuration
 from .repo_structure_lib import DirectoryMap, StructureRuleMap
 
@@ -13,10 +13,10 @@ from .repo_structure_lib import DirectoryMap, StructureRuleMap
 class RepositoryInfo:
     """Repository metadata information."""
 
-    repository_name: Optional[str]
-    branch: Optional[str]
-    commit_hash: Optional[str]
-    commit_date: Optional[str]
+    repository_name: str | None
+    branch: str | None
+    commit_hash: str | None
+    commit_date: str | None
 
 
 @dataclass
@@ -49,10 +49,10 @@ class ConfigurationReport:
     structure_rule_reports: list[StructureRuleReport]
     total_directories: int
     total_structure_rules: int
-    repository_info: Optional[RepositoryInfo]
+    repository_info: RepositoryInfo | None
 
 
-def get_repository_info(repo_root: str = ".") -> Optional[RepositoryInfo]:
+def get_repository_info(repo_root: str = ".") -> RepositoryInfo | None:
     """Get repository metadata from git.
 
     Args:
@@ -62,7 +62,7 @@ def get_repository_info(repo_root: str = ".") -> Optional[RepositoryInfo]:
         RepositoryInfo object with git metadata, or None if not a git repository
     """
 
-    def run_git_command(args: list[str]) -> Optional[str]:
+    def run_git_command(args: list[str]) -> str | None:
         """Run a git command and return output, or None on failure."""
         try:
             result = subprocess.run(
@@ -408,26 +408,7 @@ def format_report_json(report: ConfigurationReport) -> str:
     Returns:
         A JSON representation of the report.
     """
-
-    def convert_to_dict(obj: Any) -> Any:
-        """Convert dataclass to dictionary for JSON serialization."""
-        if hasattr(obj, "__dict__"):
-            result = {}
-            for key, value in obj.__dict__.items():
-                if isinstance(value, list):
-                    result[key] = [
-                        convert_to_dict(item) if hasattr(item, "__dict__") else item
-                        for item in value
-                    ]
-                else:
-                    result[key] = (
-                        convert_to_dict(value) if hasattr(value, "__dict__") else value
-                    )
-            return result
-        return obj
-
-    report_dict = convert_to_dict(report)
-    return json.dumps(report_dict, indent=2)
+    return json.dumps(asdict(report), indent=2)
 
 
 def _format_repository_info_markdown(repo_info: RepositoryInfo) -> list[str]:
