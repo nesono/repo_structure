@@ -72,7 +72,10 @@ class Configuration:
             yaml_dict = _load_repo_structure_yaml(config_file)
 
         if not yaml_dict:
-            raise ConfigurationParseError
+            source = "yaml string" if param1_is_yaml_string else config_file
+            raise ConfigurationParseError(
+                f"Configuration is empty or could not be parsed: {source}"
+            )
 
         if not schema:
             schema = get_json_schema()
