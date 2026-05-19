@@ -29,7 +29,7 @@ def _create_repo_directory_structure(specification: str) -> None:
     | <dirname>/                 | Directory                                                       |
     | <linkname> -> <targetfile> | Symbolic link with the name <linkname> pointing to <targetfile> |
     """
-    for item in iter(specification.splitlines()):
+    for item in specification.splitlines():
         if item.startswith("#") or item.strip() == "":
             continue
         if item.strip().endswith("/"):
