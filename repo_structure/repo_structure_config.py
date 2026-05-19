@@ -3,6 +3,7 @@
 import copy
 import logging
 import re
+import warnings
 from dataclasses import dataclass, field
 from typing import TextIO, Any
 
@@ -45,9 +46,53 @@ class ConfigurationData:
 
 
 class Configuration:
-    """Repo Structure configuration class."""
+    """Repo Structure configuration class.
 
-    def __init__(
+    Prefer the :meth:`from_file` and :meth:`from_yaml_string` classmethod
+    factories over calling the constructor directly. The boolean
+    ``param1_is_yaml_string`` flag is deprecated and will be removed in a
+    future release.
+    """
+
+    @classmethod
+    def from_file(
+        cls,
+        path: str,
+        *,
+        schema: dict[Any, Any] | None = None,
+        verbose: bool = False,
+    ) -> "Configuration":
+        """Build a Configuration from a YAML file on disk.
+
+        Args:
+            path: Filesystem path to the YAML configuration file.
+            schema: Optional JSON schema to validate the YAML against.
+            verbose: Emit DEBUG-level diagnostic messages during parsing.
+        """
+        return cls(path, False, schema, verbose)
+
+    @classmethod
+    def from_yaml_string(
+        cls,
+        yaml_string: str,
+        *,
+        schema: dict[Any, Any] | None = None,
+        verbose: bool = False,
+    ) -> "Configuration":
+        """Build a Configuration directly from a YAML string.
+
+        Args:
+            yaml_string: Raw YAML configuration text.
+            schema: Optional JSON schema to validate the YAML against.
+            verbose: Emit DEBUG-level diagnostic messages during parsing.
+        """
+        # Suppress the deprecation warning for the boolean flag --
+        # this factory is the new, supported entry point.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return cls(yaml_string, True, schema, verbose)
+
+    def __init__(  # pylint: disable=too-many-branches
         self,
         config_file: str,
         param1_is_yaml_string: bool = False,
@@ -56,16 +101,36 @@ class Configuration:
     ):
         """Create new configuration object.
 
+        Prefer :meth:`from_file` or :meth:`from_yaml_string` over calling
+        the constructor directly.
+
         Args:
-              config_file (str): Path to the configuration file or configuration string.
-              param1_is_yaml_string (bool): If true interprets config_file as contents not path.
-              schema (dict[Any, Any]): An optional JSON schema file for schema verification.
+            config_file: Path to the configuration file or raw YAML text.
+            param1_is_yaml_string: If true, ``config_file`` is interpreted
+                as raw YAML rather than a filesystem path. Deprecated --
+                use :meth:`from_yaml_string` instead.
+            schema: Optional JSON schema file for schema verification.
+            verbose: Emit DEBUG-level diagnostic messages.
 
         Exceptions:
             StructureRuleError: Raised for errors in structure rules.
-            RepoStructureTemplateError: Raised for errors in repository structure templates.
-            ConfigurationParseError: Raised for errors during the configuration parsing process.
+            TemplateError: Raised for errors in repository structure templates.
+            ConfigurationParseError: Raised for errors during configuration parsing.
         """
+        # Detect direct constructor calls (rather than going through the
+        # classmethod factories) and emit a deprecation warning. We probe
+        # the parent frame for the sentinel marker set by the factories.
+        # Note: the factories always pass through __init__ so we cannot
+        # detect "factory vs direct" from inside __init__ itself --
+        # callers that prefer the new API should use the classmethods,
+        # and the boolean flag is what we deprecate, not __init__ itself.
+        if param1_is_yaml_string:
+            warnings.warn(
+                "Passing param1_is_yaml_string=True is deprecated; "
+                "use Configuration.from_yaml_string(...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if verbose:
             logging.getLogger(__package__).setLevel(logging.DEBUG)
         _LOGGER.debug("Loading configuration")
