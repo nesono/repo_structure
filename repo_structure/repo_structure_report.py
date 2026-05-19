@@ -6,7 +6,12 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Literal
 from .repo_structure_config import Configuration
-from .repo_structure_lib import DirectoryMap, StructureRuleMap
+from .repo_structure_lib import (
+    BUILTIN_DIRECTORY_RULES,
+    DirectoryMap,
+    IGNORE_RULE,
+    StructureRuleMap,
+)
 
 
 @dataclass
@@ -151,7 +156,7 @@ def _generate_directory_reports(
     for directory, rules in directory_map.items():
         rule_descriptions = []
         for rule in rules:
-            if rule == "ignore":
+            if rule in BUILTIN_DIRECTORY_RULES:
                 rule_descriptions.append(
                     "Builtin rule: Excludes this directory from structure validation"
                 )
@@ -218,12 +223,12 @@ def _generate_structure_rule_reports(
 
     reports = []
 
-    # Check if 'ignore' rule is used anywhere
+    # Check if the ignore rule is used anywhere
     ignore_directories = [
-        directory for directory, rules in directory_map.items() if "ignore" in rules
+        directory for directory, rules in directory_map.items() if IGNORE_RULE in rules
     ]
 
-    # Add built-in 'ignore' rule if it's used
+    # Add built-in ignore rule if it's used
     if ignore_directories:
         directory_descs = [
             directory_descriptions.get(directory, "No description provided")
@@ -231,7 +236,7 @@ def _generate_structure_rule_reports(
         ]
         reports.append(
             StructureRuleReport(
-                rule_name="ignore",
+                rule_name=IGNORE_RULE,
                 description="Builtin rule: Excludes this directory from structure validation",
                 applied_directories=ignore_directories,
                 directory_descriptions=directory_descs,
