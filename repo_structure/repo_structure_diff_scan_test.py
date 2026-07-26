@@ -1,7 +1,7 @@
 # pylint: disable=duplicate-code
 """Tests for diff-scan subcommand."""
 
-from .repo_structure_lib import Flags
+from .models import Flags
 from .repo_structure_config import Configuration
 from .repo_structure_diff_scan import DiffScanProcessor
 from .repo_structure_test_lib import with_repo_structure_in_tmpdir

@@ -11,22 +11,23 @@ from .repo_structure_config import (
     Configuration,
 )
 
-from .repo_structure_lib import (
+from .models import (
     BUILTIN_DIRECTORY_RULES,
-    map_dir_to_rel_dir,
+    Entry,
+    Flags,
+    MatchFailure,
+    ScanIssue,
+    StructureRuleList,
+)
+from .paths import join_path_normalized, map_dir_to_rel_dir
+from .scanning import (
+    check_companion_files,
+    expand_if_exists,
+    expand_use_rule,
+    get_matching_item_index,
+    map_dir_to_entry_backlog,
     skip_entry,
     to_entry,
-    expand_use_rule,
-    expand_if_exists,
-    map_dir_to_entry_backlog,
-    Entry,
-    StructureRuleList,
-    Flags,
-    join_path_normalized,
-    ScanIssue,
-    get_matching_item_index,
-    check_companion_files,
-    MatchFailure,
 )
 
 _LOGGER = logging.getLogger(__name__)

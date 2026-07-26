@@ -9,7 +9,8 @@ from pathlib import Path
 
 import click
 
-from .repo_structure_lib import ConfigurationParseError, Flags, ScanIssue
+from .errors import ConfigurationParseError
+from .models import Flags, ScanIssue
 from .repo_structure_full_scan import (
     FullScanProcessor,
 )

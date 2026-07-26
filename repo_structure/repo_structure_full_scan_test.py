@@ -9,10 +9,8 @@ from .repo_structure_full_scan import (
     FullScanProcessor,
     ScanIssue,
 )
-from .repo_structure_lib import (
-    Flags,
-    ConfigurationParseError,
-)
+from .errors import ConfigurationParseError
+from .models import Flags
 
 from .repo_structure_test_lib import with_repo_structure_in_tmpdir
 

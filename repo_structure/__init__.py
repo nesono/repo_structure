@@ -3,9 +3,9 @@
 from .repo_structure_config import Configuration
 from .repo_structure_full_scan import FullScanProcessor
 from .repo_structure_diff_scan import DiffScanProcessor
-from .repo_structure_lib import (
+from .errors import ConfigurationParseError
+from .models import (
     Flags,
-    ConfigurationParseError,
     ScanIssue,
     MatchResult,
     MatchSuccess,

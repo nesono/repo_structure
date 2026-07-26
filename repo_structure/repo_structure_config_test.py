@@ -6,7 +6,7 @@ from .repo_structure_config import (
     _classify_entry,
 )
 from . import ConfigurationParseError
-from .repo_structure_lib import StructureRuleError, TemplateError
+from .errors import StructureRuleError, TemplateError
 
 
 def test_successful_parse():
