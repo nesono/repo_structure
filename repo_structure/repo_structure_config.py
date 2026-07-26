@@ -231,6 +231,19 @@ class Configuration:
                         f"Directory mapping '{directory}' uses non-existing rule '{r}'"
                     )
 
+    def add_template_rule(
+        self, directory: str, rule_name: str, entries: StructureRuleList
+    ) -> None:
+        """Register an expanded template rule and map it to a directory.
+
+        Args:
+            directory: Directory map key the expanded rule applies to.
+            rule_name: Name to register the generated structure rule under.
+            entries: Parsed entries making up the generated structure rule.
+        """
+        self.config.structure_rules[rule_name] = entries
+        self.config.directory_map.setdefault(directory, []).append(rule_name)
+
     @property
     def structure_rules(self) -> StructureRuleMap:
         """Property for structure rules."""
@@ -462,8 +475,7 @@ def _parse_use_template(
         f"__template_rule_{map_dir_to_rel_dir(directory)}_"
         f"{dir_map_yaml['use_template']}"
     )
-    config.config.structure_rules[template_rule_name] = structure_rule_list
-    config.config.directory_map[directory].append(template_rule_name)
+    config.add_template_rule(directory, template_rule_name, structure_rule_list)
 
 
 def _build_directory_map(
