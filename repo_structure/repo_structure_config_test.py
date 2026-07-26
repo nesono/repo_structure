@@ -3,6 +3,7 @@
 import pytest
 from .repo_structure_config import (
     Configuration,
+    _classify_entry,
 )
 from . import ConfigurationParseError
 from .repo_structure_lib import StructureRuleError, TemplateError
@@ -626,3 +627,83 @@ directory_map:
 
     assert config.structure_rules["__template_rule_new"] is entries
     assert config.directory_map["/new_dir/"] == ["__template_rule_new"]
+
+
+@pytest.mark.parametrize(
+    "entry, kind, is_required, is_forbidden",
+    [
+        ({"require": r"README\.md"}, "require", True, False),
+        ({"allow": r".*\.md"}, "allow", False, False),
+        ({"forbid": r".*\.tmp"}, "forbid", False, True),
+    ],
+)
+def test_classify_entry(entry, kind, is_required, is_forbidden):
+    """Test that each pattern key maps to the expected classification."""
+    parsed = _classify_entry(entry)
+
+    assert parsed.pattern == entry[kind]
+    assert parsed.kind == kind
+    assert parsed.is_required == is_required
+    assert parsed.is_forbidden == is_forbidden
+
+
+def test_classify_entry_precedence():
+    """Test that require wins over allow, and allow over forbid."""
+    assert _classify_entry({"allow": "a", "require": "r"}).kind == "require"
+    assert _classify_entry({"forbid": "f", "allow": "a"}).kind == "allow"
+
+
+def test_classify_entry_without_pattern_key():
+    """Test that an entry lacking any pattern key is reported clearly."""
+    with pytest.raises(ConfigurationParseError) as exc_info:
+        _classify_entry({"use_rule": "some_rule"})
+
+    assert "require, allow, forbid" in str(exc_info.value)
+
+
+def test_forbid_entry_is_not_required():
+    """Test that a forbidden entry is parsed as forbidden and not required."""
+    test_yaml = r"""
+structure_rules:
+  basic_rule:
+    - description: 'Basic rule'
+    - require: 'README\.md'
+    - allow: '.*\.md'
+    - forbid: '.*\.tmp'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: basic_rule
+"""
+    config = Configuration.from_yaml_string(test_yaml)
+    entries = {e.path.pattern: e for e in config.structure_rules["basic_rule"]}
+
+    assert entries[r"README\.md"].is_required
+    assert not entries[r"README\.md"].is_forbidden
+    assert not entries[r".*\.md"].is_required
+    assert not entries[r".*\.md"].is_forbidden
+    assert not entries[r".*\.tmp"].is_required
+    assert entries[r".*\.tmp"].is_forbidden
+
+
+def test_template_expansion_of_allow_and_forbid_entries():
+    """Test that template expansion substitutes allow and forbid patterns."""
+    test_yaml = r"""
+templates:
+  component:
+    - description: 'Component template'
+    - allow: '{{name}}\.md'
+    - forbid: '{{name}}\.tmp'
+directory_map:
+  /components/:
+    - description: 'Components directory'
+    - use_template: component
+      parameters:
+        name: ['lidar']
+"""
+    config = Configuration.from_yaml_string(test_yaml)
+    entries = config.structure_rules["__template_rule_components_component"]
+
+    assert [e.path.pattern for e in entries] == [r"lidar\.md", r"lidar\.tmp"]
+    assert not entries[0].is_forbidden
+    assert entries[1].is_forbidden
