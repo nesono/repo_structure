@@ -29,7 +29,12 @@ from .repo_structure_lib import (
 class FullScanProcessor:
     """Handles full repository structure scanning."""
 
-    def __init__(self, repo_root: str, config: Configuration, flags: Flags = Flags()):
+    def __init__(
+        self,
+        repo_root: str,
+        config: Configuration,
+        flags: Flags | None = None,
+    ):
         """Initialize the scanner with static configuration.
 
         Args:
@@ -39,7 +44,7 @@ class FullScanProcessor:
         """
         self.repo_root = repo_root
         self.config = config
-        self.flags = flags
+        self.flags = flags if flags is not None else Flags()
         self.git_ignore = self._get_git_ignore()
 
     def _get_git_ignore(self) -> Callable[[str], bool] | None:

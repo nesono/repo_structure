@@ -28,7 +28,7 @@ from .repo_structure_lib import (
 class DiffScanProcessor:
     """Handles differential scanning of specific paths with stateful configuration."""
 
-    def __init__(self, config: Configuration, flags: Flags = Flags()):
+    def __init__(self, config: Configuration, flags: Flags | None = None):
         """Initialize the diff scanner with static configuration.
 
         Args:
@@ -36,7 +36,7 @@ class DiffScanProcessor:
             flags: Scanning flags (verbose, follow_symlinks, include_hidden)
         """
         self.config = config
-        self.flags = flags
+        self.flags = flags if flags is not None else Flags()
 
     def _incremental_path_split(
         self, path_to_split: str
