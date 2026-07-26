@@ -22,6 +22,7 @@ from .repo_structure_lib import (
     ScanIssue,
     get_matching_item_index,
     check_companion_files,
+    MatchFailure,
 )
 
 
@@ -90,16 +91,14 @@ class DiffScanProcessor:
                 self.flags.verbose,
             )
 
-            if not match_result.success:
+            if isinstance(match_result, MatchFailure):
                 return match_result.issue
 
             if self.flags.verbose:
                 print(f"  Found match for path '{entry_name}'")
 
             # Check for required companion files
-            idx = match_result.index
-            assert idx is not None  # Type hint for mypy
-            backlog_match = backlog[idx]
+            backlog_match = backlog[match_result.index]
 
             # Construct full directory path by combining base_dir and rel_dir
             full_rel_dir = (
