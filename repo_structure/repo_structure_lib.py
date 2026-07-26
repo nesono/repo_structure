@@ -1,5 +1,6 @@
 """Common library code for repo_structure."""
 
+import logging
 import os
 import re
 from dataclasses import dataclass, field
@@ -8,6 +9,8 @@ from pathlib import Path
 from typing import Callable, Final, Literal
 
 BUILTIN_DIRECTORY_RULES: Final = ["ignore"]
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class ConfigurationParseError(Exception):
@@ -233,8 +236,7 @@ def skip_entry(
 
     for condition in skip_conditions:
         if condition:
-            if flags.verbose:
-                print(f"Skipping {entry.path}")
+            _LOGGER.debug("Skipping %s", entry.path)
             return True
 
     return False
@@ -253,13 +255,12 @@ def to_entry(os_entry: DirEntry[str], rel_dir: str) -> Entry:
 def expand_use_rule(
     use_rule: str,
     structure_rules: StructureRuleMap,
-    flags: Flags,
+    flags: Flags,  # pylint: disable=unused-argument
     rel_path: str,
 ):
     """Expand the use_rule into a list of RepoEntry items."""
     if use_rule:
-        if flags.verbose:
-            print(f"use_rule found for rel path '{rel_path}'")
+        _LOGGER.debug("use_rule found for rel path '%s'", rel_path)
         return _build_active_entry_backlog(
             [use_rule],
             structure_rules,
@@ -267,11 +268,12 @@ def expand_use_rule(
     return None
 
 
-def expand_if_exists(backlog_entry: RepoEntry, flags: Flags):
+def expand_if_exists(
+    backlog_entry: RepoEntry, flags: Flags
+):  # pylint: disable=unused-argument
     """Expand to the entry in `if_exists` or None."""
     if backlog_entry.if_exists:
-        if flags.verbose:
-            print(f"if_exists found for rel path '{backlog_entry.path.pattern}'")
+        _LOGGER.debug("if_exists found for rel path '%s'", backlog_entry.path.pattern)
         return backlog_entry.if_exists
     # the following line can not be reached given a directory entry must be
     # either `use_rule`, or `if_exists`
@@ -380,7 +382,7 @@ def get_matching_item_index(
     backlog: StructureRuleList,
     entry_path: str,
     is_dir: bool,
-    verbose: bool = False,
+    verbose: bool = False,  # pylint: disable=unused-argument
 ) -> MatchResult:
     """Get matching item index without raising exceptions, return result with potential issues."""
     for i, v in enumerate(backlog):
@@ -394,8 +396,7 @@ def get_matching_item_index(
                         path=entry_path,
                     )
                 )
-            if verbose:
-                print(f"  Found match at index {i}: '{v.path.pattern}'")
+            _LOGGER.debug("  Found match at index %d: '%s'", i, v.path.pattern)
             return MatchSuccess(index=i)
 
     display_path = entry_path + "/" if is_dir else entry_path
@@ -410,7 +411,9 @@ def get_matching_item_index(
 
 
 def _find_matching_file_in_directory(
-    base_dir: str, pattern: re.Pattern, verbose: bool
+    base_dir: str,
+    pattern: re.Pattern,
+    verbose: bool,  # pylint: disable=unused-argument
 ) -> bool:
     """Find a file matching the pattern in the directory tree.
 
@@ -433,8 +436,7 @@ def _find_matching_file_in_directory(
             file_rel_normalized = normalize_path(str(file_rel))
 
             if pattern.fullmatch(file_rel_normalized):
-                if verbose:
-                    print(f"  Found companion: {file_rel_normalized}")
+                _LOGGER.debug("  Found companion: %s", file_rel_normalized)
                 return True
 
     return False
@@ -479,8 +481,9 @@ def check_companion_files(
 
         # Search for file matching the companion pattern
         if not _find_matching_file_in_directory(base_dir, companion.path, verbose):
-            if verbose:
-                print(f"  Missing companion matching pattern: {companion.path.pattern}")
+            _LOGGER.debug(
+                "  Missing companion matching pattern: %s", companion.path.pattern
+            )
             return ScanIssue(
                 severity="error",
                 code="missing_companion",

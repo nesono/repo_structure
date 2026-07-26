@@ -1,5 +1,6 @@
 """Ensure clean repository structure for your projects."""
 
+import logging
 import sys
 from typing import cast
 from typing import Literal
@@ -57,6 +58,12 @@ def repo_structure(
     verbose: bool,
 ) -> None:
     """Ensure clean repository structure for your projects."""
+    if verbose:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(message)s",
+            stream=sys.stdout,
+        )
     flags = Flags()
     flags.follow_symlinks = follow_symlinks
     flags.include_hidden = include_hidden
