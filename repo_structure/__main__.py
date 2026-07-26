@@ -74,7 +74,7 @@ def repo_structure(
 def _load_configuration(config_path: str, verbose: bool) -> Configuration:
     """Load and validate configuration from file."""
     try:
-        return Configuration(config_path, False, None, verbose)
+        return Configuration.from_file(config_path, verbose=verbose)
     except ConfigurationParseError as err:
         click.echo(err, err=True)
         sys.exit(1)
