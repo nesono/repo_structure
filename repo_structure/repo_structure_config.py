@@ -92,7 +92,7 @@ class Configuration:
             warnings.simplefilter("ignore", DeprecationWarning)
             return cls(yaml_string, True, schema, verbose)
 
-    def __init__(  # pylint: disable=too-many-branches
+    def __init__(
         self,
         config_file: str,
         param1_is_yaml_string: bool = False,
@@ -133,6 +133,34 @@ class Configuration:
             )
         if verbose:
             logging.getLogger(__package__).setLevel(logging.DEBUG)
+
+        yaml_dict = self._load(config_file, param1_is_yaml_string)
+        self._validate_schema(yaml_dict, schema)
+
+        _LOGGER.debug("Parsing configuration data")
+        structure_rules, structure_rule_descriptions = self._parse_rules(yaml_dict)
+        directory_map, directory_descriptions = self._parse_directory_map(yaml_dict)
+        self.config = ConfigurationData(
+            structure_rules=structure_rules,
+            directory_map=directory_map,
+            structure_rule_descriptions=structure_rule_descriptions,
+            directory_descriptions=directory_descriptions,
+        )
+
+        self._expand_templates(yaml_dict)
+        self._validate_cross_references()
+        self._register_configuration_file(config_file, param1_is_yaml_string)
+
+        _LOGGER.debug(
+            "Structure rules count: %d, Directory map count: %d",
+            len(self.config.structure_rules),
+            len(self.config.directory_map),
+        )
+        _LOGGER.debug("Configuration parsed successfully")
+
+    @staticmethod
+    def _load(config_file: str, param1_is_yaml_string: bool) -> dict:
+        """Read the YAML source into a dictionary."""
         _LOGGER.debug("Loading configuration")
         if param1_is_yaml_string:
             yaml_dict = _load_repo_structure_yamls(config_file)
@@ -144,7 +172,11 @@ class Configuration:
             raise ConfigurationParseError(
                 f"Configuration is empty or could not be parsed: {source}"
             )
+        return yaml_dict
 
+    @staticmethod
+    def _validate_schema(yaml_dict: dict, schema: dict[Any, Any] | None) -> None:
+        """Validate the raw YAML against the JSON schema."""
         if not schema:
             schema = get_json_schema()
 
@@ -155,46 +187,42 @@ class Configuration:
         except SchemaError as e:
             raise ConfigurationParseError(f"Bad schema: {e.message}") from e
         _LOGGER.debug("Configuration validated successfully")
-        _LOGGER.debug("Parsing configuration data")
 
-        structure_rules, structure_rule_descriptions = _parse_structure_rules(
-            yaml_dict.get("structure_rules", {})
-        )
-        directory_map, directory_descriptions = _parse_directory_map(
-            yaml_dict.get("directory_map", {})
-        )
+    @staticmethod
+    def _parse_rules(yaml_dict: dict) -> tuple[StructureRuleMap, dict[str, str]]:
+        """Parse the ``structure_rules`` section into rules and descriptions."""
+        return _parse_structure_rules(yaml_dict.get("structure_rules", {}))
 
-        self.config = ConfigurationData(
-            structure_rules=structure_rules,
-            directory_map=directory_map,
-            structure_rule_descriptions=structure_rule_descriptions,
-            directory_descriptions=directory_descriptions,
-        )
-        # Template parsing is expanded in-place and added as structure rules to the directory_map
+    @staticmethod
+    def _parse_directory_map(yaml_dict: dict) -> tuple[DirectoryMap, dict[str, str]]:
+        """Parse the ``directory_map`` section into mappings and descriptions."""
+        return _build_directory_map(yaml_dict.get("directory_map", {}))
+
+    def _expand_templates(self, yaml_dict: dict) -> None:
+        """Expand templates in-place, adding structure rules to the directory map."""
         _parse_templates_to_configuration(
             yaml_dict.get("templates", {}),
             yaml_dict.get("directory_map", {}),
             self,
         )
-        self._validate_directory_map_use_rules()
 
-        if not param1_is_yaml_string:
-            if config_file in self.config.structure_rules:
-                raise ConfigurationParseError(
-                    f"Conflicting Structure rule for {config_file}"
-                    "- do not add the config manually."
-                )
+    def _register_configuration_file(
+        self, config_file: str, param1_is_yaml_string: bool
+    ) -> None:
+        """Record the config file name so scans can account for the file itself."""
+        if param1_is_yaml_string:
+            return
 
-            self.config.configuration_file_name = config_file
+        if config_file in self.config.structure_rules:
+            raise ConfigurationParseError(
+                f"Conflicting Structure rule for {config_file}"
+                "- do not add the config manually."
+            )
 
-        _LOGGER.debug(
-            "Structure rules count: %d, Directory map count: %d",
-            len(self.config.structure_rules),
-            len(self.config.directory_map),
-        )
-        _LOGGER.debug("Configuration parsed successfully")
+        self.config.configuration_file_name = config_file
 
-    def _validate_directory_map_use_rules(self):
+    def _validate_cross_references(self):
+        """Ensure every rule referenced by the directory map exists."""
         existing_rules = self.config.structure_rules.keys()
         for directory, rule in self.config.directory_map.items():
             for r in rule:
@@ -438,7 +466,7 @@ def _parse_use_template(
     config.config.directory_map[directory].append(template_rule_name)
 
 
-def _parse_directory_map(
+def _build_directory_map(
     directory_map_yaml: dict,
 ) -> tuple[DirectoryMap, dict[str, str]]:
 
