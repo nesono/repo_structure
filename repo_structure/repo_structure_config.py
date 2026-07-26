@@ -336,16 +336,12 @@ def _parse_use_template(
         return
 
     def _expand_template(dir_map_yaml, templates_yaml):
-
-        def _max_values_length(expansion_map: dict[str, list[str]]) -> int:
-            max_length = 0
-            for _, values in expansion_map.items():
-                max_length = max(max_length, len(values))
-            return max_length
-
         expansion_map = dir_map_yaml["parameters"]
+        max_values_length = max(
+            (len(values) for values in expansion_map.values()), default=0
+        )
         structure_rules_yaml: list[dict] = []
-        for i in range(_max_values_length(expansion_map)):
+        for i in range(max_values_length):
             if dir_map_yaml["use_template"] not in templates_yaml:
                 raise TemplateError(
                     f"Template '{dir_map_yaml['use_template']}'"
