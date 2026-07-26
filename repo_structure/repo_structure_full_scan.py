@@ -12,6 +12,7 @@ from .repo_structure_config import (
 )
 
 from .repo_structure_lib import (
+    BUILTIN_DIRECTORY_RULES,
     map_dir_to_rel_dir,
     skip_entry,
     to_entry,
@@ -245,7 +246,7 @@ class FullScanProcessor:
         used_rules = set()
         for rules in self.config.directory_map.values():
             for r in rules:
-                if r and r not in ("ignore",):
+                if r and r not in BUILTIN_DIRECTORY_RULES:
                     used_rules.add(r)
 
         for rule_name in self.config.structure_rules.keys():
