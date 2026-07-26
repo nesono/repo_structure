@@ -5,7 +5,7 @@ import logging
 import re
 import warnings
 from dataclasses import dataclass, field
-from typing import TextIO, Any
+from typing import NamedTuple, TextIO, Any
 
 from ruamel import yaml as YAML
 from jsonschema import validate, ValidationError, SchemaError
@@ -351,27 +351,39 @@ def _build_rules(
     return rules, descriptions
 
 
-def _get_pattern(entry: dict) -> str:
-    if "require" in entry:
-        return entry["require"]
-    if "allow" in entry:
-        return entry["allow"]
-    # if "forbid" in entry:
-    return entry["forbid"]
+# The keys that carry an entry's pattern, in precedence order - the first
+# one present on an entry decides how the entry is treated.
+_PATTERN_KEYS = ("require", "allow", "forbid")
 
 
-def _get_is_required(entry: dict) -> bool:
-    if "allow" in entry:
-        return False
-    if "forbid" in entry:
-        return False
-    # if "require" in entry:
-    return True
+class ParsedEntry(NamedTuple):
+    """A structure rule entry's pattern together with how it is enforced."""
+
+    pattern: str
+    kind: str
+    is_required: bool
+
+    @property
+    def is_forbidden(self) -> bool:
+        """True if the entry's pattern must not match anything."""
+        return self.kind == "forbid"
+
+
+def _classify_entry(entry: dict) -> ParsedEntry:
+    """Determine which pattern key an entry uses and what it implies."""
+    for kind in _PATTERN_KEYS:
+        if kind in entry:
+            return ParsedEntry(
+                pattern=entry[kind], kind=kind, is_required=kind == "require"
+            )
+    raise ConfigurationParseError(
+        f"Entry must contain one of {', '.join(_PATTERN_KEYS)}: {entry}"
+    )
 
 
 def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
-    entry_pattern = _get_pattern(entry)
-    is_required = _get_is_required(entry)
+    parsed = _classify_entry(entry)
+    entry_pattern = parsed.pattern
 
     is_dir = entry_pattern.endswith("/")
     entry_pattern = entry_pattern[0:-1] if is_dir else entry_pattern
@@ -386,8 +398,8 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     result = RepoEntry(
         path=compiled_pattern,
         is_dir=is_dir,
-        is_required=is_required,
-        is_forbidden="forbid" in entry,
+        is_required=parsed.is_required,
+        is_forbidden=parsed.is_forbidden,
         use_rule=entry.get("use_rule", ""),
     )
     for sub_entry in entry.get("if_exists", []):
@@ -399,15 +411,6 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     return result
 
 
-def _get_pattern_key(entry: dict) -> str:
-    if "require" in entry:
-        return "require"
-    if "allow" in entry:
-        return "allow"
-    # if "forbid" in entry:
-    return "forbid"
-
-
 def _expand_template_entry(
     template_yaml: list[dict], expansion_key: str, expansion_var: str
 ) -> list[dict]:
@@ -416,7 +419,7 @@ def _expand_template_entry(
         # Skip description entries
         if "description" in entry and len(entry) == 1:
             return entry
-        k = _get_pattern_key(entry)
+        k = _classify_entry(entry).kind
         entry[k] = entry[k].replace(f"{{{{{expansion_key}}}}}", expansion_var)
         return entry
 
