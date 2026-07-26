@@ -580,3 +580,49 @@ directory_map:
     companion = cpp_rule.companion[0]
     assert companion.path.pattern == "{{base}}.h"
     assert companion.is_required
+
+
+def test_template_expansion_registers_rule_in_directory_map():
+    """Test that expanding a template registers the generated rule."""
+    test_yaml = r"""
+templates:
+  component:
+    - description: 'Component template'
+    - require: '{{name}}.cpp'
+directory_map:
+  /components/:
+    - description: 'Components directory'
+    - use_template: component
+      parameters:
+        name: ['lidar', 'camera']
+"""
+    config = Configuration.from_yaml_string(test_yaml)
+
+    rule_name = "__template_rule_components_component"
+    assert rule_name in config.structure_rules
+    assert config.directory_map["/components/"] == [rule_name]
+    assert [e.path.pattern for e in config.structure_rules[rule_name]] == [
+        "lidar.cpp",
+        "camera.cpp",
+    ]
+
+
+def test_add_template_rule_creates_missing_directory_entry():
+    """Test that add_template_rule works for a directory without prior rules."""
+    test_yaml = r"""
+structure_rules:
+  basic_rule:
+    - description: 'Basic rule'
+    - require: 'README\.md'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: basic_rule
+"""
+    config = Configuration.from_yaml_string(test_yaml)
+    entries = config.structure_rules["basic_rule"]
+
+    config.add_template_rule("/new_dir/", "__template_rule_new", entries)
+
+    assert config.structure_rules["__template_rule_new"] is entries
+    assert config.directory_map["/new_dir/"] == ["__template_rule_new"]
