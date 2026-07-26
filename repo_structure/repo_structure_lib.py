@@ -293,6 +293,26 @@ def _has_template_substitution(pattern: str) -> bool:
     return "{{" in pattern and "}}" in pattern
 
 
+def _clone_repo_entry(
+    entry: RepoEntry, *, is_required: bool | None = None
+) -> RepoEntry:
+    """Shallow-clone a RepoEntry with count reset to 0.
+
+    Counters live on the per-scan backlog. Cloning prevents scan state from
+    leaking back into the shared Configuration.
+    """
+    return RepoEntry(
+        path=entry.path,
+        is_dir=entry.is_dir,
+        is_required=is_required if is_required is not None else entry.is_required,
+        is_forbidden=entry.is_forbidden,
+        use_rule=entry.use_rule,
+        if_exists=entry.if_exists,
+        companion=entry.companion,
+        count=0,
+    )
+
+
 def _build_active_entry_backlog(
     active_use_rules: list[str], structure_rules: StructureRuleMap
 ) -> StructureRuleList:
@@ -301,7 +321,9 @@ def _build_active_entry_backlog(
         if rule == "ignore":
             continue
         rules = structure_rules[rule]
-        result += rules
+        # Clone every entry so scan-time mutations (count += 1) do not leak
+        # back into Configuration.structure_rules.
+        result.extend(_clone_repo_entry(entry) for entry in rules)
 
         # Add companions without template substitution to initial backlog
         for entry in rules:
@@ -309,16 +331,7 @@ def _build_active_entry_backlog(
                 for companion in entry.companion:
                     # Only add if no template substitution needed
                     if not _has_template_substitution(companion.path.pattern):
-                        companion_copy = RepoEntry(
-                            path=companion.path,
-                            is_dir=companion.is_dir,
-                            is_required=False,  # Mark as optional
-                            is_forbidden=companion.is_forbidden,
-                            use_rule=companion.use_rule,
-                            if_exists=companion.if_exists,
-                            companion=[],
-                            count=0,
-                        )
+                        companion_copy = _clone_repo_entry(companion, is_required=False)
                         result.append(companion_copy)
     return result
 
