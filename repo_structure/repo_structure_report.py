@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Literal
 from .repo_structure_config import Configuration
-from .repo_structure_lib import (
+from .models import (
     BUILTIN_DIRECTORY_RULES,
     DirectoryMap,
     IGNORE_RULE,

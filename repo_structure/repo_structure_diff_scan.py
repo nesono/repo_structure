@@ -8,22 +8,26 @@ from .repo_structure_config import (
     Configuration,
 )
 
-from .repo_structure_lib import (
-    rel_dir_to_map_dir,
-    map_dir_to_rel_dir,
-    skip_entry,
+from .models import (
     Entry,
-    expand_use_rule,
-    expand_if_exists,
     Flags,
-    map_dir_to_entry_backlog,
-    StructureRuleList,
-    normalize_path,
-    join_path_normalized,
-    ScanIssue,
-    get_matching_item_index,
-    check_companion_files,
     MatchFailure,
+    ScanIssue,
+    StructureRuleList,
+)
+from .paths import (
+    join_path_normalized,
+    map_dir_to_rel_dir,
+    normalize_path,
+    rel_dir_to_map_dir,
+)
+from .scanning import (
+    check_companion_files,
+    expand_if_exists,
+    expand_use_rule,
+    get_matching_item_index,
+    map_dir_to_entry_backlog,
+    skip_entry,
 )
 
 _LOGGER = logging.getLogger(__name__)

@@ -10,17 +10,15 @@ from typing import NamedTuple, TextIO, Any
 from ruamel import yaml as YAML
 from jsonschema import validate, ValidationError, SchemaError
 
-from .repo_structure_lib import (
-    map_dir_to_rel_dir,
+from .errors import ConfigurationParseError, StructureRuleError, TemplateError
+from .models import (
     RepoEntry,
-    ConfigurationParseError,
-    StructureRuleError,
     DirectoryMap,
     StructureRuleList,
     StructureRuleMap,
     BUILTIN_DIRECTORY_RULES,
-    TemplateError,
 )
+from .paths import map_dir_to_rel_dir
 from .repo_structure_schema import get_json_schema
 
 _LOGGER = logging.getLogger(__name__)
