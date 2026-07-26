@@ -381,9 +381,10 @@ def _parse_use_template(
         if not ("description" in entry and len(entry) == 1)
     ]
 
-    # fmt: off
-    template_rule_name = \
-        f"__template_rule_{map_dir_to_rel_dir(directory)}_{dir_map_yaml['use_template']}"
+    template_rule_name = (
+        f"__template_rule_{map_dir_to_rel_dir(directory)}_"
+        f"{dir_map_yaml['use_template']}"
+    )
     config.config.structure_rules[template_rule_name] = structure_rule_list
     config.config.directory_map[directory].append(template_rule_name)
 

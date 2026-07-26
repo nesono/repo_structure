@@ -65,7 +65,7 @@ class FullScanProcessor:
         def _format_missing_entries_message(
             missing_files: list[str], missing_dirs: list[str]
         ) -> str:
-            result = f"Required patterns missing in  directory '{rel_dir}':\n"
+            result = f"Required patterns missing in directory '{rel_dir}':\n"
             if missing_files:
                 result += "Files:\n"
                 result += "".join(f"  - '{file}'\n" for file in missing_files)
