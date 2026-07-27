@@ -1,10 +1,10 @@
 # pylint: disable=duplicate-code
 """Tests for diff-scan subcommand."""
 
-from .models import Flags
-from .config import Configuration
-from .diff_scan import DiffScanProcessor
-from .test_lib import with_repo_structure_in_tmpdir
+from repo_structure.models import Flags
+from repo_structure.config import Configuration
+from repo_structure.diff_scan import DiffScanProcessor
+from tests.test_lib import with_repo_structure_in_tmpdir
 
 
 def test_matching_regex():

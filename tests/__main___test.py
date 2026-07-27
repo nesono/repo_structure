@@ -1,7 +1,7 @@
 """Main tests module."""
 
 from click.testing import CliRunner
-from .__main__ import repo_structure
+from repo_structure.__main__ import repo_structure
 
 
 def test_main_full_scan_success():
@@ -15,7 +15,7 @@ def test_main_full_scan_success():
             "-r",
             ".",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            "tests/test_config_allow_all.yaml",
         ],
     )
 
@@ -32,7 +32,7 @@ def test_main_full_scan_fail_bad_config():
             "-r",
             ".",
             "-c",
-            "repo_structure/test_config_bad_config.yaml",
+            "tests/test_config_bad_config.yaml",
         ],
     )
 
@@ -44,7 +44,7 @@ def test_main_full_scan_fail():
     runner = CliRunner()
     result = runner.invoke(
         repo_structure,
-        ["full-scan", "-r", ".", "-c", "repo_structure/test_config_fail.yaml"],
+        ["full-scan", "-r", ".", "-c", "tests/test_config_fail.yaml"],
     )
 
     assert result.exit_code != 0
@@ -59,7 +59,7 @@ def test_main_diff_scan_success():
             "--verbose",
             "diff-scan",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            "tests/test_config_allow_all.yaml",
             "LICENSE",
             "repo_structure.yaml",
             "repo_structure/config.py",
@@ -77,7 +77,7 @@ def test_main_diff_scan_fail_bad_config():
         [
             "diff-scan",
             "-c",
-            "repo_structure/test_config_bad_config.yaml",
+            "tests/test_config_bad_config.yaml",
             "LICENSE",
         ],
     )
@@ -94,7 +94,7 @@ def test_main_diff_scan_fail():
         [
             "diff-scan",
             "-c",
-            "repo_structure/test_config_fail.yaml",
+            "tests/test_config_fail.yaml",
             "LICENSE",
         ],
     )
@@ -111,7 +111,7 @@ def test_main_diff_scan_fail_abs_path():
         [
             "diff-scan",
             "-c",
-            "repo_structure/test_config_fail.yaml",
+            "tests/test_config_fail.yaml",
             "/etc/passwd",
         ],
     )
@@ -133,7 +133,7 @@ def test_main_global_flags():
             "-r",
             ".",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            "tests/test_config_allow_all.yaml",
         ],
     )
 
@@ -150,7 +150,7 @@ def test_main_include_hidden_default():
             "-r",
             ".",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            "tests/test_config_allow_all.yaml",
         ],
     )
 
@@ -174,7 +174,7 @@ def test_main_diff_scan_empty_paths():
         [
             "diff-scan",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            "tests/test_config_allow_all.yaml",
         ],
     )
 
@@ -190,7 +190,7 @@ def test_main_diff_scan_multiple_paths_with_failure():
         [
             "diff-scan",
             "-c",
-            "repo_structure/test_config_fail.yaml",
+            "tests/test_config_fail.yaml",
             "LICENSE",
             "repo_structure.yaml",
             "/absolute/path",
@@ -239,7 +239,7 @@ def test_main_full_scan_with_warnings():
             "-r",
             ".",
             "-c",
-            "repo_structure/test_config_with_warnings.yaml",
+            "tests/test_config_with_warnings.yaml",
         ],
     )
 
@@ -258,7 +258,7 @@ def test_main_full_scan_directory_success():
             "-r",
             ".",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            "tests/test_config_allow_all.yaml",
             "-d",
             "repo_structure",
         ],
@@ -277,7 +277,7 @@ def test_main_full_scan_directory_fail():
             "-r",
             ".",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            "tests/test_config_allow_all.yaml",
             "-d",
             "bad_directory",
         ],
@@ -293,7 +293,7 @@ def test_report_command_text():
         [
             "report",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            "tests/test_config_allow_all.yaml",
             "-f",
             "text",
         ],
@@ -311,7 +311,7 @@ def test_report_command_json():
         [
             "report",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            "tests/test_config_allow_all.yaml",
             "-f",
             "json",
         ],
@@ -328,7 +328,7 @@ def test_report_command_markdown():
         [
             "report",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            "tests/test_config_allow_all.yaml",
             "-f",
             "markdown",
         ],

@@ -5,8 +5,8 @@
 import re
 from unittest.mock import Mock
 
-from .models import Entry, Flags, MatchSuccess, RepoEntry
-from .scanning import (
+from repo_structure.models import Entry, Flags, MatchSuccess, RepoEntry
+from repo_structure.scanning import (
     _build_active_entry_backlog,
     expand_if_exists,
     expand_use_rule,

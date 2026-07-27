@@ -1,0 +1,11 @@
+structure_rules:
+  # The rule name deliberately matches the path this config is loaded with, so
+  # that registering the configuration file itself reports a conflict.
+  tests/conflicting_test_config.yaml:
+    - description: "Test configuration for conflicting config file"
+    - require: "conflicting_test_config.yaml"
+
+directory_map:
+  /:
+    - description: "Root directory"
+    - use_rule: tests/conflicting_test_config.yaml

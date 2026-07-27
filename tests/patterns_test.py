@@ -8,9 +8,9 @@ from typing import cast
 
 import pytest
 
-from .errors import StructureRuleError
-from .models import RepoEntry
-from .patterns import (
+from repo_structure.errors import StructureRuleError
+from repo_structure.models import RepoEntry
+from repo_structure.patterns import (
     expand_companion_requirements,
     extract_pattern_captures,
     has_template_substitution,

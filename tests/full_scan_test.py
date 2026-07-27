@@ -4,15 +4,15 @@
 
 import pytest
 
-from .config import Configuration
-from .full_scan import (
+from repo_structure.config import Configuration
+from repo_structure.full_scan import (
     FullScanProcessor,
     ScanIssue,
 )
-from .errors import ConfigurationParseError
-from .models import Flags
+from repo_structure.errors import ConfigurationParseError
+from repo_structure.models import Flags
 
-from .test_lib import with_repo_structure_in_tmpdir
+from tests.test_lib import with_repo_structure_in_tmpdir
 
 
 def _check_repo_directory_structure(

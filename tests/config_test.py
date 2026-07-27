@@ -1,12 +1,12 @@
 """Tests for repo_structure library functions."""
 
 import pytest
-from .config import (
+from repo_structure.config import (
     Configuration,
     _classify_entry,
 )
-from . import ConfigurationParseError
-from .errors import StructureRuleError, TemplateError
+from repo_structure import ConfigurationParseError
+from repo_structure.errors import StructureRuleError, TemplateError
 
 
 def test_successful_parse():
@@ -72,7 +72,7 @@ directory_map:
 
 def test_success_minimal_parse_with_config_file():
     """Test successful parsing with minimal configuration file."""
-    config = Configuration("repo_structure/test_config_allow_all.yaml")
+    config = Configuration("tests/test_config_allow_all.yaml")
     assert config is not None
 
 
@@ -549,7 +549,7 @@ def test_fail_config_file_structure_rule_conflict():
     be added as an automatic rule.
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration("conflicting_test_config.yaml")
+        Configuration("tests/conflicting_test_config.yaml")
 
 
 def test_companion_parsing():

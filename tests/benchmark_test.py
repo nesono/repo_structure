@@ -4,9 +4,9 @@ import os
 from typing import Final
 import pytest
 
-from .test_lib import with_random_repo_structure_in_tmpdir
-from .full_scan import FullScanProcessor
-from .config import Configuration
+from tests.test_lib import with_random_repo_structure_in_tmpdir
+from repo_structure.full_scan import FullScanProcessor
+from repo_structure.config import Configuration
 
 
 ALLOW_ALL_CONFIG: Final = """

@@ -5,7 +5,6 @@ structure_rules:
     - require: "LICENSE"
     - require: 'README\.md'
     - require: 'PUBLISHING\.md'
-    - require: 'conflicting_test_config\.yaml'
     - require: '\.pre-commit-config\.yaml'
     - require: '\.pre-commit-hooks\.yaml'
     - require: '\.markdownlint\.yaml'
@@ -15,21 +14,19 @@ structure_rules:
     - require: '\.python-version'
     - require: '\.pylintrc'
   python_package:
-    - description: "Standard Python package structure with modules, tests, and configuration files"
+    - description: "Standard Python package structure with modules and configuration files"
     - require: '__main__\.py'
     - require: '__init__\.py'
-    # Specify files that don't need a companion first
     - allow: '_version\.py'
-    # TODO: Add test for the schema
-    - allow: 'schema\.py'
-    - allow: 'test_lib\.py'
-    - allow: '.*_test\.py'
-    # Specify the companion
-    - allow: '(?P<base>.*)\.py'
-      companion:
-        - require: '{{base}}_test\.py'
+    - allow: '.*\.py'
     - require: 'config\.schema\.json'
-    - require: 'test_config_.*\.yaml'
+  python_tests:
+    - description: "Test modules, test support code and test configuration fixtures"
+    - require: '__init__\.py'
+    - require: 'test_lib\.py'
+    - allow: '.*_test\.py'
+    - allow: 'test_config_.*\.yaml'
+    - require: 'conflicting_test_config\.yaml'
 
 directory_map:
   /:
@@ -38,6 +35,9 @@ directory_map:
   /repo_structure/:
     - description: "Main Python package directory containing the core application logic and modules"
     - use_rule: python_package
+  /tests/:
+    - description: "Test suite for the repo_structure package"
+    - use_rule: python_tests
   /.github/:
     - description: "GitHub-specific configuration and workflow files - ignored from structure validation"
     - use_rule: ignore

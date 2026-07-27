@@ -5,7 +5,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from .paths import (
+from repo_structure.paths import (
     join_path_normalized,
     map_dir_to_rel_dir,
     normalize_path,

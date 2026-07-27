@@ -45,13 +45,15 @@ repo_structure = "repo_structure.__main__:repo_structure"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["repo_structure"]
-exclude = ["repo_structure/*_test.py"]
 
 [tool.setuptools.package-data]
 repo_structure = ["*.json"]
 
 [tool.setuptools_scm]
 version_file = "repo_structure/_version.py"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.coverage.run]
 omit = [

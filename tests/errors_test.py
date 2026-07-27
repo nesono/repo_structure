@@ -2,7 +2,11 @@
 
 import pytest
 
-from .errors import ConfigurationParseError, StructureRuleError, TemplateError
+from repo_structure.errors import (
+    ConfigurationParseError,
+    StructureRuleError,
+    TemplateError,
+)
 
 
 @pytest.mark.parametrize(

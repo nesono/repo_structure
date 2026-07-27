@@ -4,7 +4,7 @@
 
 import re
 
-from .models import (
+from repo_structure.models import (
     BUILTIN_DIRECTORY_RULES,
     IGNORE_RULE,
     Entry,

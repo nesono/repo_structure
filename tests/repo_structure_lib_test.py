@@ -7,7 +7,7 @@ guarantee that importing from the old module still yields the same objects.
 
 import pytest
 
-from . import errors, models, paths, patterns, repo_structure_lib, scanning
+from repo_structure import errors, models, paths, patterns, repo_structure_lib, scanning
 
 
 @pytest.mark.parametrize("name", repo_structure_lib.__all__)
