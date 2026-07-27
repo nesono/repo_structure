@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import Iterator
 
-from .repo_structure_config import (
+from .config import (
     Configuration,
 )
 

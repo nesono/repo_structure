@@ -1,6 +1,6 @@
-"""Tests for repo_structure_schema module."""
+"""Tests for schema module."""
 
-from repo_structure.repo_structure_schema import get_json_schema
+from repo_structure.schema import get_json_schema
 
 
 def test_get_json_schema_loads_successfully():

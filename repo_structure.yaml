@@ -21,8 +21,8 @@ structure_rules:
     # Specify files that don't need a companion first
     - allow: '_version\.py'
     # TODO: Add test for the schema
-    - allow: 'repo_structure_schema\.py'
-    - allow: 'repo_structure_test_lib\.py'
+    - allow: 'schema\.py'
+    - allow: 'test_lib\.py'
     - allow: '.*_test\.py'
     # Specify the companion
     - allow: '(?P<base>.*)\.py'

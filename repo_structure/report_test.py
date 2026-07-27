@@ -4,8 +4,8 @@ import tempfile
 import subprocess
 from pathlib import Path
 
-from .repo_structure_config import Configuration
-from .repo_structure_report import (
+from .config import Configuration
+from .report import (
     generate_report,
     format_report_text,
     format_report_json,

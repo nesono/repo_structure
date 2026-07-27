@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Callable
 from gitignore_parser import parse_gitignore
 
-from .repo_structure_config import (
+from .config import (
     Configuration,
 )
 

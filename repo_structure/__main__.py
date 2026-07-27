@@ -11,12 +11,12 @@ import click
 
 from .errors import ConfigurationParseError
 from .models import Flags, ScanIssue
-from .repo_structure_full_scan import (
+from .full_scan import (
     FullScanProcessor,
 )
-from .repo_structure_diff_scan import DiffScanProcessor
-from .repo_structure_config import Configuration
-from .repo_structure_report import generate_report, format_report
+from .diff_scan import DiffScanProcessor
+from .config import Configuration
+from .report import generate_report, format_report
 
 try:
     from ._version import version as VERSION

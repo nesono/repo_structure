@@ -1,7 +1,7 @@
 """Tests for repo_structure library functions."""
 
 import pytest
-from .repo_structure_config import (
+from .config import (
     Configuration,
     _classify_entry,
 )
