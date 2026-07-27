@@ -19,7 +19,7 @@ from .models import (
     BUILTIN_DIRECTORY_RULES,
 )
 from .paths import map_dir_to_rel_dir
-from .repo_structure_schema import get_json_schema
+from .schema import get_json_schema
 
 _LOGGER = logging.getLogger(__name__)
 

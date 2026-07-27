@@ -62,7 +62,7 @@ def test_main_diff_scan_success():
             "repo_structure/test_config_allow_all.yaml",
             "LICENSE",
             "repo_structure.yaml",
-            "repo_structure/repo_structure_config.py",
+            "repo_structure/config.py",
         ],
     )
 

@@ -1,8 +1,8 @@
 """Check the repository directory structure against your configuration."""
 
-from .repo_structure_config import Configuration
-from .repo_structure_full_scan import FullScanProcessor
-from .repo_structure_diff_scan import DiffScanProcessor
+from .config import Configuration
+from .full_scan import FullScanProcessor
+from .diff_scan import DiffScanProcessor
 from .errors import ConfigurationParseError
 from .models import (
     Flags,
