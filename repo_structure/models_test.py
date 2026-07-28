@@ -128,15 +128,21 @@ class TestMatchResult:
         """Test that MatchSuccess exposes the matched index."""
         assert MatchSuccess(index=3).index == 3
 
-    def test_match_failure_holds_issue(self):
-        """Test that MatchFailure exposes the issue."""
-        issue = ScanIssue(severity="error", code="unspecified_entry", message="nope")
-        assert MatchFailure(issue=issue).issue is issue
+    def test_match_failure_holds_reason_and_entry(self):
+        """Test that MatchFailure exposes the failure reason and entry."""
+        failure = MatchFailure(
+            code="unspecified_entry", entry_path="widget.cpp", is_dir=False
+        )
+        assert failure.code == "unspecified_entry"
+        assert failure.entry_path == "widget.cpp"
+        assert not failure.is_dir
 
     def test_variants_are_distinguishable(self):
         """Test that the two variants never compare equal."""
-        issue = ScanIssue(severity="error", code="unspecified_entry", message="nope")
-        assert MatchSuccess(index=0) != MatchFailure(issue=issue)
+        failure = MatchFailure(
+            code="unspecified_entry", entry_path="widget.cpp", is_dir=False
+        )
+        assert MatchSuccess(index=0) != failure
 
 
 class TestBuiltinDirectoryRules:

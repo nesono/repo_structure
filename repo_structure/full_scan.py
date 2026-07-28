@@ -162,8 +162,21 @@ class FullScanProcessor:
         entry: Entry,
         errors: list[ScanIssue],
     ) -> None:
-        match_result.issue.path = join_path_normalized(entry.rel_dir, entry.path)
-        errors.append(match_result.issue)
+        if match_result.code == "forbidden_entry":
+            message = f"Found forbidden entry: {match_result.entry_path}"
+        else:
+            display_path = match_result.entry_path + (
+                "/" if match_result.is_dir else ""
+            )
+            message = f"Found unspecified entry: '{display_path}'"
+        errors.append(
+            ScanIssue(
+                severity="error",
+                code=match_result.code,
+                message=message,
+                path=join_path_normalized(entry.rel_dir, entry.path),
+            )
+        )
 
     def _process_subdirectory(
         self,

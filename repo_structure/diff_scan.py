@@ -1,6 +1,7 @@
 """Library functions for repo structure directory verification."""
 
 import logging
+from dataclasses import replace
 from pathlib import Path
 from typing import Iterator
 
@@ -12,6 +13,7 @@ from .models import (
     Entry,
     Flags,
     MatchFailure,
+    MatchFailureCode,
     ScanIssue,
     ScanResult,
     StructureRuleList,
@@ -32,6 +34,11 @@ from .scanning import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+_MATCH_FAILURE_LABEL: dict[MatchFailureCode, str] = {
+    "forbidden_entry": "Forbidden",
+    "unspecified_entry": "Unspecified",
+}
 
 
 class DiffScanProcessor:
@@ -72,16 +79,22 @@ class DiffScanProcessor:
             yield rel_dir, part, is_directory
 
     def _check_path_in_backlog(
-        self, backlog: StructureRuleList, path: str, base_dir: str = ""
+        self,
+        backlog: StructureRuleList,
+        rel_path: str,
+        original_path: str,
+        map_dir: str,
     ) -> ScanIssue | None:
         """Check if path is valid in backlog and return ScanIssue if invalid.
 
         Args:
             backlog: List of structure rules to check against
-            path: Path to check (relative to base_dir)
-            base_dir: Base directory that path is relative to (relative to repo root)
+            rel_path: Path to check, relative to the map dir
+            original_path: Path as given to `check_path`, used for reporting
+            map_dir: Map dir `rel_path` is relative to, used for reporting
         """
-        for rel_dir, entry_name, is_dir in self._incremental_path_split(path):
+        base_dir = map_dir_to_rel_dir(map_dir)
+        for rel_dir, entry_name, is_dir in self._incremental_path_split(rel_path):
             if skip_entry(
                 Entry(
                     path=entry_name, rel_dir=rel_dir, is_dir=is_dir, is_symlink=False
@@ -100,7 +113,15 @@ class DiffScanProcessor:
             )
 
             if isinstance(match_result, MatchFailure):
-                return match_result.issue
+                return ScanIssue(
+                    severity="error",
+                    code=match_result.code,
+                    message=(
+                        f"{_MATCH_FAILURE_LABEL[match_result.code]} entry "
+                        f"'{original_path}' found. Map dir: '{map_dir}'"
+                    ),
+                    path=original_path,
+                )
 
             _LOGGER.debug("  Found match for path '%s'", entry_name)
 
@@ -115,7 +136,9 @@ class DiffScanProcessor:
                 entry_name, backlog_match, full_rel_dir, self.flags.verbose
             )
             if companion_issue:
-                return companion_issue
+                # The companion check only knows the entry name; report the
+                # path the caller asked about.
+                return replace(companion_issue, path=original_path)
 
             if is_dir:
                 backlog = expand_use_rule(
@@ -151,29 +174,18 @@ class DiffScanProcessor:
             entries are present.
         """
         map_dir = self._get_corresponding_map_dir(path)
+        base_dir = map_dir_to_rel_dir(map_dir)
         backlog = map_dir_to_entry_backlog(
             self.config.directory_map,
             self.config.structure_rules,
-            map_dir_to_rel_dir(map_dir),
+            base_dir,
         )
         if not backlog:
             _LOGGER.debug("backlog empty - returning success")
             return None
 
-        base_dir = map_dir_to_rel_dir(map_dir)
         rel_path = str(Path(path).relative_to(base_dir)) if base_dir else path
-        issue = self._check_path_in_backlog(backlog, rel_path, base_dir)
-        if issue:
-            # Update the message to include the original path and map_dir context
-            if issue.code == "unspecified_entry":
-                issue.message = (
-                    f"Unspecified entry '{path}' found. Map dir: '{map_dir}'"
-                )
-            elif issue.code == "forbidden_entry":
-                issue.message = f"Forbidden entry '{path}' found. Map dir: '{map_dir}'"
-            issue.path = path
-
-        return issue
+        return self._check_path_in_backlog(backlog, rel_path, path, map_dir)
 
     def check_paths(self, paths: list[str]) -> ScanResult:
         """Check multiple paths efficiently using the same configuration.
