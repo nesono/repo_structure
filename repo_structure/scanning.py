@@ -175,25 +175,12 @@ def get_matching_item_index(
         if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
             if v.is_forbidden:
                 return MatchFailure(
-                    issue=ScanIssue(
-                        severity="error",
-                        code="forbidden_entry",
-                        message=f"Found forbidden entry: {entry_path}",
-                        path=entry_path,
-                    )
+                    code="forbidden_entry", entry_path=entry_path, is_dir=is_dir
                 )
             _LOGGER.debug("  Found match at index %d: '%s'", i, v.path.pattern)
             return MatchSuccess(index=i)
 
-    display_path = entry_path + "/" if is_dir else entry_path
-    return MatchFailure(
-        issue=ScanIssue(
-            severity="error",
-            code="unspecified_entry",
-            message=f"Found unspecified entry: '{display_path}'",
-            path=entry_path,
-        )
-    )
+    return MatchFailure(code="unspecified_entry", entry_path=entry_path, is_dir=is_dir)
 
 
 def _find_matching_file_in_directory(

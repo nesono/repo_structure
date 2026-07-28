@@ -35,6 +35,41 @@ directory_map:
     assert issue.code == "forbidden_entry"
 
 
+def test_issue_reports_original_path_and_map_dir():
+    """Test that issues name the path as given and its map dir, not the segment."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - description: 'Base structure with README'
+    - require: 'README\.md'
+  python_package:
+    - description: 'Python package structure'
+    - require: '.*\.py'
+    - forbid: '.*\.pyc'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: base_structure
+  /app/:
+    - description: 'Application directory'
+    - use_rule: python_package
+    """
+    config = Configuration(config_yaml, True)
+    processor = DiffScanProcessor(config)
+
+    issue = processor.check_path("app/notes.txt")
+    assert issue is not None
+    assert issue.code == "unspecified_entry"
+    assert issue.path == "app/notes.txt"
+    assert issue.message == "Unspecified entry 'app/notes.txt' found. Map dir: '/app/'"
+
+    issue = processor.check_path("app/main.pyc")
+    assert issue is not None
+    assert issue.code == "forbidden_entry"
+    assert issue.path == "app/main.pyc"
+    assert issue.message == "Forbidden entry 'app/main.pyc' found. Map dir: '/app/'"
+
+
 def test_matching_regex_dir():
     """Test with required file."""
     config_yaml = r"""

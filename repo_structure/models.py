@@ -87,11 +87,21 @@ class MatchSuccess:
     index: int
 
 
+MatchFailureCode = Literal["forbidden_entry", "unspecified_entry"]
+
+
 @dataclass(frozen=True)
 class MatchFailure:
-    """Failed match: holds the resulting ScanIssue."""
+    """Failed match: why it failed and which entry caused it.
 
-    issue: ScanIssue
+    Deliberately carries no message. Only the caller knows the path and
+    map-dir context a message should mention, so each processor builds the
+    final ScanIssue itself instead of patching one built here.
+    """
+
+    code: MatchFailureCode
+    entry_path: str
+    is_dir: bool
 
 
 MatchResult = MatchSuccess | MatchFailure
