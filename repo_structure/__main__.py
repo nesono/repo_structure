@@ -3,7 +3,6 @@
 import logging
 import sys
 from typing import cast
-from typing import Literal
 import time
 from pathlib import Path
 
@@ -16,7 +15,7 @@ from .full_scan import (
 )
 from .diff_scan import DiffScanProcessor
 from .config import Configuration
-from .report import generate_report, format_report
+from .report import FORMATTERS, ReportFormat, generate_report, format_report
 
 try:
     from ._version import version as VERSION
@@ -297,7 +296,7 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
     "--output_format",
     "-f",
     "output_format",
-    type=click.Choice(["text", "json", "markdown"]),
+    type=click.Choice(list(FORMATTERS)),
     help="Output format for the report.",
     default="text",
     show_default=True,
@@ -334,9 +333,7 @@ def report(
     config = _load_configuration(config_path, flags.verbose)
     report_data = generate_report(config, repo_root)
 
-    formatted_report = format_report(
-        report_data, cast(Literal["text", "json", "markdown"], output_format)
-    )
+    formatted_report = format_report(report_data, cast(ReportFormat, output_format))
 
     if output:
         try:

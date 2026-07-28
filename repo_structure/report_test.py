@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .config import Configuration
 from .report import (
+    FORMATTERS,
     generate_report,
     format_report_text,
     format_report_json,
@@ -215,6 +216,26 @@ directory_map:
     # Test Markdown format
     markdown_output = format_report(report, "markdown")
     assert "# Repository Structure Configuration Report" in markdown_output
+
+
+def test_format_report_dispatches_to_every_registered_formatter():
+    """Every registry entry is reachable through format_report."""
+    test_yaml = """
+structure_rules:
+  basic_rule:
+    - description: 'Basic rule for documentation'
+    - require: 'README\\.md'
+
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: basic_rule
+"""
+    config = Configuration.from_yaml_string(test_yaml)
+    report = generate_report(config)
+
+    for format_type, formatter in FORMATTERS.items():
+        assert format_report(report, format_type) == formatter(report)
 
 
 def test_multiple_rules_per_directory():

@@ -1,7 +1,9 @@
 """Main tests module."""
 
+import click
 from click.testing import CliRunner
 from .__main__ import repo_structure
+from .report import FORMATTERS
 
 
 def test_main_full_scan_success():
@@ -345,3 +347,14 @@ def test_report_command_help():
 
     assert result.exit_code == 0
     assert "Generate a report of the configuration structure" in result.output
+
+
+def test_report_output_format_choices_match_registry():
+    """The CLI offers exactly the formats registered in FORMATTERS."""
+    report_command = repo_structure.commands["report"]
+    output_format = next(
+        param for param in report_command.params if param.name == "output_format"
+    )
+
+    assert isinstance(output_format.type, click.Choice)
+    assert list(output_format.type.choices) == list(FORMATTERS)
