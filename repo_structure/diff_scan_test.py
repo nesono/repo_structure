@@ -4,7 +4,7 @@
 from .models import Flags
 from .config import Configuration
 from .diff_scan import DiffScanProcessor
-from .test_lib import with_repo_structure_in_tmpdir
+from .test_lib import create_repo_structure
 
 
 def test_matching_regex():
@@ -303,15 +303,16 @@ directory_map:
     assert "another_invalid.txt" in issue_paths
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_companion_check(tmp_path):
+    """Test that companion validates companion files exist."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 widget.cpp
 widget.h
 engine.cpp
-"""
-)
-def test_companion_check():
-    """Test that companion validates companion files exist."""
+""",
+    )
     test_yaml = r"""
 structure_rules:
   cpp_with_headers:
@@ -325,7 +326,7 @@ directory_map:
     - use_rule: cpp_with_headers
 """
     config = Configuration(test_yaml, param1_is_yaml_string=True)
-    scanner = DiffScanProcessor(config)
+    scanner = DiffScanProcessor(config, repo_root=repo)
 
     # widget.cpp should pass (has widget.h)
     issue = scanner.check_path("widget.cpp")
@@ -338,17 +339,18 @@ directory_map:
     assert "Missing required companion" in issue.message
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_companion_multiple(tmp_path):
+    """Test multiple companion requirements."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 lib.cpp
 lib.h
 lib_test.cpp
 util.cpp
 util.h
-"""
-)
-def test_companion_multiple():
-    """Test multiple companion requirements."""
+""",
+    )
     test_yaml = r"""
 structure_rules:
   cpp_with_test:
@@ -363,7 +365,7 @@ directory_map:
     - use_rule: cpp_with_test
 """
     config = Configuration(test_yaml, param1_is_yaml_string=True)
-    scanner = DiffScanProcessor(config)
+    scanner = DiffScanProcessor(config, repo_root=repo)
 
     # lib.cpp should pass (has both companions)
     issue = scanner.check_path("lib.cpp")
@@ -375,16 +377,17 @@ directory_map:
     assert "util_test.cpp" in issue.message
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_companion_subdirectory(tmp_path):
+    """Test that companions can be in subdirectories."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 widget.cpp
 include/
 include/widget.h
 engine.cpp
-"""
-)
-def test_companion_subdirectory():
-    """Test that companions can be in subdirectories."""
+""",
+    )
     test_yaml = r"""
 structure_rules:
   cpp_with_header_in_include:
@@ -401,7 +404,7 @@ directory_map:
     - use_rule: cpp_with_header_in_include
 """
     config = Configuration(test_yaml, param1_is_yaml_string=True)
-    scanner = DiffScanProcessor(config)
+    scanner = DiffScanProcessor(config, repo_root=repo)
 
     # widget.cpp should pass (has include/widget.h)
     issue = scanner.check_path("widget.cpp")
@@ -413,15 +416,16 @@ directory_map:
     assert "include/engine.h" in issue.message
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_companion_no_expansion(tmp_path):
+    """Test that companion works without named groups in diff-scan."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 widget.cpp
 include/
 include/gadget.h
-"""
-)
-def test_companion_no_expansion():
-    """Test that companion works without named groups in diff-scan."""
+""",
+    )
     test_yaml = r"""
 structure_rules:
     cpp_with_header_in_include:
@@ -439,7 +443,7 @@ directory_map:
     - use_rule: cpp_with_header_in_include
 """
     config = Configuration(test_yaml, param1_is_yaml_string=True)
-    scanner = DiffScanProcessor(config)
+    scanner = DiffScanProcessor(config, repo_root=repo)
 
     # widget.cpp should pass (has both companions)
     issue = scanner.check_path("widget.cpp")
