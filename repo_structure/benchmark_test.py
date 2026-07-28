@@ -4,7 +4,7 @@ import os
 from typing import Final
 import pytest
 
-from .test_lib import with_random_repo_structure_in_tmpdir
+from .test_lib import create_random_repo_structure
 from .full_scan import FullScanProcessor
 from .config import Configuration
 
@@ -26,9 +26,9 @@ directory_map:
 @pytest.mark.skipif(
     os.environ.get("GITHUB_RUN_ID", "") != "", reason="Only run on local machine."
 )
-@with_random_repo_structure_in_tmpdir()
-def test_benchmark_repo_structure_default(benchmark):
+def test_benchmark_repo_structure_default(benchmark, tmp_path):
     """Test repo_structure benchmark."""
+    repo = create_random_repo_structure(tmp_path)
     config = Configuration(ALLOW_ALL_CONFIG, True)
-    processor = FullScanProcessor(".", config)
+    processor = FullScanProcessor(repo, config)
     benchmark(processor.scan)

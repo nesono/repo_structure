@@ -44,15 +44,24 @@ _MATCH_FAILURE_LABEL: dict[MatchFailureCode, str] = {
 class DiffScanProcessor:
     """Handles differential scanning of specific paths with stateful configuration."""
 
-    def __init__(self, config: Configuration, flags: Flags | None = None):
+    def __init__(
+        self,
+        config: Configuration,
+        flags: Flags | None = None,
+        repo_root: str = ".",
+    ):
         """Initialize the diff scanner with static configuration.
 
         Args:
             config: Repository structure configuration
             flags: Scanning flags (verbose, follow_symlinks, include_hidden)
+            repo_root: Root directory the checked paths are relative to.
+                Defaults to the process CWD, which is what the pre-commit hook
+                and the CLI pass paths relative to.
         """
         self.config = config
         self.flags = flags if flags is not None else Flags()
+        self.repo_root = repo_root
 
     def _incremental_path_split(
         self, path_to_split: str
@@ -133,7 +142,10 @@ class DiffScanProcessor:
                 join_path_normalized(base_dir, rel_dir) if base_dir else rel_dir
             )
             companion_issue = check_companion_files(
-                entry_name, backlog_match, full_rel_dir, self.flags.verbose
+                entry_name,
+                backlog_match,
+                str(Path(self.repo_root) / full_rel_dir),
+                self.flags.verbose,
             )
             if companion_issue:
                 # The companion check only knows the entry name; report the

@@ -12,35 +12,36 @@ from .full_scan import (
 from .errors import ConfigurationParseError
 from .models import Flags
 
-from .test_lib import with_repo_structure_in_tmpdir
+from .test_lib import create_repo_structure
 
 
 def _check_repo_directory_structure(
+    repo_root: str,
     config: Configuration,
     flags: Flags = Flags(),
 ) -> tuple[list[ScanIssue], list[ScanIssue]]:
     """Check repository structure and return errors and warnings instead of asserting."""
-    processor = FullScanProcessor(".", config, flags)
+    processor = FullScanProcessor(repo_root, config, flags)
     result = processor.scan()
     return result.errors, result.warnings
 
 
-@with_repo_structure_in_tmpdir("")
 def test_all_empty():
-    """Test empty directory structure and spec."""
+    """Test empty spec."""
     config_yaml = r"""
 """
     with pytest.raises(ConfigurationParseError):
         Configuration(config_yaml, True)
 
 
-@with_repo_structure_in_tmpdir(
-    """
-README.md
-"""
-)
-def test_matching_regex():
+def test_matching_regex(tmp_path):
     """Test with required file."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+README.md
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -52,19 +53,20 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_required_dir(tmp_path):
+    """Test with required directory."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 python/
 python/main.py
-"""
-)
-def test_required_dir():
-    """Test with required directory."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -78,21 +80,22 @@ directory_map:
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_unspecified_dir(tmp_path):
+    """Test with unspecified directory in directory, where only files are allowed."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 README.md
 python/
 python/main.py
 unspecified/
-"""
-)
-def test_unspecified_dir():
-    """Test with unspecified directory in directory, where only files are allowed."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -107,19 +110,20 @@ directory_map:
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "unspecified_entry"
     assert "unspecified" in errors[0].path
 
 
-@with_repo_structure_in_tmpdir(
-    """
-README.md
-"""
-)
-def test_missing_root_mapping():
+def test_missing_root_mapping(tmp_path):
     """Test missing root mapping."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+README.md
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -131,18 +135,19 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_root_mapping"
 
 
-@with_repo_structure_in_tmpdir(
-    """
-README.md
-"""
-)
-def test_missing_required_file():
+def test_missing_required_file(tmp_path):
     """Test missing required file."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+README.md
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -155,18 +160,19 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
 
 
-@with_repo_structure_in_tmpdir(
-    """
-README.md
-"""
-)
-def test_missing_required_dir():
+def test_missing_required_dir(tmp_path):
     """Test missing required directory."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+README.md
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -181,20 +187,21 @@ directory_map:
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
 
 
-@with_repo_structure_in_tmpdir(
-    """
-README.md
-"""
-)
-def test_fail_rule_precedence():
+def test_fail_rule_precedence(tmp_path):
     """Test rule precedence. This needs to fail because the wildcard consumes all matches.
 
     The first match wins and thus the README.md will never be reached."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+README.md
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -207,19 +214,20 @@ directory_map:
     - use_rule: base_structure
 """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_multi_use_rule(tmp_path):
+    """Test using multiple rules."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 README.md
 main.py
-"""
-)
-def test_multi_use_rule():
-    """Test using multiple rules."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -235,18 +243,19 @@ directory_map:
     - use_rule: python_package
     """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
-README.md
-"""
-)
-def test_multi_use_rule_missing_py_file():
+def test_multi_use_rule_missing_py_file(tmp_path):
     """Test missing required pattern file while using multi rules."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+README.md
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -262,19 +271,20 @@ directory_map:
     - use_rule: python_package
     """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_conflicting_file_and_dir_names(tmp_path):
+    """Test two required entries, one file, one dir. Need to pass ensuring distinct detection."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 filename.txt
 dirname/
-"""
-)
-def test_conflicting_file_and_dir_names():
-    """Test two required entries, one file, one dir. Need to pass ensuring distinct detection."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -289,18 +299,19 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
-dirname/
-"""
-)
-def test_conflicting_dir_name():
+def test_conflicting_dir_name(tmp_path):
     """Ensure that a matching directory does not suffice a required file."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+dirname/
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -312,19 +323,20 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 2
     assert errors[0].code == "missing_required_entries"
     assert errors[1].code == "unspecified_entry"
 
 
-@with_repo_structure_in_tmpdir(
-    """
-filename.txt
-"""
-)
-def test_conflicting_file_name():
+def test_conflicting_file_name(tmp_path):
     """Ensure that a matching file does not suffice a required directory."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+filename.txt
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -338,19 +350,20 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 2
     assert errors[0].code == "missing_required_entries"
     assert errors[1].code == "unspecified_entry"
 
 
-@with_repo_structure_in_tmpdir(
-    """
-filename.txt
-"""
-)
-def test_filename_with_bad_substring_match():
+def test_filename_with_bad_substring_match(tmp_path):
     """Ensure substring match is not enough to match."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+filename.txt
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -362,19 +375,20 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 2
     assert errors[0].code == "missing_required_entries"
     assert errors[1].code == "unspecified_entry"
 
 
-@with_repo_structure_in_tmpdir(
-    """
-LICENSE
-"""
-)
-def test_required_file_in_optional_directory_no_entry():
+def test_required_file_in_optional_directory_no_entry(tmp_path):
     """Test required file under optional directory - no entry."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+LICENSE
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -389,19 +403,20 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_required_file_in_optional_directory_with_entry(tmp_path):
+    """Test required file under optional directory - with directory entry."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 LICENSE
 doc/
-"""
-)
-def test_required_file_in_optional_directory_with_entry():
-    """Test required file under optional directory - with directory entry."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -416,20 +431,21 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_required_file_in_optional_directory_with_entry_and_exists(tmp_path):
+    """Test required file under optional directory - with directory entry and file."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 LICENSE
 doc/
 doc/README.md
-"""
-)
-def test_required_file_in_optional_directory_with_entry_and_exists():
-    """Test required file under optional directory - with directory entry and file."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -444,21 +460,22 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_use_rule_recursive(tmp_path):
+    """Test self-recursion from a use rule."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 main.cpp
 README.md
 lib/
 lib/lib.cpp
-"""
-)
-def test_use_rule_recursive():
-    """Test self-recursion from a use rule."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -476,21 +493,22 @@ directory_map:
     - use_rule: cpp_source
     """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_fail_use_rule_recursive(tmp_path):
+    """Ensure use_rules are not mixed up in recursion."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 main.py
 README.md
 lib/
 lib/README.md
-"""
-)
-def test_fail_use_rule_recursive():
-    """Ensure use_rules are not mixed up in recursion."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -508,7 +526,7 @@ directory_map:
     - use_rule: python_package
     """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 2
     assert errors[0].code == "missing_required_entries"
     assert errors[0].path == "lib"
@@ -516,16 +534,17 @@ directory_map:
     assert errors[1].path == "lib/README.md"
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_fail_directory_mapping_precedence(tmp_path):
+    """Test that directories from directory_mapping take precedence."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 main.py
 README.md
 lib/
 lib/README.md
-"""
-)
-def test_fail_directory_mapping_precedence():
-    """Test that directories from directory_mapping take precedence."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -546,13 +565,16 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_succeed_elaborate_use_rule_recursive(tmp_path):
+    """Test deeper nested use rule setup with existing entries."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 README.md
 app/
 app/main.py
@@ -563,10 +585,8 @@ app/lib/sub_lib/lib.py
 app/lib/sub_lib/tool/
 app/lib/sub_lib/tool/README.md
 app/lib/sub_lib/tool/main.py
-"""
-)
-def test_succeed_elaborate_use_rule_recursive():
-    """Test deeper nested use rule setup with existing entries."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -590,19 +610,20 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_succeed_ignored_hidden_file(tmp_path):
+    """Test existing ignored hidden file - hidden files not tracked."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 .hidden.md
 README.md
-"""
-)
-def test_succeed_ignored_hidden_file():
-    """Test existing ignored hidden file - hidden files not tracked."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -616,18 +637,19 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.include_hidden = False
-    errors, warnings = _check_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(repo, config, flags)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
-README.md
-"""
-)
-def test_fail_hidden_file_required_despite_hidden_disabled():
+def test_fail_hidden_file_required_despite_hidden_disabled(tmp_path):
     """Test with a missing, required, hidden file - hidden files not tracked."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+README.md
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -642,20 +664,21 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.include_hidden = True
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_fail_unspecified_hidden_files_when_hidden_enabled(tmp_path):
+    """Test for unspecified hidden file - hidden files tracked."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 README.md
 .hidden.md
 .unspecified.md
-"""
-)
-def test_fail_unspecified_hidden_files_when_hidden_enabled():
-    """Test for unspecified hidden file - hidden files tracked."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -670,20 +693,21 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.include_hidden = True
-    errors, _ = _check_repo_directory_structure(config, flags)
+    errors, _ = _check_repo_directory_structure(repo, config, flags)
     assert len(errors) == 1
     assert errors[0].code == "unspecified_entry"
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_succeed_gitignored_file(tmp_path):
+    """Test for ignored file from gitignore."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 README.md
 ignored.md
 .gitignore:ignored.md
-"""
-)
-def test_succeed_gitignored_file():
-    """Test for ignored file from gitignore."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -695,19 +719,51 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
+def test_succeed_gitignored_file_in_subdirectory(tmp_path):
+    """Test that gitignore patterns are matched against the full relative path."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
+README.md
+python/
+python/main.py
+python/ignored.md
+.gitignore:python/ignored.md
+""",
+    )
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - description: 'Base structure with README'
+    - require: 'README\.md'
+    - require: 'python/'
+      if_exists:
+      - require: 'main\.py'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: base_structure
     """
+    config = Configuration(config_yaml, True)
+    errors, warnings = _check_repo_directory_structure(repo, config)
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+
+def test_fail_unspecified_link(tmp_path):
+    """Test for unspecified symlink."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 README.md
 link -> README.md
-"""
-)
-def test_fail_unspecified_link():
-    """Test for unspecified symlink."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -721,20 +777,21 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.follow_symlinks = True
-    errors, warnings = _check_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(repo, config, flags)
     assert len(errors) == 1
     assert errors[0].code == "unspecified_entry"
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_succeed_specified_link(tmp_path):
+    """Test for specified symlink."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 README.md
 link -> README.md
-"""
-)
-def test_succeed_specified_link():
-    """Test for specified symlink."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -749,13 +806,16 @@ directory_map:
     config = Configuration(config_yaml, True)
     flags = Flags()
     flags.follow_symlinks = True
-    errors, warnings = _check_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(repo, config, flags)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_succeed_template_rule(tmp_path):
+    """Test template with single parameter."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 lidar/
 lidar/lidar_component.py
 lidar/doc/
@@ -764,10 +824,8 @@ driver/
 driver/driver_component.py
 driver/doc/
 driver/doc/driver.techspec.md
-"""
-)
-def test_succeed_template_rule():
-    """Test template with single parameter."""
+""",
+    )
     config_yaml = r"""
 templates:
   component:
@@ -786,13 +844,16 @@ directory_map:
         component: ['lidar', 'driver']
 """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_fail_template_rule_missing_file(tmp_path):
+    """Test template with single parameter missing file."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 lidar/
 lidar/lidar_component.py
 lidar/doc/
@@ -800,10 +861,8 @@ lidar/doc/lidar.techspec.md
 driver/
 driver/driver_component.py
 driver/doc/
-"""
-)
-def test_fail_template_rule_missing_file():
-    """Test template with single parameter missing file."""
+""",
+    )
     config_yaml = r"""
 templates:
   component:
@@ -822,13 +881,16 @@ directory_map:
         component: ['lidar', 'driver']
 """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_succeed_template_rule_if_exists(tmp_path):
+    """Test template with if_exists clause and optional dir missing."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 lidar/
 lidar/lidar_component.py
 lidar/doc/
@@ -836,10 +898,8 @@ lidar/doc/lidar.techspec.md
 driver/
 driver/driver_component.py
 driver/
-"""
-)
-def test_succeed_template_rule_if_exists():
-    """Test template with if_exists clause and optional dir missing."""
+""",
+    )
     config_yaml = r"""
 templates:
   component:
@@ -858,13 +918,16 @@ directory_map:
         component: ['lidar', 'driver']
 """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_succeed_template_rule_subdirectory_map(tmp_path):
+    """Test template with single parameter and subdirectory map."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 lidar/
 lidar/lidar_component.py
 lidar/doc/
@@ -881,10 +944,8 @@ subdir/camera/
 subdir/camera/camera_component.py
 subdir/camera/doc/
 subdir/camera/doc/camera.techspec.md
-"""
-)
-def test_succeed_template_rule_subdirectory_map():
-    """Test template with single parameter and subdirectory map."""
+""",
+    )
     config_yaml = r"""
 templates:
   component:
@@ -908,13 +969,16 @@ directory_map:
         component: ['control', 'camera']
 """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_fail_template_rule_subdirectory_map_missing_file(tmp_path):
+    """Test template with single parameter and subdirectory map missing file."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 lidar/
 lidar/lidar_component.py
 lidar/doc/
@@ -930,10 +994,8 @@ subdir/camera/
 subdir/camera/camera_component.py
 subdir/camera/doc/
 subdir/camera/doc/camera.techspec.md
-"""
-)
-def test_fail_template_rule_subdirectory_map_missing_file():
-    """Test template with single parameter and subdirectory map missing file."""
+""",
+    )
     config_yaml = r"""
 templates:
   component:
@@ -957,13 +1019,16 @@ directory_map:
         component: ['control', 'camera']
 """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_succeed_template_rule_multiple_expansions(tmp_path):
+    """Test template with single parameter and subdirectory map."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 lidar/
 lidar/lidar_component.rs
 lidar/doc/
@@ -980,10 +1045,8 @@ subdir/camera/
 subdir/camera/camera_component.py
 subdir/camera/doc/
 subdir/camera/doc/camera.techspec.md
-"""
-)
-def test_succeed_template_rule_multiple_expansions():
-    """Test template with single parameter and subdirectory map."""
+""",
+    )
     config_yaml = r"""
 templates:
   example_template:
@@ -1009,13 +1072,16 @@ directory_map:
         extension: ['py']
 """
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config)
+    errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_succeed_with_verbose(tmp_path):
+    """Test enforcement with verbose flag enabled."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 README.md
 link_to_skip -> README.md
 doc/
@@ -1024,10 +1090,8 @@ lidar/
 lidar/lidar_component.py
 lidar/doc/
 lidar/doc/lidar.techspec.md
-"""
-)
-def test_succeed_with_verbose():
-    """Test enforcement with verbose flag enabled."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -1056,21 +1120,22 @@ directory_map:
     flags = Flags()
     flags.verbose = True
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(repo, config, flags)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_forbid_file(tmp_path):
+    """Test with required directory."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 README.md
 CMakeLists.txt
 python/
 python/main.py
-"""
-)
-def test_forbid_file():
-    """Test with required directory."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -1086,21 +1151,22 @@ directory_map:
     - use_rule: base_structure
         """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "forbidden_entry"
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_ignore_rule(tmp_path):
+    """Test with ignored directory."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 README.md
 python/
 python/whatever.py
 python/this_is_ignored.py
-"""
-)
-def test_ignore_rule():
-    """Test with ignored directory."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -1117,21 +1183,24 @@ directory_map:
     flags = Flags()
     flags.verbose = True
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(repo, config, flags)
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
-README.md
-"""
-)
-def test_warn_on_unused_structure_rule():  # pylint: disable=import-outside-toplevel
+def test_warn_on_unused_structure_rule(
+    tmp_path,
+):  # pylint: disable=import-outside-toplevel
     """Warn if a structure rule exists in the configuration but is never used in the scan.
 
     Using the non-throwing API, warnings are returned as ScanIssue entries.
     """
+    repo = create_repo_structure(
+        tmp_path,
+        """
+README.md
+""",
+    )
     config_yaml = r"""
 structure_rules:
   base_structure:
@@ -1146,22 +1215,23 @@ directory_map:
     - use_rule: base_structure
     """
     config = Configuration(config_yaml, True)
-    processor = FullScanProcessor(".", config, Flags())
+    processor = FullScanProcessor(repo, config, Flags())
     warnings = processor.scan().warnings
     assert any(
         "unused_rule" in i.message for i in warnings
     ), f"Expected unused rule warning, got: {warnings}"
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_companion_full_scan(tmp_path):
+    """Test that full scan detects missing companion files."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 widget.cpp
 widget.h
 engine.cpp
-"""
-)
-def test_companion_full_scan():
-    """Test that full scan detects missing companion files."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   cpp_with_headers:
@@ -1175,7 +1245,7 @@ directory_map:
     - use_rule: cpp_with_headers
 """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
 
     # Should have error for engine.cpp missing engine.h
     # Note: We get 2 errors - one from companion check, one from missing required pattern
@@ -1186,17 +1256,18 @@ directory_map:
     assert "engine.h" in companion_errors[0].message
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_companion_subdirectory_full_scan(tmp_path):
+    """Test that full scan detects missing companions in subdirectories."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 widget.cpp
 widget.h
 include/
 include/engine.h
 engine.cpp
-"""
-)
-def test_companion_subdirectory_full_scan():
-    """Test that full scan detects missing companions in subdirectories."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
   cpp_with_header_in_include:
@@ -1210,7 +1281,7 @@ directory_map:
     - use_rule: cpp_with_header_in_include
 """
     config = Configuration(config_yaml, True)
-    errors, _ = _check_repo_directory_structure(config)
+    errors, _ = _check_repo_directory_structure(repo, config)
 
     # Should have errors:
     # 1. widget.cpp missing include/widget.h companion
@@ -1222,15 +1293,16 @@ directory_map:
     assert "include/widget.h" in companion_errors[0].message
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_companion_no_expansion(tmp_path):
+    """Test that companion works without named groups."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 widget.cpp
 include/
 include/gadget.h
-"""
-)
-def test_companion_no_expansion():
-    """Test that companion works without named groups."""
+""",
+    )
     config_yaml = r"""
 structure_rules:
     cpp_with_header_in_include:
@@ -1247,24 +1319,25 @@ directory_map:
     flags = Flags()
     flags.verbose = True
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(repo, config, flags)
 
     assert len(errors) == 0
     assert len(warnings) == 0
 
 
-@with_repo_structure_in_tmpdir(
-    """
+def test_companion_with_template_parameters(tmp_path):
+    """Test that companions can use both template parameters and capture groups."""
+    repo = create_repo_structure(
+        tmp_path,
+        """
 controller.py
 controller_test.py
 service.rs
 service_test.rs
 utils.cpp
 utils_test.cpp
-"""
-)
-def test_companion_with_template_parameters():
-    """Test that companions can use both template parameters and capture groups."""
+""",
+    )
     config_yaml = r"""
 templates:
     module_with_test:
@@ -1283,7 +1356,7 @@ directory_map:
     flags = Flags()
     flags.verbose = True
     config = Configuration(config_yaml, True)
-    errors, warnings = _check_repo_directory_structure(config, flags)
+    errors, warnings = _check_repo_directory_structure(repo, config, flags)
 
     assert len(errors) == 0
     assert len(warnings) == 0

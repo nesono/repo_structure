@@ -56,11 +56,17 @@ class FullScanProcessor:
         self.git_ignore = self._get_git_ignore()
 
     def _get_git_ignore(self) -> Callable[[str], bool] | None:
-        """Get gitignore parser, cached for the lifetime of the scan."""
+        """Get gitignore parser, cached for the lifetime of the scan.
+
+        The returned matcher takes a path relative to the repository root and
+        resolves it against that root, not against the process CWD.
+        """
         git_ignore_path = Path(self.repo_root) / ".gitignore"
-        if git_ignore_path.is_file():
-            return parse_gitignore(str(git_ignore_path))
-        return None
+        if not git_ignore_path.is_file():
+            return None
+
+        matches = parse_gitignore(str(git_ignore_path))
+        return lambda rel_path: matches(str(Path(self.repo_root) / rel_path))
 
     def _check_required_entries_missing(
         self,
@@ -133,7 +139,10 @@ class FullScanProcessor:
 
             # Check for required companion files
             companion_issue = check_companion_files(
-                entry.path, backlog[idx], rel_dir, self.flags.verbose
+                entry.path,
+                backlog[idx],
+                str(Path(self.repo_root) / rel_dir),
+                self.flags.verbose,
             )
             if companion_issue:
                 errors.append(companion_issue)

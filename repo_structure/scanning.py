@@ -41,7 +41,11 @@ def skip_entry(
     git_ignore: Callable[[str], bool] | None = None,
     flags: Flags | None = None,
 ) -> bool:
-    """Return True if the entry should be skipped/ignored."""
+    """Return True if the entry should be skipped/ignored.
+
+    `git_ignore` is called with the entry's path relative to the repository
+    root, so it must resolve that against the root rather than the process CWD.
+    """
     if flags is None:
         flags = Flags()
     skip_conditions = [
@@ -49,7 +53,7 @@ def skip_entry(
         (not flags.include_hidden and entry.path.startswith(".")),
         (entry.path == ".gitignore" and not entry.is_dir),
         (entry.path == ".git" and entry.is_dir),
-        (git_ignore and git_ignore(entry.path)),
+        (git_ignore and git_ignore(join_path_normalized(entry.rel_dir, entry.path))),
         (
             entry.is_dir
             and rel_dir_to_map_dir(join_path_normalized(entry.rel_dir, entry.path))
@@ -218,7 +222,7 @@ def _find_matching_file_in_directory(
 def check_companion_files(
     entry_name: str,
     matched_entry: RepoEntry,
-    rel_dir: str,
+    search_dir: str,
     verbose: bool = False,
 ) -> ScanIssue | None:
     """Check if required companion files exist for a matched entry.
@@ -226,7 +230,8 @@ def check_companion_files(
     Args:
         entry_name: Name of the file that was matched
         matched_entry: The RepoEntry that was matched
-        rel_dir: Relative directory where the file exists
+        search_dir: Directory to search companions in, resolved by the caller
+            against the repository root (not the process CWD)
         verbose: Enable verbose output
 
     Returns:
@@ -247,7 +252,7 @@ def check_companion_files(
     )
 
     # Check if required companions exist
-    base_dir = rel_dir if rel_dir else "."
+    base_dir = search_dir if search_dir else "."
     for companion in expanded_companions:
         if not companion.is_required:
             continue
