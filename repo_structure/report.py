@@ -4,7 +4,7 @@ import json
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Callable, Literal
 from .config import Configuration
 from .models import (
     BUILTIN_DIRECTORY_RULES,
@@ -12,6 +12,9 @@ from .models import (
     IGNORE_RULE,
     StructureRuleMap,
 )
+
+ReportFormat = Literal["text", "json", "markdown"]
+"""Output formats supported by :data:`FORMATTERS`."""
 
 
 @dataclass
@@ -533,9 +536,21 @@ def format_report_markdown(report: ConfigurationReport) -> str:
     return "\n".join(lines)
 
 
+FORMATTERS: dict[ReportFormat, Callable[[ConfigurationReport], str]] = {
+    "text": format_report_text,
+    "json": format_report_json,
+    "markdown": format_report_markdown,
+}
+"""Registry of report formatters, keyed by output format.
+
+Add a new format by registering its formatter here; the CLI derives its
+``--output-format`` choices from these keys.
+"""
+
+
 def format_report(
     report: ConfigurationReport,
-    format_type: Literal["text", "json", "markdown"] = "text",
+    format_type: ReportFormat = "text",
 ) -> str:
     """Format the report in the specified format.
 
@@ -545,9 +560,8 @@ def format_report(
 
     Returns:
         A formatted representation of the report.
+
+    Raises:
+        KeyError: If ``format_type`` is not a registered format.
     """
-    if format_type == "json":
-        return format_report_json(report)
-    if format_type == "markdown":
-        return format_report_markdown(report)
-    return format_report_text(report)
+    return FORMATTERS[format_type](report)
