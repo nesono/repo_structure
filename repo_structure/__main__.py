@@ -10,7 +10,7 @@ from pathlib import Path
 import click
 
 from .errors import ConfigurationParseError
-from .models import Flags, ScanIssue
+from .models import Flags, ScanResult
 from .full_scan import (
     FullScanProcessor,
 )
@@ -98,39 +98,35 @@ def _validate_directory_mapping(directory: str, config: Configuration) -> None:
 
 def _perform_scan(
     repo_root: str, config: Configuration, flags: Flags, directory: str | None
-) -> tuple[list[ScanIssue], list[ScanIssue]]:
+) -> ScanResult:
     """Perform the actual scan operation."""
+    processor = FullScanProcessor(repo_root, config, flags)
+
     if directory:
         directory = f'/{directory.strip("/")}/'
         _validate_directory_mapping(directory, config)
-        processor = FullScanProcessor(repo_root, config, flags)
-        errors = processor.scan_directory(directory)
-        return errors, []
+        return processor.scan_directory(directory)
 
-    processor = FullScanProcessor(repo_root, config, flags)
     return processor.scan()
 
 
-def _print_scan_results(errors: list[ScanIssue], warnings: list[ScanIssue]) -> bool:
+def _print_scan_results(result: ScanResult) -> bool:
     """Print scan results and return success status."""
-    successful = True
-
     # Print warnings first
-    if warnings:
+    if result.warnings:
         click.echo(click.style("Warnings:", fg="yellow"))
-        for w in warnings:
+        for w in result.warnings:
             loc = f" [{w.path}]" if getattr(w, "path", None) else ""
             click.echo(click.style(f" - ({w.code}) {w.message}{loc}", fg="yellow"))
 
     # Then errors
-    if errors:
+    if result.errors:
         click.echo(click.style("Errors:", fg="red"))
-        for e in errors:
+        for e in result.errors:
             loc = f" [{e.path}]" if getattr(e, "path", None) else ""
             click.echo(click.style(f" - ({e.code}) {e.message}{loc}", fg="red"))
-        successful = False
 
-    return successful
+    return result.is_success
 
 
 @repo_structure.command()
@@ -186,8 +182,8 @@ def full_scan(
     start_time = time.time()
 
     config = _load_configuration(config_path, flags.verbose)
-    errors, warnings = _perform_scan(repo_root, config, flags, directory)
-    successful = _print_scan_results(errors, warnings)
+    result = _perform_scan(repo_root, config, flags, directory)
+    successful = _print_scan_results(result)
 
     duration = time.time() - start_time
     if flags.verbose:
@@ -257,16 +253,14 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
             valid_paths.append(path)
 
     # Check all valid paths efficiently
-    issues = processor.check_paths(valid_paths)
-    if issues:
-        for issue in issues:
-            loc = f" [{issue.path}]" if getattr(issue, "path", None) else ""
-            click.echo(
-                "Error: "
-                + click.style(f"({issue.code}) {issue.message}{loc}", fg="red"),
-                err=True,
-            )
-        successful = False
+    result = processor.check_paths(valid_paths)
+    for issue in result.errors:
+        loc = f" [{issue.path}]" if getattr(issue, "path", None) else ""
+        click.echo(
+            "Error: " + click.style(f"({issue.code}) {issue.message}{loc}", fg="red"),
+            err=True,
+        )
+    successful = successful and result.is_success
 
     click.echo(
         "Checks have"

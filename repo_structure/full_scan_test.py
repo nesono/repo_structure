@@ -21,7 +21,8 @@ def _check_repo_directory_structure(
 ) -> tuple[list[ScanIssue], list[ScanIssue]]:
     """Check repository structure and return errors and warnings instead of asserting."""
     processor = FullScanProcessor(".", config, flags)
-    return processor.scan()
+    result = processor.scan()
+    return result.errors, result.warnings
 
 
 @with_repo_structure_in_tmpdir("")
@@ -1146,7 +1147,7 @@ directory_map:
     """
     config = Configuration(config_yaml, True)
     processor = FullScanProcessor(".", config, Flags())
-    _, warnings = processor.scan()
+    warnings = processor.scan().warnings
     assert any(
         "unused_rule" in i.message for i in warnings
     ), f"Expected unused rule warning, got: {warnings}"
