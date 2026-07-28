@@ -7,6 +7,7 @@ from .errors import ConfigurationParseError
 from .models import (
     Flags,
     ScanIssue,
+    ScanResult,
     MatchResult,
     MatchSuccess,
     MatchFailure,
@@ -18,6 +19,7 @@ __all__ = [
     "FullScanProcessor",
     "DiffScanProcessor",
     "ScanIssue",
+    "ScanResult",
     "MatchResult",
     "MatchSuccess",
     "MatchFailure",

@@ -13,6 +13,7 @@ from .models import (
     MatchSuccess,
     RepoEntry,
     ScanIssue,
+    ScanResult,
 )
 
 
@@ -84,6 +85,40 @@ class TestScanIssue:
             severity="error", code="forbidden_entry", message="nope", path="a.txt"
         )
         assert issue == same
+
+
+class TestScanResult:
+    """Test the ScanResult dataclass."""
+
+    def test_empty_result_is_successful(self):
+        """Test that a result without issues defaults to empty and successful."""
+        result = ScanResult()
+        assert not result.errors
+        assert not result.warnings
+        assert result.is_success
+
+    def test_errors_fail_the_scan(self):
+        """Test that any error makes the result unsuccessful."""
+        issue = ScanIssue(severity="error", code="unspecified_entry", message="nope")
+        assert not ScanResult(errors=[issue]).is_success
+
+    def test_warnings_alone_do_not_fail_the_scan(self):
+        """Test that warnings are reported without failing the scan."""
+        warning = ScanIssue(
+            severity="warning", code="unused_structure_rule", message="unused"
+        )
+        result = ScanResult(warnings=[warning])
+        assert result.is_success
+        assert result.warnings == [warning]
+
+    def test_default_lists_are_not_shared(self):
+        """Test that each instance gets its own list instances."""
+        first = ScanResult()
+        second = ScanResult()
+        first.errors.append(
+            ScanIssue(severity="error", code="unspecified_entry", message="nope")
+        )
+        assert not second.errors
 
 
 class TestMatchResult:

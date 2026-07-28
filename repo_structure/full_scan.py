@@ -17,6 +17,7 @@ from .models import (
     Flags,
     MatchFailure,
     ScanIssue,
+    ScanResult,
     StructureRuleList,
 )
 from .paths import join_path_normalized, map_dir_to_rel_dir
@@ -262,21 +263,22 @@ class FullScanProcessor:
                 )
         return warnings
 
-    def scan(self) -> tuple[list[ScanIssue], list[ScanIssue]]:
-        """Scan the repository and return a list of issues (errors and warnings)."""
+    def scan(self) -> ScanResult:
+        """Scan the repository and return the errors and warnings found."""
         errors = self._collect_errors()
         warnings = self._collect_warnings()
         errors.sort(key=lambda x: (x.path is None, x.path or "", x.code))
         warnings.sort(key=lambda x: (x.path is None, x.path or "", x.code))
-        return errors, warnings
+        return ScanResult(errors=errors, warnings=warnings)
 
-    def scan_directory(self, map_dir: str) -> list[ScanIssue]:
-        """Scan a single directory mapping and return issues.
+    def scan_directory(self, map_dir: str) -> ScanResult:
+        """Scan a single directory mapping and return the issues found.
 
         Args:
             map_dir: Directory mapping key (e.g. "/", "src/", "tests/")
 
         Returns:
-            List of scan issues found in the specified directory mapping
+            ScanResult for the specified directory mapping. Warnings are always
+            empty, since unused-rule detection is repository-wide.
         """
-        return self._process_map_dir(map_dir)
+        return ScanResult(errors=self._process_map_dir(map_dir))

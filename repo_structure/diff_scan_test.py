@@ -239,8 +239,9 @@ directory_map:
 
     # Test with all valid paths
     valid_paths = ["README.md", "LICENSE"]
-    issues = processor.check_paths(valid_paths)
-    assert len(issues) == 0
+    result = processor.check_paths(valid_paths)
+    assert result.is_success
+    assert len(result.errors) == 0
 
     # Test with mixed valid and invalid paths
     mixed_paths = [
@@ -250,7 +251,9 @@ directory_map:
         "CMakeLists.txt",
         "another_invalid.txt",
     ]
-    issues = processor.check_paths(mixed_paths)
+    result = processor.check_paths(mixed_paths)
+    assert not result.is_success
+    issues = result.errors
     assert len(issues) == 3
 
     # Check specific issues

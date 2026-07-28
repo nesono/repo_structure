@@ -13,6 +13,7 @@ from .models import (
     Flags,
     MatchFailure,
     ScanIssue,
+    ScanResult,
     StructureRuleList,
 )
 from .paths import (
@@ -174,18 +175,19 @@ class DiffScanProcessor:
 
         return issue
 
-    def check_paths(self, paths: list[str]) -> list[ScanIssue]:
+    def check_paths(self, paths: list[str]) -> ScanResult:
         """Check multiple paths efficiently using the same configuration.
 
         Args:
             paths: List of paths to check
 
         Returns:
-            List of ScanIssues for invalid paths. Empty list if all paths are valid.
+            ScanResult holding one error per invalid path. A diff scan cannot
+            detect missing required entries, so warnings are always empty.
         """
-        issues = []
+        errors = []
         for path in paths:
             issue = self.check_path(path)
             if issue:
-                issues.append(issue)
-        return issues
+                errors.append(issue)
+        return ScanResult(errors=errors)

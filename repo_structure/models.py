@@ -63,6 +63,23 @@ class ScanIssue:
     path: str | None = None
 
 
+@dataclass
+class ScanResult:
+    """Outcome of a scan: the issues found, split by severity.
+
+    Both processors return this shape so callers do not have to special-case
+    per-processor return types.
+    """
+
+    errors: list[ScanIssue] = field(default_factory=list)
+    warnings: list[ScanIssue] = field(default_factory=list)
+
+    @property
+    def is_success(self) -> bool:
+        """True when the scan found no errors. Warnings do not fail a scan."""
+        return not self.errors
+
+
 @dataclass(frozen=True)
 class MatchSuccess:
     """Successful match: holds the index of the matched backlog entry."""
