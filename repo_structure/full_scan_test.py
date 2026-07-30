@@ -1360,3 +1360,174 @@ directory_map:
 
     assert len(errors) == 0
     assert len(warnings) == 0
+
+
+def test_companion_capture_with_regex_metacharacters(tmp_path):
+    """Regression: a capture holding regex metacharacters matches literally.
+
+    Before captures were passed through ``re.escape``, the expanded companion
+    pattern for ``foo+bar.cpp`` was ``foo+bar\\.h``, which does not match the
+    literal file ``foo+bar.h`` — a false 'missing companion' error.
+    """
+    repo = create_repo_structure(
+        tmp_path,
+        """
+foo+bar.cpp
+foo+bar.h
+""",
+    )
+    config_yaml = r"""
+structure_rules:
+  cpp_with_headers:
+    - description: 'C++ files with required headers'
+    - allow: '(?P<base>.*)\.cpp'
+      companion:
+        - require: '{{base}}\.h'
+    - allow: '.*\.h'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_headers
+"""
+    config = Configuration.from_yaml_string(config_yaml)
+    errors, warnings = _check_repo_directory_structure(repo, config)
+
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+
+def test_companion_capture_metacharacters_do_not_match_loosely(tmp_path):
+    """Regression: an escaped capture must not match regex-wise.
+
+    Unescaped, ``foo+bar\\.h`` would happily match ``fooobar.h`` and hide the
+    fact that the real companion ``foo+bar.h`` is missing.
+    """
+    repo = create_repo_structure(
+        tmp_path,
+        """
+foo+bar.cpp
+fooobar.h
+""",
+    )
+    config_yaml = r"""
+structure_rules:
+  cpp_with_headers:
+    - description: 'C++ files with required headers'
+    - allow: '(?P<base>.*)\.cpp'
+      companion:
+        - require: '{{base}}\.h'
+    - allow: '.*\.h'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_headers
+"""
+    config = Configuration.from_yaml_string(config_yaml)
+    errors, _ = _check_repo_directory_structure(repo, config)
+
+    companion_errors = [e for e in errors if e.code == "missing_companion"]
+    assert len(companion_errors) == 1
+    assert companion_errors[0].path == "foo+bar.cpp"
+
+
+def test_companion_capture_with_unbalanced_parenthesis(tmp_path):
+    """Regression: a capture that used to break regex compilation still checks.
+
+    ``foo(bar`` substituted raw produced an uncompilable pattern whose
+    ``re.error`` was swallowed, silently dropping the companion requirement.
+    """
+    repo = create_repo_structure(
+        tmp_path,
+        """
+foo(bar.cpp
+""",
+    )
+    config_yaml = r"""
+structure_rules:
+  cpp_with_headers:
+    - description: 'C++ files with required headers'
+    - allow: '(?P<base>.*)\.cpp'
+      companion:
+        - require: '{{base}}\.h'
+    - allow: '.*\.h'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: cpp_with_headers
+"""
+    config = Configuration.from_yaml_string(config_yaml)
+    errors, _ = _check_repo_directory_structure(repo, config)
+
+    companion_errors = [e for e in errors if e.code == "missing_companion"]
+    assert len(companion_errors) == 1
+    assert companion_errors[0].path == "foo(bar.cpp"
+    assert r"foo\(bar\.h" in companion_errors[0].message
+
+
+def test_configuration_reused_across_scans(tmp_path):
+    """Regression: scan counters must not leak back into the Configuration.
+
+    Scanning a satisfying repository used to bump ``count`` on the shared
+    ``RepoEntry`` objects, so a later scan of a repository that is missing the
+    required file saw a stale non-zero count and reported no error.
+    """
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - description: 'Base structure requiring a README'
+    - require: 'README\.md'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: base_structure
+"""
+    config = Configuration.from_yaml_string(config_yaml)
+
+    complete_repo = create_repo_structure(
+        tmp_path / "complete",
+        """
+README.md
+""",
+    )
+    incomplete_repo = create_repo_structure(tmp_path / "incomplete", "")
+
+    errors, _ = _check_repo_directory_structure(complete_repo, config)
+    assert len(errors) == 0
+
+    errors, _ = _check_repo_directory_structure(incomplete_repo, config)
+    assert [e.code for e in errors] == ["missing_required_entries"]
+    assert "README" in errors[0].message
+
+    # And the third scan of the complete repository still passes, proving the
+    # incomplete scan did not leave state behind either.
+    errors, _ = _check_repo_directory_structure(complete_repo, config)
+    assert len(errors) == 0
+
+
+def test_configuration_structure_rules_unmutated_by_scan(tmp_path):
+    """Regression: scanning leaves ``Configuration.structure_rules`` counts at 0."""
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - description: 'Base structure requiring a README'
+    - require: 'README\.md'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: base_structure
+"""
+    config = Configuration.from_yaml_string(config_yaml)
+    repo = create_repo_structure(
+        tmp_path,
+        """
+README.md
+""",
+    )
+
+    _check_repo_directory_structure(repo, config)
+
+    assert all(
+        entry.count == 0
+        for entries in config.structure_rules.values()
+        for entry in entries
+    )
