@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "repo-structure"
@@ -42,16 +42,18 @@ dev = [
 [project.scripts]
 repo_structure = "repo_structure.__main__:repo_structure"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["repo_structure"]
-exclude = ["repo_structure/*_test.py"]
+[tool.hatch.version]
+source = "vcs"
 
-[tool.setuptools.package-data]
-repo_structure = ["*.json"]
+[tool.hatch.build.hooks.vcs]
+version-file = "repo_structure/_version.py"
 
-[tool.setuptools_scm]
-version_file = "repo_structure/_version.py"
+[tool.hatch.build.targets.wheel]
+packages = ["repo_structure"]
+# Tests live beside the modules they test (see CLAUDE.md); strip them from the
+# wheel here rather than relocating them. Hatchling matches file patterns,
+# which setuptools' packages.find exclude cannot do.
+exclude = ["*_test.py", "test_lib.py", "test_config_*.yaml"]
 
 [tool.coverage.run]
 omit = [

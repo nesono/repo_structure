@@ -28,12 +28,16 @@ demo of the tool's flagship feature. `check_companion_files` resolves companions
 by walking _below_ the matched file's directory, so a `../tests/…` companion can
 never match — relocating tests forces that rule to be dropped.
 
-The accepted cost is that setuptools ships the test modules in the wheel
-(~50 KB). Note that `[tool.setuptools.packages.find] exclude` filters _package
-names_, not files, so the existing `exclude = ["repo_structure/*_test.py"]` line
-is inert and cannot be made to work. If wheel contents ever need cleaning up,
-switch the build backend to hatchling (`hatch-vcs` replacing `setuptools-scm`),
-which can exclude files.
+Tests are kept out of the wheel at _build_ time instead of by relocating them.
+The build backend is hatchling (with `hatch-vcs` for the version), whose
+`[tool.hatch.build.targets.wheel] exclude` matches file patterns. setuptools
+could not do this: its `packages.find` exclude filters _package names_, not
+files, so the old `exclude = ["repo_structure/*_test.py"]` line was inert.
+
+Anything test-only added under `repo_structure/` must therefore match one of
+the `exclude` patterns in `pyproject.toml` — `*_test.py`, `test_lib.py`,
+`test_config_*.yaml` — or it will ship to PyPI. The sdist deliberately keeps
+the tests so downstreams can run the suite.
 
 ## Module map
 
