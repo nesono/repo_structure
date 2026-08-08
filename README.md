@@ -15,9 +15,12 @@ You can control:
 - Mapping directory structure rules to specific directories (`directory_map`)
 - Reusing directory structure rules recursively (`use_rule` in `structure_rules`)
 - Template for structures with patterns (`templates`)
+- Splitting the configuration across directories (`use_config`, `inherit`)
 
-Here is an example file that showcases all the supported features:
-[example YAML](repo_structure.yaml)
+This repository validates itself, so its own configuration is the worked
+example. It is split across two files, which is the `use_config` feature in
+use: [the root configuration](repo_structure.yaml) delegates the package
+directory to [the package's own configuration](repo_structure/repo_structure.yaml).
 
 Cross-platform support for Windows, macOS, and Linux.
 

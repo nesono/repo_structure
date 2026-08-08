@@ -53,7 +53,14 @@ packages = ["repo_structure"]
 # Tests live beside the modules they test (see CLAUDE.md); strip them from the
 # wheel here rather than relocating them. Hatchling matches file patterns,
 # which setuptools' packages.find exclude cannot do.
-exclude = ["*_test.py", "test_lib.py", "test_config_*.yaml"]
+# repo_structure.yaml describes this directory for the tool's own self-scan and
+# is not runtime data, so it stays out of the wheel too.
+exclude = [
+    "*_test.py",
+    "test_lib.py",
+    "test_config_*.yaml",
+    "repo_structure.yaml",
+]
 
 [tool.coverage.run]
 omit = [
