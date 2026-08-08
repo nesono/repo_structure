@@ -46,6 +46,71 @@ DirectoryMap = dict[str, list[str]]
 StructureRuleList = list[RepoEntry]
 StructureRuleMap = dict[str, StructureRuleList]
 
+INHERIT_ALL: Final = "all"
+
+
+@dataclass
+class InheritSpec:
+    """What a configuration takes over from the configuration that mounted it.
+
+    ``structure_rules`` is either :data:`INHERIT_ALL`, an explicit list of rule
+    names, or None when the configuration inherits nothing. ``override`` names
+    the inherited rules the configuration deliberately redefines; redefining an
+    inherited rule that is not listed here is an error.
+    """
+
+    structure_rules: str | list[str] | None = None
+    override: list[str] = field(default_factory=list)
+
+    @property
+    def inherits_everything(self) -> bool:
+        """True if the configuration asked for every parent structure rule."""
+        return self.structure_rules == INHERIT_ALL
+
+
+@dataclass
+class ParsedDocument:
+    """One configuration document, parsed but not yet merged with others.
+
+    Rule names are still exactly as written in the document -- qualification
+    into the merged namespace happens during the merge, not here. Likewise,
+    ``directory_map`` keys are relative to the document's own directory.
+    """
+
+    structure_rules: StructureRuleMap = field(default_factory=dict)
+    structure_rule_descriptions: dict[str, str] = field(default_factory=dict)
+    directory_map: DirectoryMap = field(default_factory=dict)
+    directory_descriptions: dict[str, str] = field(default_factory=dict)
+    mounts: dict[str, str] = field(default_factory=dict)
+    inherit: InheritSpec = field(default_factory=InheritSpec)
+
+
+@dataclass
+class ConfigurationData:
+    """Stores configuration data.
+
+    This is the flattened result of merging every configuration document that
+    took part in a load. Rules contributed by a mounted configuration are keyed
+    by their qualified name (see ``config_merge.qualify``); ``rule_origins``
+    maps each rule back to the configuration file that defined it.
+    """
+
+    structure_rules: StructureRuleMap = field(default_factory=dict)
+    directory_map: DirectoryMap = field(default_factory=dict)
+    configuration_file_name: str = ""
+    structure_rule_descriptions: dict[str, str] = field(default_factory=dict)
+    directory_descriptions: dict[str, str] = field(default_factory=dict)
+    configuration_file_names: set[str] = field(default_factory=set)
+    rule_origins: dict[str, str] = field(default_factory=dict)
+
+    def get_structure_rule_description(self, rule_name: str) -> str:
+        """Get the description for a structure rule."""
+        return self.structure_rule_descriptions.get(rule_name, "")
+
+    def get_directory_description(self, directory: str) -> str:
+        """Get the description for a directory."""
+        return self.directory_descriptions.get(directory, "")
+
 
 @dataclass
 class ScanIssue:

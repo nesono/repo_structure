@@ -34,15 +34,19 @@ The build backend is hatchling (with `hatch-vcs` for the version), whose
 could not do this: its `packages.find` exclude filters _package names_, not
 files, so the old `exclude = ["repo_structure/*_test.py"]` line was inert.
 
-Anything test-only added under `repo_structure/` must therefore match one of
-the `exclude` patterns in `pyproject.toml` — `*_test.py`, `test_lib.py`,
-`test_config_*.yaml` — or it will ship to PyPI. The sdist deliberately keeps
-the tests so downstreams can run the suite.
+Anything added under `repo_structure/` that is not runtime data must therefore
+match one of the `exclude` patterns in `pyproject.toml` — `*_test.py`,
+`test_lib.py`, `test_config_*.yaml`, `repo_structure.yaml` — or it will ship to
+PyPI. The sdist deliberately keeps them so downstreams can run the suite.
+`config.schema.json` is the one data file that _should_ ship.
 
 ## Module map
 
 - `__main__.py` — click CLI: `full-scan`, `diff-scan`, `report`
 - `config.py` — YAML parsing, schema validation, template expansion
+- `config_merge.py` — flattens a `use_config` mount tree into one configuration:
+  rule-name qualification, `inherit`/`override`, collision errors. Takes the
+  document parser as a callable so `config.py` can depend on it, not vice versa
 - `models.py` — dataclasses, type aliases, rule constants
 - `errors.py` — exception hierarchy
 - `paths.py` — path normalization
@@ -58,11 +62,26 @@ the tests so downstreams can run the suite.
 ## Self-validation
 
 `repo_structure.yaml` describes this repository, and `full-scan` runs in CI and
-as a pre-commit hook. Its `base_structure` rule has no catch-all `allow`, so
-**adding any new file at the repo root fails the scan until you add a matching
-entry to `repo_structure.yaml`**. The same applies to new directories, which
-need a `directory_map` entry. Run `uv run repo_structure full-scan` after adding
-files.
+as a pre-commit hook. Run `uv run repo_structure full-scan` after adding files.
+
+The configuration is **split across two files**, which is this repo's demo of
+multi-file configuration the same way the `companion` rule demos companion
+files:
+
+- `repo_structure.yaml` (root) — the `base_structure` rule for repo-root files,
+  and a `use_config` entry delegating `/repo_structure/` to the file below
+- `repo_structure/repo_structure.yaml` — the `python_package` rule, including
+  the `companion` rule. Its `directory_map` keys are relative to that
+  directory, so `/` there means `/repo_structure/`
+
+So **which file to edit depends on where the new file goes**: a new file at the
+repo root needs an entry in the root config, a new module under
+`repo_structure/` needs one in the package config. Neither rule has a catch-all
+`allow`, so an unlisted file fails the scan either way. New directories need a
+`directory_map` entry in whichever config governs their parent.
+
+Note that a mounted configuration file is skipped by the scan, so
+`repo_structure/repo_structure.yaml` does not need a rule matching itself.
 
 ## Issue-driven work
 

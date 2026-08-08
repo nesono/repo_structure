@@ -26,43 +26,43 @@ class TestSkipEntry:
         """Test that symlinks are skipped when follow_symlinks is False."""
         entry = Entry(path="link", rel_dir="", is_dir=False, is_symlink=True)
         flags = Flags(follow_symlinks=False)
-        assert skip_entry(entry, {}, "config.yaml", None, flags) is True
+        assert skip_entry(entry, {}, {"config.yaml"}, None, flags) is True
 
     def test_skip_entry_symlink_follow(self):
         """Test that symlinks are not skipped when follow_symlinks is True."""
         entry = Entry(path="link", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags(follow_symlinks=True)
-        assert skip_entry(entry, {}, "config.yaml", None, flags) is False
+        assert skip_entry(entry, {}, {"config.yaml"}, None, flags) is False
 
     def test_skip_entry_hidden_no_include(self):
         """Test that hidden files are skipped when include_hidden is False."""
         entry = Entry(path=".hidden", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags(include_hidden=False)
-        assert skip_entry(entry, {}, "config.yaml", None, flags) is True
+        assert skip_entry(entry, {}, {"config.yaml"}, None, flags) is True
 
     def test_skip_entry_hidden_include(self):
         """Test that hidden files are not skipped when include_hidden is True."""
         entry = Entry(path=".hidden", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags(include_hidden=True)
-        assert skip_entry(entry, {}, "config.yaml", None, flags) is False
+        assert skip_entry(entry, {}, {"config.yaml"}, None, flags) is False
 
     def test_skip_entry_gitignore_file(self):
         """Test that .gitignore file is skipped."""
         entry = Entry(path=".gitignore", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags()
-        assert skip_entry(entry, {}, "config.yaml", None, flags) is True
+        assert skip_entry(entry, {}, {"config.yaml"}, None, flags) is True
 
     def test_skip_entry_git_dir(self):
         """Test that .git directory is skipped."""
         entry = Entry(path=".git", rel_dir="", is_dir=True, is_symlink=False)
         flags = Flags()
-        assert skip_entry(entry, {}, "config.yaml", None, flags) is True
+        assert skip_entry(entry, {}, {"config.yaml"}, None, flags) is True
 
     def test_skip_entry_config_file(self):
         """Test that config file is skipped."""
         entry = Entry(path="config.yaml", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags()
-        assert skip_entry(entry, {}, "config.yaml", None, flags) is True
+        assert skip_entry(entry, {}, {"config.yaml"}, None, flags) is True
 
     def test_skip_entry_git_ignore_function(self):
         """Test that entries matching gitignore are skipped."""
@@ -72,20 +72,42 @@ class TestSkipEntry:
             return path == "ignored.txt"
 
         flags = Flags()
-        assert skip_entry(entry, {}, "config.yaml", git_ignore, flags) is True
+        assert skip_entry(entry, {}, {"config.yaml"}, git_ignore, flags) is True
 
     def test_skip_entry_directory_in_map(self):
         """Test that directories in directory_map are skipped."""
         entry = Entry(path="subdir", rel_dir="app", is_dir=True, is_symlink=False)
         directory_map = {"/app/subdir/": ["rule1"]}
         flags = Flags()
-        assert skip_entry(entry, directory_map, "config.yaml", None, flags) is True
+        assert skip_entry(entry, directory_map, {"config.yaml"}, None, flags) is True
 
     def test_skip_entry_normal_file(self):
         """Test that normal files are not skipped."""
         entry = Entry(path="file.txt", rel_dir="", is_dir=False, is_symlink=False)
         flags = Flags()
-        assert skip_entry(entry, {}, "config.yaml", None, flags) is False
+        assert skip_entry(entry, {}, {"config.yaml"}, None, flags) is False
+
+    def test_skip_entry_mounted_config_file(self):
+        """Test that a config file mounted in a subdirectory is skipped."""
+        entry = Entry(
+            path="repo_structure.yaml",
+            rel_dir="frontend",
+            is_dir=False,
+            is_symlink=False,
+        )
+        config_files = {"repo_structure.yaml", "frontend/repo_structure.yaml"}
+        assert skip_entry(entry, {}, config_files, None, Flags()) is True
+
+    def test_skip_entry_config_file_name_in_other_directory(self):
+        """Test that a mounted config is only skipped in the directory it sits in."""
+        entry = Entry(
+            path="repo_structure.yaml",
+            rel_dir="backend",
+            is_dir=False,
+            is_symlink=False,
+        )
+        config_files = {"frontend/repo_structure.yaml"}
+        assert skip_entry(entry, {}, config_files, None, Flags()) is False
 
 
 class TestToEntry:

@@ -1,0 +1,25 @@
+# Configuration for the repo_structure package directory, mounted by the
+# repository root configuration through 'use_config'. Paths here are relative
+# to this directory: '/' below means '/repo_structure/'.
+structure_rules:
+  python_package:
+    - description: "Standard Python package structure with modules, tests, and configuration files"
+    - require: '__main__\.py'
+    - require: '__init__\.py'
+    # Specify files that don't need a companion first
+    - allow: '_version\.py'
+    # TODO: Add test for the schema
+    - allow: 'schema\.py'
+    - allow: 'test_lib\.py'
+    - allow: '.*_test\.py'
+    # Specify the companion
+    - allow: '(?P<base>.*)\.py'
+      companion:
+        - require: '{{base}}_test\.py'
+    - require: 'config\.schema\.json'
+    - require: 'test_config_.*\.yaml'
+
+directory_map:
+  /:
+    - description: "Python package modules, each with its companion test beside it"
+    - use_rule: python_package

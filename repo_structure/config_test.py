@@ -505,6 +505,62 @@ directory_map:
         Configuration(test_config, True)
 
 
+def test_fail_qualifier_in_structure_rule_name():
+    """Test that '::' is reserved for qualified rule names."""
+    test_config = """
+structure_rules:
+    team::rule:
+        - description: 'Uses the reserved namespace separator'
+        - require: 'some_file.md'
+directory_map:
+    /:
+        - description: 'Root directory'
+        - use_rule: team::rule
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration.from_yaml_string(test_config)
+
+
+def test_fail_use_config_combined_with_use_rule():
+    """Test that one directory map entry cannot both map and mount."""
+    test_config = """
+structure_rules:
+    correct_rule:
+        - description: 'Correct rule'
+        - require: 'some_file.md'
+directory_map:
+    /:
+        - description: 'Root directory'
+        - use_rule: correct_rule
+    /frontend/:
+        - description: 'Frontend directory'
+        - use_rule: correct_rule
+          use_config: repo_structure.yaml
+    """
+    with pytest.raises(ConfigurationParseError):
+        Configuration.from_yaml_string(test_config)
+
+
+def test_fail_two_configs_mounted_at_one_directory():
+    """Test that a directory cannot mount two configurations."""
+    test_config = """
+structure_rules:
+    correct_rule:
+        - description: 'Correct rule'
+        - require: 'some_file.md'
+directory_map:
+    /:
+        - description: 'Root directory'
+        - use_rule: correct_rule
+    /frontend/:
+        - description: 'Frontend directory'
+        - use_config: repo_structure.yaml
+        - use_config: other.yaml
+    """
+    with pytest.raises(ConfigurationParseError, match="more than one configuration"):
+        Configuration.from_yaml_string(test_config)
+
+
 def test_fail_double_underscore_prefix_template():
     """Test failing template with parameters and only have a use_rule."""
     test_config = """

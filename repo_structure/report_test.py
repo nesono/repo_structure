@@ -623,3 +623,56 @@ directory_map:
     # Verify in JSON output
     json_output = format_report_json(report)
     assert "companion" in json_output
+
+
+def test_report_names_the_configuration_that_defines_a_rule(tmp_path):
+    """Test that rules from a mounted configuration are attributed to it."""
+    (tmp_path / "frontend").mkdir()
+    (tmp_path / "repo_structure.yaml").write_text(
+        """
+structure_rules:
+  base:
+    - description: 'Root files'
+    - require: 'README\\.md'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: base
+  /frontend/:
+    - description: 'Owned by the frontend team'
+    - use_config: repo_structure.yaml
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "frontend" / "repo_structure.yaml").write_text(
+        """
+structure_rules:
+  base:
+    - description: 'Frontend files'
+    - require: 'index\\.ts'
+directory_map:
+  /:
+    - description: 'Frontend root'
+    - use_rule: base
+""",
+        encoding="utf-8",
+    )
+
+    config = Configuration.from_file(str(tmp_path / "repo_structure.yaml"))
+    report = generate_report(config, str(tmp_path))
+
+    by_name = {r.rule_name: r for r in report.structure_rule_reports}
+    assert by_name["base"].source_config == ""
+
+    mounted = by_name["frontend/repo_structure.yaml::base"]
+    assert mounted.source_config == "frontend/repo_structure.yaml"
+
+    # Both rules are called 'base', so the report has to say which is which.
+    text_output = format_report_text(report)
+    assert "Defined in: frontend/repo_structure.yaml" in text_output
+
+    # Anchors stay unique and link-safe despite the shared display name.
+    markdown_output = format_report_markdown(report)
+    assert "{#rule-base}" in markdown_output
+    assert "{#rule-frontend-repo_structure-yaml-base}" in markdown_output
+    assert "[`base`](#rule-frontend-repo_structure-yaml-base)" in markdown_output

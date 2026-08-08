@@ -1,11 +1,13 @@
 """Report generation functionality for repo structure configuration."""
 
 import json
+import re
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Literal
 from .config import Configuration
+from .config_merge import unqualify
 from .models import (
     BUILTIN_DIRECTORY_RULES,
     DirectoryMap,
@@ -39,7 +41,14 @@ class DirectoryReport:
 
 @dataclass
 class StructureRuleReport:
-    """Report data for a single structure rule."""
+    """Report data for a single structure rule.
+
+    ``rule_name`` is the name the rule has in the merged configuration, which
+    for a rule owned by a mounted configuration is qualified with that
+    configuration's path -- ``unqualify`` recovers the name as written in the
+    file that defines it. ``source_config`` names that file, and is empty when
+    the rule comes from the top-level configuration.
+    """
 
     rule_name: str
     description: str
@@ -47,6 +56,7 @@ class StructureRuleReport:
     directory_descriptions: list[str]
     rule_count: int
     patterns: list[str]
+    source_config: str = ""
 
 
 @dataclass
@@ -124,6 +134,8 @@ def generate_report(config: Configuration, repo_root: str = ".") -> Configuratio
     Returns:
         A complete configuration report with directory and structure rule information.
     """
+    sources = _rule_sources(config)
+
     directory_reports = _generate_directory_reports(
         config.directory_map,
         config.directory_descriptions,
@@ -135,6 +147,7 @@ def generate_report(config: Configuration, repo_root: str = ".") -> Configuratio
         config.directory_map,
         config.structure_rule_descriptions,
         config.directory_descriptions,
+        sources,
     )
 
     repository_info = get_repository_info(repo_root)
@@ -146,6 +159,29 @@ def generate_report(config: Configuration, repo_root: str = ".") -> Configuratio
         total_structure_rules=len(structure_rule_reports),
         repository_info=repository_info,
     )
+
+
+def _rule_sources(config: Configuration) -> dict[str, str]:
+    """Map each rule to the mounted configuration that defines it.
+
+    Rules of the top-level configuration map to the empty string: naming the
+    file they came from would be noise in a single-file repository.
+    """
+    top_level = config.configuration_file_name
+    return {
+        rule_name: "" if origin == top_level else origin
+        for rule_name, origin in config.rule_origins.items()
+    }
+
+
+def _rule_anchor(rule_name: str) -> str:
+    """Build a markdown anchor id for a rule section.
+
+    Qualified rule names carry a configuration path, so anything that is not
+    safe in an anchor collapses to a dash. Plain rule names come through
+    unchanged.
+    """
+    return "rule-" + re.sub(r"[^A-Za-z0-9_-]+", "-", rule_name)
 
 
 def _generate_directory_reports(
@@ -187,6 +223,7 @@ def _generate_structure_rule_reports(
     directory_map: DirectoryMap,
     structure_rule_descriptions: dict[str, str],
     directory_descriptions: dict[str, str],
+    rule_sources: dict[str, str],
 ) -> list[StructureRuleReport]:
     """Generate reports for each structure rule."""
 
@@ -274,6 +311,7 @@ def _generate_structure_rule_reports(
                 directory_descriptions=directory_descs,
                 rule_count=len(rule_entries),
                 patterns=patterns,
+                source_config=rule_sources.get(rule_name, ""),
             )
         )
 
@@ -335,10 +373,11 @@ def _format_directory_mappings_text(
     lines.append("-" * 20)
     for dir_report in directory_reports:
         display_dir = _normalize_directory_display(dir_report.directory)
+        rule_names = [unqualify(rule) for rule in dir_report.applied_rules]
         lines.append(f"Directory: {display_dir}")
         lines.append(f"  Description: {dir_report.description}")
-        lines.append(f"  Applied Rules: {', '.join(dir_report.applied_rules)}")
-        for rule, desc in zip(dir_report.applied_rules, dir_report.rule_descriptions):
+        lines.append(f"  Applied Rules: {', '.join(rule_names)}")
+        for rule, desc in zip(rule_names, dir_report.rule_descriptions):
             lines.append(f"    - {rule}: {desc}")
         lines.append("")
     return lines
@@ -359,7 +398,9 @@ def _format_structure_rules_text(
     lines.append("Structure Rules")
     lines.append("-" * 15)
     for rule_report in structure_rule_reports:
-        lines.append(f"Rule: {rule_report.rule_name}")
+        lines.append(f"Rule: {unqualify(rule_report.rule_name)}")
+        if rule_report.source_config:
+            lines.append(f"  Defined in: {rule_report.source_config}")
         lines.append(f"  Description: {rule_report.description}")
 
         # Only show entry count and patterns if there are any
@@ -498,7 +539,7 @@ def format_report_markdown(report: ConfigurationReport) -> str:
         lines.append("**Applied Rules:**")
         for rule, desc in zip(dir_report.applied_rules, dir_report.rule_descriptions):
             # Link to the rule section
-            lines.append(f"- [`{rule}`](#rule-{rule}): {desc}")
+            lines.append(f"- [`{unqualify(rule)}`](#{_rule_anchor(rule)}): {desc}")
         lines.append("")
 
     # Structure rule dimension
@@ -506,10 +547,14 @@ def format_report_markdown(report: ConfigurationReport) -> str:
     lines.append("")
     for rule_report in report.structure_rule_reports:
         # Create anchor for this rule
+        display_name = unqualify(rule_report.rule_name)
         lines.append(
-            f"### Rule: `{rule_report.rule_name}` {{#rule-{rule_report.rule_name}}}"
+            f"### Rule: `{display_name}` {{#{_rule_anchor(rule_report.rule_name)}}}"
         )
         lines.append("")
+        if rule_report.source_config:
+            lines.append(f"**Defined in:** `{rule_report.source_config}`")
+            lines.append("")
         lines.append(f"**Description:** {rule_report.description}")
 
         # Only show entry count and patterns if there are any

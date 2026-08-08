@@ -15,30 +15,17 @@ structure_rules:
     - require: 'renovate\.json'
     - require: '\.python-version'
     - require: '\.pylintrc'
-  python_package:
-    - description: "Standard Python package structure with modules, tests, and configuration files"
-    - require: '__main__\.py'
-    - require: '__init__\.py'
-    # Specify files that don't need a companion first
-    - allow: '_version\.py'
-    # TODO: Add test for the schema
-    - allow: 'schema\.py'
-    - allow: 'test_lib\.py'
-    - allow: '.*_test\.py'
-    # Specify the companion
-    - allow: '(?P<base>.*)\.py'
-      companion:
-        - require: '{{base}}_test\.py'
-    - require: 'config\.schema\.json'
-    - require: 'test_config_.*\.yaml'
 
 directory_map:
   /:
     - description: "Root directory containing project documentation, configuration files, and main project structure"
     - use_rule: base_structure
+  # Delegated to the package's own configuration - see repo_structure/repo_structure.yaml.
+  # This is the repo's demo of multi-file configuration, the same way the
+  # companion rule below demos companion files.
   /repo_structure/:
-    - description: "Main Python package directory containing the core application logic and modules"
-    - use_rule: python_package
+    - description: "Main Python package directory, governed by its own configuration"
+    - use_config: repo_structure.yaml
   /.github/:
     - description: "GitHub-specific configuration and workflow files - ignored from structure validation"
     - use_rule: ignore
