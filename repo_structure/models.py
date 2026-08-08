@@ -9,9 +9,13 @@ BUILTIN_DIRECTORY_RULES: Final = (IGNORE_RULE,)
 
 
 @dataclass
-class RepoEntry:  # pylint: disable=too-many-instance-attributes
+class RepoEntry:
     """Wrapper for entries in the directory structure, that store the path
-    as a string together with the entry type."""
+    as a string together with the entry type.
+
+    Owned by the parsed configuration and shared by every scan, so it holds no
+    scan state -- see :class:`BacklogEntry`.
+    """
 
     path: re.Pattern
     is_dir: bool
@@ -20,6 +24,24 @@ class RepoEntry:  # pylint: disable=too-many-instance-attributes
     use_rule: str = ""
     if_exists: list["RepoEntry"] = field(default_factory=list)
     companion: list["RepoEntry"] = field(default_factory=list)
+
+
+@dataclass
+class BacklogEntry:
+    """One entry of the backlog a scan builds for a single directory.
+
+    Wrapping rather than copying the :class:`RepoEntry` keeps the match counter
+    -- the only mutable state a scan keeps -- off the configuration, so two
+    directories governed by the same rule cannot see each other's counts.
+
+    ``is_required`` is carried here rather than read off ``entry`` because a
+    companion pattern joins the backlog as optional even when the rule declares
+    it required: it is enforced against the file that names it, not against the
+    directory as a whole.
+    """
+
+    entry: RepoEntry
+    is_required: bool
     count: int = 0
 
 
@@ -45,6 +67,8 @@ class Flags:
 DirectoryMap = dict[str, list[str]]
 StructureRuleList = list[RepoEntry]
 StructureRuleMap = dict[str, StructureRuleList]
+Backlog = list[BacklogEntry]
+"""The entries a scan checks one directory against, with their match counts."""
 
 INHERIT_ALL: Final = "all"
 

@@ -14,15 +14,16 @@ from .config_merge import unqualify
 
 from .models import (
     BUILTIN_DIRECTORY_RULES,
+    Backlog,
     Entry,
     Flags,
     MatchFailure,
     ScanIssue,
     ScanResult,
-    StructureRuleList,
 )
 from .paths import join_path_normalized, map_dir_to_rel_dir
 from .scanning import (
+    CompanionIndex,
     check_companion_files,
     child_backlog,
     get_matching_item_index,
@@ -55,6 +56,9 @@ class FullScanProcessor:
         self.flags = flags if flags is not None else Flags()
         self.git_ignore = self._get_git_ignore()
         self.config_file_names = config.configuration_file_names_for(repo_root)
+        # Replaced at the start of every scan, so no listing outlives the scan
+        # that read it.
+        self._companions = CompanionIndex()
 
     def _get_git_ignore(self) -> Callable[[str], bool] | None:
         """Get gitignore parser, cached for the lifetime of the scan.
@@ -72,7 +76,7 @@ class FullScanProcessor:
     def _check_required_entries_missing(
         self,
         rel_dir: str,
-        entry_backlog: StructureRuleList,
+        entry_backlog: Backlog,
     ) -> ScanIssue | None:
 
         def _format_missing_entries_message(
@@ -87,33 +91,28 @@ class FullScanProcessor:
                 result += "".join(f"  - '{dir}'\n" for dir in missing_dirs)
             return result
 
-        missing_required: StructureRuleList = []
-        for entry in entry_backlog:
-            if entry.is_required and entry.count == 0:
-                missing_required.append(entry)
+        missing = [
+            candidate.entry
+            for candidate in entry_backlog
+            if candidate.is_required and candidate.count == 0
+        ]
+        if not missing:
+            return None
 
-        if missing_required:
-            missing_required_files = [
-                f.path.pattern for f in missing_required if not f.is_dir
-            ]
-            missing_required_dirs = [
-                d.path.pattern for d in missing_required if d.is_dir
-            ]
-
-            return ScanIssue(
-                severity="error",
-                code="missing_required_entries",
-                message=_format_missing_entries_message(
-                    missing_required_files, missing_required_dirs
-                ),
-                path=rel_dir,
-            )
-        return None
+        return ScanIssue(
+            severity="error",
+            code="missing_required_entries",
+            message=_format_missing_entries_message(
+                [entry.path.pattern for entry in missing if not entry.is_dir],
+                [entry.path.pattern for entry in missing if entry.is_dir],
+            ),
+            path=rel_dir,
+        )
 
     def _check_reldir_structure(
         self,
         rel_dir: str,
-        backlog: StructureRuleList,
+        backlog: Backlog,
     ) -> list[ScanIssue]:
         """Check repository structure recursively and return list of issues."""
         errors: list[ScanIssue] = []
@@ -141,8 +140,9 @@ class FullScanProcessor:
             # Check for required companion files
             companion_issue = check_companion_files(
                 entry.path,
-                backlog[idx],
+                backlog[idx].entry,
                 str(Path(self.repo_root) / rel_dir),
+                self._companions,
             )
             if companion_issue:
                 errors.append(companion_issue)
@@ -191,7 +191,7 @@ class FullScanProcessor:
         self,
         rel_dir: str,
         entry: Entry,
-        backlog: StructureRuleList,
+        backlog: Backlog,
         idx: int,
     ) -> list[ScanIssue]:
         errors: list[ScanIssue] = []
@@ -294,6 +294,7 @@ class FullScanProcessor:
 
     def scan(self) -> ScanResult:
         """Scan the repository and return the errors and warnings found."""
+        self._companions = CompanionIndex()
         errors = self._collect_errors()
         warnings = self._collect_warnings()
         errors.sort(key=lambda x: (x.path is None, x.path or "", x.code))
@@ -310,4 +311,5 @@ class FullScanProcessor:
             ScanResult for the specified directory mapping. Warnings are always
             empty, since unused-rule detection is repository-wide.
         """
+        self._companions = CompanionIndex()
         return ScanResult(errors=self._process_map_dir(map_dir))

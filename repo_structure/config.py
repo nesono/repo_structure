@@ -227,9 +227,7 @@ def parse_document(
         mounts=mounts,
         inherit=_parse_inherit(yaml_dict.get("inherit", {})),
     )
-    _parse_templates_to_document(
-        yaml_dict.get("templates", {}), directory_map_yaml, document
-    )
+    _add_template_rules(yaml_dict.get("templates", {}), directory_map_yaml, document)
     return document
 
 
@@ -306,75 +304,69 @@ def _load_repo_structure_yamls(yaml_string: str | TextIO) -> dict:
     return yaml.load(yaml_string)
 
 
+def _is_description(entry: dict) -> bool:
+    """True if a YAML entry is the description object and nothing else."""
+    return "description" in entry and len(entry) == 1
+
+
+def _take_description(entries: list[dict], context: str) -> tuple[str, list[dict]]:
+    """Split a section into its leading description and the entries that follow.
+
+    Both structure rules and directory maps are written as a list whose first
+    element carries the description, so both are read the same way here.
+
+    Args:
+        entries: The raw YAML list.
+        context: What is being parsed, for the error messages.
+    """
+    if not entries:
+        raise ConfigurationParseError(f"{context} cannot be empty")
+
+    if not _is_description(entries[0]):
+        raise ConfigurationParseError(
+            f"First entry in {context.lower()} must be a description object "
+            "with only 'description' field"
+        )
+
+    return entries[0]["description"], entries[1:]
+
+
 def _parse_structure_rules(
     structure_rules_yaml: dict,
 ) -> tuple[StructureRuleMap, dict[str, str]]:
-
-    def _validate_use_rule_not_dangling(rules: StructureRuleMap) -> None:
-        for rule_key in rules.keys():
-            for entry in rules[rule_key]:
-                if entry.use_rule and entry.use_rule not in rules:
-                    raise ConfigurationParseError(
-                        f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
-                        "is not a valid rule key"
-                    )
-
-    def _validate_use_rule_only_recursive(rules: StructureRuleMap) -> None:
-        for rule_key in rules.keys():
-            for entry in rules[rule_key]:
-                if entry.use_rule and entry.use_rule != rule_key:
-                    raise ConfigurationParseError(
-                        f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
-                        "is not recursive"
-                    )
-
-    rules, descriptions = _build_rules(structure_rules_yaml)
-    _validate_use_rule_not_dangling(rules)
-    _validate_use_rule_only_recursive(rules)
-
-    return rules, descriptions
-
-
-def _build_rules(
-    structure_rules_yaml: dict,
-) -> tuple[StructureRuleMap, dict[str, str]]:
-
-    def _parse_directory_structure(
-        directory_structure_yaml: list, structure_rule_list: StructureRuleList
-    ) -> str:
-        """Parse directory structure entries and return the description."""
-        if not directory_structure_yaml:
-            raise ConfigurationParseError("Structure rule cannot be empty")
-
-        # First entry must be the description
-        first_entry = directory_structure_yaml[0]
-        if "description" not in first_entry or len(first_entry) != 1:
-            raise ConfigurationParseError(
-                "First entry in structure rule must be a description object "
-                "with only 'description' field"
-            )
-
-        description = first_entry["description"]
-
-        # Parse remaining entries (skip the description at index 0)
-        for item in directory_structure_yaml[1:]:
-            structure_rule_list.append(_parse_entry_to_repo_entry(item))
-
-        return description
-
+    """Parse the ``structure_rules`` section into rules and their descriptions."""
     rules: StructureRuleMap = {}
     descriptions: dict[str, str] = {}
-    if not structure_rules_yaml:
-        return rules, descriptions
 
-    for rule in structure_rules_yaml:
-        structure_rules: StructureRuleList = []
-        description = _parse_directory_structure(
-            structure_rules_yaml[rule], structure_rules
-        )
-        rules[rule] = structure_rules
-        descriptions[rule] = description
+    for rule_name, rule_yaml in structure_rules_yaml.items():
+        description, entries = _take_description(rule_yaml, "Structure rule")
+        rules[rule_name] = [_parse_entry_to_repo_entry(entry) for entry in entries]
+        descriptions[rule_name] = description
+
+    _validate_use_rules(rules)
     return rules, descriptions
+
+
+def _validate_use_rules(rules: StructureRuleMap) -> None:
+    """Reject a ``use_rule`` that names an unknown rule or a different one.
+
+    A ``use_rule`` may only point back at the rule it appears in: it exists to
+    describe recursion, not to compose rules.
+    """
+    for rule_key, entries in rules.items():
+        for entry in entries:
+            if not entry.use_rule:
+                continue
+            if entry.use_rule not in rules:
+                raise ConfigurationParseError(
+                    f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
+                    "is not a valid rule key"
+                )
+            if entry.use_rule != rule_key:
+                raise ConfigurationParseError(
+                    f"use_rule '{entry.use_rule}' in entry '{entry.path.pattern}'"
+                    "is not recursive"
+                )
 
 
 # The keys that carry an entry's pattern, in precedence order - the first
@@ -383,11 +375,19 @@ _PATTERN_KEYS = ("require", "allow", "forbid")
 
 
 class ParsedEntry(NamedTuple):
-    """A structure rule entry's pattern together with how it is enforced."""
+    """A structure rule entry's pattern together with how it is enforced.
+
+    ``kind`` is the pattern key the entry was written with; what it means for
+    the scan follows from it, so it is derived rather than stored twice.
+    """
 
     pattern: str
     kind: str
-    is_required: bool
+
+    @property
+    def is_required(self) -> bool:
+        """True if the entry's pattern must match at least once."""
+        return self.kind == "require"
 
     @property
     def is_forbidden(self) -> bool:
@@ -399,9 +399,7 @@ def _classify_entry(entry: dict) -> ParsedEntry:
     """Determine which pattern key an entry uses and what it implies."""
     for kind in _PATTERN_KEYS:
         if kind in entry:
-            return ParsedEntry(
-                pattern=entry[kind], kind=kind, is_required=kind == "require"
-            )
+            return ParsedEntry(pattern=entry[kind], kind=kind)
     raise ConfigurationParseError(
         f"Entry must contain one of {', '.join(_PATTERN_KEYS)}: {entry}"
     )
@@ -437,75 +435,79 @@ def _parse_entry_to_repo_entry(entry: dict) -> RepoEntry:
     return result
 
 
+def _substitute_in_entry(entry: dict, expansion_key: str, expansion_var: str) -> dict:
+    """Replace ``{{key}}`` with one expansion value in a single template entry."""
+    if _is_description(entry):
+        return entry
+    kind = _classify_entry(entry).kind
+    entry[kind] = entry[kind].replace(f"{{{{{expansion_key}}}}}", expansion_var)
+    return entry
+
+
 def _expand_template_entry(
     template_yaml: list[dict], expansion_key: str, expansion_var: str
 ) -> list[dict]:
-
-    def _expand_entry(entry: dict, expansion_key: str, expansion_var: str):
-        # Skip description entries
-        if "description" in entry and len(entry) == 1:
-            return entry
-        k = _classify_entry(entry).kind
-        entry[k] = entry[k].replace(f"{{{{{expansion_key}}}}}", expansion_var)
-        return entry
-
+    """Substitute one expansion value throughout a template's entries."""
     expanded_yaml: list[dict] = []
     for entry in template_yaml:
-        entry = _expand_entry(entry, expansion_key, expansion_var)
-        if "if_exists" in entry:
-            entry["if_exists"] = _expand_template_entry(
-                entry["if_exists"], expansion_key, expansion_var
-            )
-        if "companion" in entry:
-            entry["companion"] = _expand_template_entry(
-                entry["companion"], expansion_key, expansion_var
-            )
+        entry = _substitute_in_entry(entry, expansion_key, expansion_var)
+        for nested in ("if_exists", "companion"):
+            if nested in entry:
+                entry[nested] = _expand_template_entry(
+                    entry[nested], expansion_key, expansion_var
+                )
         expanded_yaml.append(entry)
     return expanded_yaml
 
 
-def _parse_use_template(
-    dir_map_yaml: dict, directory: str, templates_yaml: dict, document: ParsedDocument
-):
-    if "use_template" not in dir_map_yaml:
-        return
+def _expand_template(dir_map_yaml: dict, templates_yaml: dict) -> list[dict]:
+    """Instantiate a template once per value of its longest parameter list.
 
-    def _expand_template(dir_map_yaml, templates_yaml):
-        expansion_map = dir_map_yaml["parameters"]
-        max_values_length = max(
-            (len(values) for values in expansion_map.values()), default=0
-        )
-        structure_rules_yaml: list[dict] = []
-        for i in range(max_values_length):
-            if dir_map_yaml["use_template"] not in templates_yaml:
-                raise TemplateError(
-                    f"Template '{dir_map_yaml['use_template']}'"
-                    "not found in templates"
-                )
-            entries = copy.deepcopy(templates_yaml[dir_map_yaml["use_template"]])
-            for expansion_key, expansion_vars in expansion_map.items():
-                index = i % len(expansion_vars)
-                entries = _expand_template_entry(
-                    entries, expansion_key, expansion_vars[index]
-                )
-            structure_rules_yaml.extend(entries)
-        return structure_rules_yaml
+    Parameters shorter than the longest one repeat cyclically, so a template
+    parameterized by two lists of unequal length still yields one entry set per
+    instantiation.
+    """
+    template_name = dir_map_yaml["use_template"]
+    if template_name not in templates_yaml:
+        raise TemplateError(f"Template '{template_name}'" "not found in templates")
+
+    expansion_map = dir_map_yaml["parameters"]
+    instantiations = max((len(values) for values in expansion_map.values()), default=0)
+
+    structure_rules_yaml: list[dict] = []
+    for i in range(instantiations):
+        entries = copy.deepcopy(templates_yaml[template_name])
+        for expansion_key, expansion_vars in expansion_map.items():
+            entries = _expand_template_entry(
+                entries, expansion_key, expansion_vars[i % len(expansion_vars)]
+            )
+        structure_rules_yaml.extend(entries)
+    return structure_rules_yaml
+
+
+def _parse_use_template(
+    dir_map_yaml: dict, directory: str, templates_yaml: dict
+) -> tuple[str, StructureRuleList] | None:
+    """Expand a ``use_template`` entry into a generated rule.
+
+    Returns the generated rule's name and entries, or None if the directory map
+    entry does not use a template at all.
+    """
+    if "use_template" not in dir_map_yaml:
+        return None
 
     structure_rules_yaml = _expand_template(dir_map_yaml, templates_yaml)
-
-    # Filter out description entries before parsing to RepoEntry
-    structure_rule_list = [
-        _parse_entry_to_repo_entry(entry)
-        for entry in structure_rules_yaml
-        if not ("description" in entry and len(entry) == 1)
-    ]
 
     template_rule_name = (
         f"__template_rule_{map_dir_to_rel_dir(directory)}_"
         f"{dir_map_yaml['use_template']}"
     )
-    document.structure_rules[template_rule_name] = structure_rule_list
-    document.directory_map.setdefault(directory, []).append(template_rule_name)
+    entries = [
+        _parse_entry_to_repo_entry(entry)
+        for entry in structure_rules_yaml
+        if not _is_description(entry)
+    ]
+    return template_rule_name, entries
 
 
 def _build_directory_map(
@@ -517,7 +519,7 @@ def _build_directory_map(
     the configurations mounted through ``use_config``, keyed by mount directory.
     """
 
-    def _parse_use_config(rule: dict, directory: str, mounts: dict[str, str]) -> None:
+    def _record_mount(rule: dict, directory: str) -> None:
         if rule.keys() != {"use_config"}:
             return
         if directory in mounts:
@@ -527,40 +529,32 @@ def _build_directory_map(
             )
         mounts[directory] = rule["use_config"]
 
-    def _extract_description(value_list: list) -> str:
-        """Extract and validate description from directory map entry."""
-        if not value_list:
-            raise ConfigurationParseError("Directory map entry cannot be empty")
-
-        first_entry = value_list[0]
-        if "description" not in first_entry or len(first_entry) != 1:
-            raise ConfigurationParseError(
-                "First entry in directory map must be a description"
-                "object with only 'description' field"
-            )
-
-        return first_entry["description"]
-
     mapping: DirectoryMap = {}
     descriptions: dict[str, str] = {}
     mounts: dict[str, str] = {}
 
     for directory, value in directory_map_yaml.items():
-        description = _extract_description(value)
+        description, entries = _take_description(value, "Directory map entry")
         descriptions[directory] = description
 
-        for r in value[1:]:  # Skip the description at index 0
-            if r.keys() == {"use_rule"}:
-                mapping.setdefault(directory, []).append(r["use_rule"])
+        for entry in entries:
+            if entry.keys() == {"use_rule"}:
+                mapping.setdefault(directory, []).append(entry["use_rule"])
             else:
-                _parse_use_config(r, directory, mounts)
+                _record_mount(entry, directory)
 
     return mapping, descriptions, mounts
 
 
-def _parse_templates_to_document(
+def _add_template_rules(
     templates_yaml: dict, directory_map_yaml: dict, document: ParsedDocument
 ) -> None:
+    """Register a generated rule for every ``use_template`` in the directory map."""
     for directory, value in directory_map_yaml.items():
         for use_map in value:
-            _parse_use_template(use_map, directory, templates_yaml, document)
+            expanded = _parse_use_template(use_map, directory, templates_yaml)
+            if expanded is None:
+                continue
+            rule_name, entries = expanded
+            document.structure_rules[rule_name] = entries
+            document.directory_map.setdefault(directory, []).append(rule_name)
