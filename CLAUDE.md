@@ -8,6 +8,7 @@ directory structure against a YAML config. It validates _itself_ — see
 
 ```sh
 uv run --extra dev pytest          # test suite
+uv run --extra dev pytest -m heavy # the two-million-file benchmark (~15 min)
 uv run prek run --all-files        # lint / format / type checks
 uv run repo_structure full-scan    # validate this repo against repo_structure.yaml
 ```
@@ -80,6 +81,34 @@ repo root needs an entry in the root config, a new module under
 
 Note that a mounted configuration file is skipped by the scan, so
 `repo_structure/repo_structure.yaml` does not need a rule matching itself.
+
+## Benchmarks
+
+`benchmark_test.py` holds the small benchmarks; they are skipped whenever
+`GITHUB_RUN_ID` is set, so they never run in CI.
+
+`benchmark_heavy_test.py` builds a two-million-file repository whose
+configuration exercises _every_ feature the tool has — companions, templates,
+`use_config`/`inherit`/`override`, `if_exists`, the `ignore` rule, `.gitignore`,
+symlinks — and reports files, directories and entries per second. It is marked
+`heavy`, and `addopts = "-m 'not heavy'"` in `pyproject.toml` keeps it out of
+every ordinary run, including the pull-request CI matrix. Only
+`.github/workflows/benchmark.yaml` runs it, on push to `main` — i.e. after
+merge, not during review.
+
+The statistics go to the terminal reporter (`print` would be swallowed by
+pytest's output capturing) and, whenever `GITHUB_STEP_SUMMARY` is set, to the
+GitHub Actions job summary as a markdown table — so a post-merge run shows the
+numbers on its front page rather than in the log.
+
+Both scans assert a clean result. That is load-bearing: if the configuration
+ever stopped describing the generated tree, the benchmark would silently
+switch to measuring how fast the tool reports two million unspecified entries.
+
+Set `REPO_STRUCTURE_BENCHMARK_FILES` to build a scaled-down version of the
+same repository — `REPO_STRUCTURE_BENCHMARK_FILES=20000 pytest -m heavy` runs
+in seconds and is the way to check a configuration change before paying for
+the full run.
 
 ## Issue-driven work
 
