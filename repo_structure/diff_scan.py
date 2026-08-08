@@ -26,8 +26,7 @@ from .paths import (
 )
 from .scanning import (
     check_companion_files,
-    expand_if_exists,
-    expand_use_rule,
+    child_backlog,
     get_matching_item_index,
     map_dir_to_entry_backlog,
     skip_entry,
@@ -115,12 +114,7 @@ class DiffScanProcessor:
             ):
                 return None
 
-            match_result = get_matching_item_index(
-                backlog,
-                entry_name,
-                is_dir,
-                self.flags.verbose,
-            )
+            match_result = get_matching_item_index(backlog, entry_name, is_dir)
 
             if isinstance(match_result, MatchFailure):
                 return ScanIssue(
@@ -146,7 +140,6 @@ class DiffScanProcessor:
                 entry_name,
                 backlog_match,
                 str(Path(self.repo_root) / full_rel_dir),
-                self.flags.verbose,
             )
             if companion_issue:
                 # The companion check only knows the entry name; report the
@@ -154,12 +147,13 @@ class DiffScanProcessor:
                 return replace(companion_issue, path=original_path)
 
             if is_dir:
-                backlog = expand_use_rule(
-                    backlog_match.use_rule,
-                    self.config.structure_rules,
-                    self.flags,
-                    entry_name,
-                ) or expand_if_exists(backlog_match, self.flags)
+                child = child_backlog(backlog_match, self.config.structure_rules)
+                if child is None:
+                    # The directory carries no rules for its contents, so
+                    # nothing deeper can be judged. The full scan skips such a
+                    # subtree too.
+                    return None
+                backlog = child
 
         return None
 

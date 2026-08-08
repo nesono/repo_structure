@@ -8,8 +8,8 @@ from pathlib import Path
 
 import click
 
-from .errors import ConfigurationParseError
-from .models import Flags, ScanResult
+from .errors import RepoStructureError
+from .models import Flags, ScanIssue, ScanResult
 from .full_scan import (
     FullScanProcessor,
 )
@@ -75,7 +75,7 @@ def _load_configuration(config_path: str, verbose: bool) -> Configuration:
     """Load and validate configuration from file."""
     try:
         return Configuration.from_file(config_path, verbose=verbose)
-    except ConfigurationParseError as err:
+    except RepoStructureError as err:
         click.echo(err, err=True)
         sys.exit(1)
 
@@ -109,23 +109,39 @@ def _perform_scan(
     return processor.scan()
 
 
+def _describe(issue: ScanIssue) -> str:
+    """Render one issue as `(code) message [path]`."""
+    location = f" [{issue.path}]" if issue.path else ""
+    return f"({issue.code}) {issue.message}{location}"
+
+
+def _echo_issues(issues: list[ScanIssue], heading: str, color: str) -> None:
+    """Print a heading and one indented line per issue, if there are any."""
+    if not issues:
+        return
+    click.echo(click.style(heading, fg=color))
+    for issue in issues:
+        click.echo(click.style(f" - {_describe(issue)}", fg=color))
+
+
 def _print_scan_results(result: ScanResult) -> bool:
     """Print scan results and return success status."""
-    # Print warnings first
-    if result.warnings:
-        click.echo(click.style("Warnings:", fg="yellow"))
-        for w in result.warnings:
-            loc = f" [{w.path}]" if getattr(w, "path", None) else ""
-            click.echo(click.style(f" - ({w.code}) {w.message}{loc}", fg="yellow"))
-
-    # Then errors
-    if result.errors:
-        click.echo(click.style("Errors:", fg="red"))
-        for e in result.errors:
-            loc = f" [{e.path}]" if getattr(e, "path", None) else ""
-            click.echo(click.style(f" - ({e.code}) {e.message}{loc}", fg="red"))
-
+    _echo_issues(result.warnings, "Warnings:", "yellow")
+    _echo_issues(result.errors, "Errors:", "red")
     return result.is_success
+
+
+def _finish(successful: bool) -> None:
+    """Report the overall verdict and exit non-zero when checks failed."""
+    verdict = (
+        click.style(" succeeded", fg="green")
+        if successful
+        else click.style(" FAILED", fg="red")
+    )
+    click.echo("Checks have" + verdict)
+
+    if not successful:
+        sys.exit(1)
 
 
 @repo_structure.command()
@@ -189,17 +205,7 @@ def full_scan(
         scan_type = f"Directory scan ({directory})" if directory else "Full scan"
         click.echo(f"{scan_type} took {duration:.2f} seconds")
 
-    click.echo(
-        "Checks have"
-        + (
-            click.style(" succeeded", fg="green")
-            if successful
-            else click.style(" FAILED", fg="red")
-        )
-    )
-
-    if not successful:
-        sys.exit(1)
+    _finish(successful)
 
 
 @repo_structure.command()
@@ -254,24 +260,10 @@ def diff_scan(ctx: click.Context, config_path: str, paths: list[str]) -> None:
     # Check all valid paths efficiently
     result = processor.check_paths(valid_paths)
     for issue in result.errors:
-        loc = f" [{issue.path}]" if getattr(issue, "path", None) else ""
-        click.echo(
-            "Error: " + click.style(f"({issue.code}) {issue.message}{loc}", fg="red"),
-            err=True,
-        )
+        click.echo("Error: " + click.style(_describe(issue), fg="red"), err=True)
     successful = successful and result.is_success
 
-    click.echo(
-        "Checks have"
-        + (
-            click.style(" succeeded", fg="green")
-            if successful
-            else click.style(" FAILED", fg="red")
-        )
-    )
-
-    if not successful:
-        sys.exit(1)
+    _finish(successful)
 
 
 @repo_structure.command()

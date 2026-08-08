@@ -29,6 +29,6 @@ directory_map:
 def test_benchmark_repo_structure_default(benchmark, tmp_path):
     """Test repo_structure benchmark."""
     repo = create_random_repo_structure(tmp_path)
-    config = Configuration(ALLOW_ALL_CONFIG, True)
+    config = Configuration.from_yaml_string(ALLOW_ALL_CONFIG)
     processor = FullScanProcessor(repo, config)
     benchmark(processor.scan)

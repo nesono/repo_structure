@@ -21,7 +21,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     processor = DiffScanProcessor(config)
     assert processor.check_path("README.md") is None
     assert processor.check_path("LICENSE") is None
@@ -54,7 +54,7 @@ directory_map:
     - description: 'Application directory'
     - use_rule: python_package
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     processor = DiffScanProcessor(config)
 
     issue = processor.check_path("app/notes.txt")
@@ -84,7 +84,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: recursive_rule
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     processor = DiffScanProcessor(config)
     assert processor.check_path("python/main.py") is None
 
@@ -108,7 +108,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: recursive_rule
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     processor = DiffScanProcessor(config)
     assert processor.check_path("main.py") is None
     assert processor.check_path("python/something.py") is None
@@ -130,7 +130,7 @@ directory_map:
     - use_rule: base_structure
     - use_rule: python_package
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     processor = DiffScanProcessor(config)
     assert processor.check_path("README.md") is None
     assert processor.check_path("main.py") is None
@@ -160,7 +160,7 @@ directory_map:
     """
     flags = Flags()
     flags.verbose = True
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     processor = DiffScanProcessor(config, flags)
     assert processor.check_path("main/main.cpp") is None
     assert processor.check_path("main/main/main.cpp") is None
@@ -198,7 +198,7 @@ directory_map:
     - use_rule: python_package
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     processor = DiffScanProcessor(config)
     assert processor.check_path("app/main.py") is None
     assert processor.check_path("app/lib/lib.py") is None
@@ -227,7 +227,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
 """
-    config = Configuration(config_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(config_yaml)
     processor = DiffScanProcessor(config)
     assert processor.check_path(".gitignore") is None
 
@@ -247,7 +247,7 @@ directory_map:
     - description: 'Python directory'
     - use_rule: ignore
         """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     flags = Flags()
     flags.verbose = True
     processor = DiffScanProcessor(config, flags)
@@ -269,7 +269,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     processor = DiffScanProcessor(config)
 
     # Test with all valid paths
@@ -325,7 +325,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: cpp_with_headers
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     scanner = DiffScanProcessor(config, repo_root=repo)
 
     # widget.cpp should pass (has widget.h)
@@ -364,7 +364,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: cpp_with_test
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     scanner = DiffScanProcessor(config, repo_root=repo)
 
     # lib.cpp should pass (has both companions)
@@ -403,7 +403,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: cpp_with_header_in_include
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     scanner = DiffScanProcessor(config, repo_root=repo)
 
     # widget.cpp should pass (has include/widget.h)
@@ -442,7 +442,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: cpp_with_header_in_include
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     scanner = DiffScanProcessor(config, repo_root=repo)
 
     # widget.cpp should pass (has both companions)

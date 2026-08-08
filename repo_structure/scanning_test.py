@@ -8,8 +8,7 @@ from unittest.mock import Mock
 from .models import Entry, Flags, MatchSuccess, RepoEntry
 from .scanning import (
     _build_active_entry_backlog,
-    expand_if_exists,
-    expand_use_rule,
+    child_backlog,
     get_matching_item_index,
     map_dir_to_entry_backlog,
     skip_entry,
@@ -183,15 +182,25 @@ class TestGetMatchingItemIndex:
         ]
 
         with caplog.at_level("DEBUG", logger=_SCANNING_LOGGER):
-            get_matching_item_index(backlog, "file.txt", False, verbose=True)
+            get_matching_item_index(backlog, "file.txt", False)
         assert "Found match at index 0: 'file\\.txt'" in caplog.text
 
 
-class TestHandleUseRule:
-    """Test the expand_use_rule function."""
+class TestChildBacklog:
+    """Test the child_backlog function."""
 
-    def test_handle_use_rule_with_rule(self):
-        """Test handling when use_rule is provided."""
+    @staticmethod
+    def _dir_entry(pattern: str, **kwargs) -> RepoEntry:
+        return RepoEntry(
+            path=re.compile(pattern),
+            is_dir=True,
+            is_required=False,
+            is_forbidden=False,
+            **kwargs,
+        )
+
+    def test_child_backlog_from_use_rule(self):
+        """Test that use_rule expands into the referenced rule's entries."""
         structure_rules = {
             "python_files": [
                 RepoEntry(
@@ -202,36 +211,16 @@ class TestHandleUseRule:
                 )
             ]
         }
-        flags = Flags()
 
-        result = expand_use_rule("python_files", structure_rules, flags, "app")
+        result = child_backlog(
+            self._dir_entry(r"app", use_rule="python_files"), structure_rules
+        )
         assert result is not None
         assert len(result) == 1
         assert result[0].path.pattern == ".*\\.py"
 
-    def test_handle_use_rule_empty_rule(self):
-        """Test handling when use_rule is empty."""
-        structure_rules = {}
-        flags = Flags()
-
-        result = expand_use_rule("", structure_rules, flags, "app")
-        assert result is None
-
-    def test_handle_use_rule_verbose_output(self, caplog):
-        """Test verbose output when use_rule is found."""
-        structure_rules = {"test_rule": []}
-        flags = Flags(verbose=True)
-
-        with caplog.at_level("DEBUG", logger=_SCANNING_LOGGER):
-            expand_use_rule("test_rule", structure_rules, flags, "app")
-        assert "use_rule found for rel path 'app'" in caplog.text
-
-
-class TestHandleIfExists:
-    """Test the expand_if_exists function."""
-
-    def test_handle_if_exists_with_entries(self):
-        """Test handling when if_exists has entries."""
+    def test_child_backlog_from_if_exists(self):
+        """Test that if_exists is used when no use_rule is given."""
         if_exists_entries = [
             RepoEntry(
                 path=re.compile(r".*\.md"),
@@ -240,30 +229,24 @@ class TestHandleIfExists:
                 is_forbidden=False,
             )
         ]
-        backlog_entry = RepoEntry(
-            path=re.compile(r".*"),
-            is_dir=True,
-            is_required=False,
-            is_forbidden=False,
-            if_exists=if_exists_entries,
-        )
-        flags = Flags()
 
-        result = expand_if_exists(backlog_entry, flags)
+        result = child_backlog(self._dir_entry(r".*", if_exists=if_exists_entries), {})
         assert result == if_exists_entries
 
-    def test_handle_if_exists_empty(self):
-        """Test handling when if_exists is empty."""
-        backlog_entry = RepoEntry(
-            path=re.compile(r".*"), is_dir=True, is_required=False, is_forbidden=False
-        )
-        flags = Flags()
+    def test_child_backlog_without_rules(self):
+        """Test that an entry with neither use_rule nor if_exists expands to None."""
+        assert child_backlog(self._dir_entry(r".*"), {}) is None
 
-        result = expand_if_exists(backlog_entry, flags)
-        assert result is None
+    def test_child_backlog_use_rule_debug_output(self, caplog):
+        """Test debug output when use_rule is found."""
+        with caplog.at_level("DEBUG", logger=_SCANNING_LOGGER):
+            child_backlog(
+                self._dir_entry("app", use_rule="test_rule"), {"test_rule": []}
+            )
+        assert "use_rule found for 'app'" in caplog.text
 
-    def test_handle_if_exists_verbose_output(self, caplog):
-        """Test verbose output when if_exists is found."""
+    def test_child_backlog_if_exists_debug_output(self, caplog):
+        """Test debug output when if_exists is found."""
         if_exists_entries = [
             RepoEntry(
                 path=re.compile(r"test"),
@@ -272,18 +255,12 @@ class TestHandleIfExists:
                 is_forbidden=False,
             )
         ]
-        backlog_entry = RepoEntry(
-            path=re.compile(r"test_pattern"),
-            is_dir=True,
-            is_required=False,
-            is_forbidden=False,
-            if_exists=if_exists_entries,
-        )
-        flags = Flags(verbose=True)
 
         with caplog.at_level("DEBUG", logger=_SCANNING_LOGGER):
-            expand_if_exists(backlog_entry, flags)
-        assert "if_exists found for rel path 'test_pattern'" in caplog.text
+            child_backlog(
+                self._dir_entry("test_pattern", if_exists=if_exists_entries), {}
+            )
+        assert "if_exists found for 'test_pattern'" in caplog.text
 
 
 class TestBuildActiveEntryBacklog:

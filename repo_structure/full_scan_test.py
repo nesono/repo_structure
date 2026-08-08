@@ -31,7 +31,7 @@ def test_all_empty():
     config_yaml = r"""
 """
     with pytest.raises(ConfigurationParseError):
-        Configuration(config_yaml, True)
+        Configuration.from_yaml_string(config_yaml)
 
 
 def test_matching_regex(tmp_path):
@@ -52,7 +52,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -79,7 +79,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
         """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -109,7 +109,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
         """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "unspecified_entry"
@@ -134,7 +134,7 @@ directory_map:
     - description: 'Some directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_root_mapping"
@@ -159,7 +159,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
@@ -186,7 +186,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
         """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
@@ -213,7 +213,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
 """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
@@ -242,7 +242,7 @@ directory_map:
     - use_rule: base_structure
     - use_rule: python_package
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -270,7 +270,7 @@ directory_map:
     - use_rule: base_structure
     - use_rule: python_package
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
@@ -298,7 +298,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -322,7 +322,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 2
     assert errors[0].code == "missing_required_entries"
@@ -349,7 +349,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 2
     assert errors[0].code == "missing_required_entries"
@@ -374,7 +374,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 2
     assert errors[0].code == "missing_required_entries"
@@ -402,7 +402,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -430,7 +430,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
@@ -459,7 +459,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -492,7 +492,7 @@ directory_map:
     - use_rule: base_structure
     - use_rule: cpp_source
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -525,7 +525,7 @@ directory_map:
     - use_rule: base_structure
     - use_rule: python_package
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 2
     assert errors[0].code == "missing_required_entries"
@@ -564,7 +564,7 @@ directory_map:
     - description: 'Library directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -609,7 +609,7 @@ directory_map:
     - use_rule: python_package
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -634,7 +634,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     flags = Flags()
     flags.include_hidden = False
     errors, warnings = _check_repo_directory_structure(repo, config, flags)
@@ -661,7 +661,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     flags = Flags()
     flags.include_hidden = True
     errors, _ = _check_repo_directory_structure(repo, config)
@@ -690,7 +690,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     flags = Flags()
     flags.include_hidden = True
     errors, _ = _check_repo_directory_structure(repo, config, flags)
@@ -718,7 +718,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -749,7 +749,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -774,7 +774,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     flags = Flags()
     flags.follow_symlinks = True
     errors, warnings = _check_repo_directory_structure(repo, config, flags)
@@ -803,7 +803,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     flags = Flags()
     flags.follow_symlinks = True
     errors, warnings = _check_repo_directory_structure(repo, config, flags)
@@ -843,7 +843,7 @@ directory_map:
       parameters:
         component: ['lidar', 'driver']
 """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -880,7 +880,7 @@ directory_map:
       parameters:
         component: ['lidar', 'driver']
 """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
@@ -917,7 +917,7 @@ directory_map:
       parameters:
         component: ['lidar', 'driver']
 """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -968,7 +968,7 @@ directory_map:
       parameters:
         component: ['control', 'camera']
 """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -1018,7 +1018,7 @@ directory_map:
       parameters:
         component: ['control', 'camera']
 """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "missing_required_entries"
@@ -1071,7 +1071,7 @@ directory_map:
         component: ['control', 'camera']
         extension: ['py']
 """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -1119,7 +1119,7 @@ directory_map:
 """
     flags = Flags()
     flags.verbose = True
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config, flags)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -1150,7 +1150,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
         """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
     assert len(errors) == 1
     assert errors[0].code == "forbidden_entry"
@@ -1182,7 +1182,7 @@ directory_map:
         """
     flags = Flags()
     flags.verbose = True
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config, flags)
     assert len(errors) == 0
     assert len(warnings) == 0
@@ -1214,7 +1214,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: base_structure
     """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     processor = FullScanProcessor(repo, config, Flags())
     warnings = processor.scan().warnings
     assert any(
@@ -1244,7 +1244,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: cpp_with_headers
 """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
 
     # Should have error for engine.cpp missing engine.h
@@ -1280,7 +1280,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: cpp_with_header_in_include
 """
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, _ = _check_repo_directory_structure(repo, config)
 
     # Should have errors:
@@ -1318,7 +1318,7 @@ directory_map:
 """
     flags = Flags()
     flags.verbose = True
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config, flags)
 
     assert len(errors) == 0
@@ -1355,7 +1355,7 @@ directory_map:
 """
     flags = Flags()
     flags.verbose = True
-    config = Configuration(config_yaml, True)
+    config = Configuration.from_yaml_string(config_yaml)
     errors, warnings = _check_repo_directory_structure(repo, config, flags)
 
     assert len(errors) == 0

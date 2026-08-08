@@ -56,8 +56,6 @@ PyPI. The sdist deliberately keeps them so downstreams can run the suite.
 - `report.py` — report generation and text/json/markdown formatting
 - `schema.py` — loads `config.schema.json`
 - `test_lib.py` — test-only helpers (tmpdir repo fixtures)
-- `repo_structure_lib.py` — deprecated re-export shim; import from the focused
-  modules directly
 
 ## Self-validation
 

@@ -3,7 +3,6 @@
 import copy
 import logging
 import re
-import warnings
 from typing import NamedTuple, TextIO, Any
 
 from ruamel import yaml as YAML
@@ -27,13 +26,17 @@ from .schema import get_json_schema
 _LOGGER = logging.getLogger(__name__)
 
 
+def _set_verbosity(verbose: bool) -> None:
+    """Raise the package logger to DEBUG when a caller asks for verbosity."""
+    if verbose:
+        logging.getLogger(__package__).setLevel(logging.DEBUG)
+
+
 class Configuration:
     """Repo Structure configuration class.
 
-    Prefer the :meth:`from_file` and :meth:`from_yaml_string` classmethod
-    factories over calling the constructor directly. The boolean
-    ``param1_is_yaml_string`` flag is deprecated and will be removed in a
-    future release.
+    Build one with :meth:`from_file` or :meth:`from_yaml_string`; the
+    constructor takes the already-merged configuration data.
     """
 
     @classmethod
@@ -50,8 +53,14 @@ class Configuration:
             path: Filesystem path to the YAML configuration file.
             schema: Optional JSON schema to validate the YAML against.
             verbose: Emit DEBUG-level diagnostic messages during parsing.
+
+        Exceptions:
+            StructureRuleError: Raised for errors in structure rules.
+            TemplateError: Raised for errors in repository structure templates.
+            ConfigurationParseError: Raised for errors during configuration parsing.
         """
-        return cls(path, False, schema, verbose)
+        _set_verbosity(verbose)
+        return cls(build_config_tree(path, lambda p: load_document(p, schema)))
 
     @classmethod
     def from_yaml_string(
@@ -67,61 +76,23 @@ class Configuration:
             yaml_string: Raw YAML configuration text.
             schema: Optional JSON schema to validate the YAML against.
             verbose: Emit DEBUG-level diagnostic messages during parsing.
-        """
-        # Suppress the deprecation warning for the boolean flag --
-        # this factory is the new, supported entry point.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            return cls(yaml_string, True, schema, verbose)
-
-    def __init__(
-        self,
-        config_file: str,
-        param1_is_yaml_string: bool = False,
-        schema: dict[Any, Any] | None = None,
-        verbose: bool = False,
-    ):
-        """Create new configuration object.
-
-        Prefer :meth:`from_file` or :meth:`from_yaml_string` over calling
-        the constructor directly.
-
-        Args:
-            config_file: Path to the configuration file or raw YAML text.
-            param1_is_yaml_string: If true, ``config_file`` is interpreted
-                as raw YAML rather than a filesystem path. Deprecated --
-                use :meth:`from_yaml_string` instead.
-            schema: Optional JSON schema file for schema verification.
-            verbose: Emit DEBUG-level diagnostic messages.
 
         Exceptions:
             StructureRuleError: Raised for errors in structure rules.
             TemplateError: Raised for errors in repository structure templates.
             ConfigurationParseError: Raised for errors during configuration parsing.
         """
-        # Detect direct constructor calls (rather than going through the
-        # classmethod factories) and emit a deprecation warning. We probe
-        # the parent frame for the sentinel marker set by the factories.
-        # Note: the factories always pass through __init__ so we cannot
-        # detect "factory vs direct" from inside __init__ itself --
-        # callers that prefer the new API should use the classmethods,
-        # and the boolean flag is what we deprecate, not __init__ itself.
-        if param1_is_yaml_string:
-            warnings.warn(
-                "Passing param1_is_yaml_string=True is deprecated; "
-                "use Configuration.from_yaml_string(...) instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        if verbose:
-            logging.getLogger(__package__).setLevel(logging.DEBUG)
+        _set_verbosity(verbose)
+        return cls(_build_from_yaml_string(yaml_string, schema))
 
-        if param1_is_yaml_string:
-            self.config = _build_from_yaml_string(config_file, schema)
-        else:
-            self.config = build_config_tree(
-                config_file, lambda path: load_document(path, schema)
-            )
+    def __init__(self, config: ConfigurationData):
+        """Wrap already-merged configuration data.
+
+        Args:
+            config: The flattened result of loading every participating
+                configuration file -- see :func:`config_merge.build_config_tree`.
+        """
+        self.config = config
 
         self._validate_cross_references()
 

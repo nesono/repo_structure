@@ -30,7 +30,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: basic_rule
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
 
     assert report.total_directories == 1
@@ -81,7 +81,7 @@ directory_descriptions:
   /: "Root directory with documentation"
   /src/: "Source code directory"
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
 
     assert report.total_directories == 2
@@ -125,7 +125,7 @@ structure_rule_descriptions:
 directory_descriptions:
   /: "Root directory description"
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
     text_output = format_report_text(report)
 
@@ -149,7 +149,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: basic_rule
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
     json_output = format_report_json(report)
 
@@ -175,7 +175,7 @@ directory_map:
 structure_rule_descriptions:
   basic_rule: "Basic rule description"
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
     markdown_output = format_report_markdown(report)
 
@@ -198,7 +198,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: basic_rule
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
 
     # Test text format (default)
@@ -259,7 +259,7 @@ structure_rule_descriptions:
   rule1: "Documentation rule"
   rule2: "License rule"
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
 
     dir_report = report.directory_reports[0]
@@ -284,7 +284,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: ignore
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
 
     assert report.total_directories == 1
@@ -328,7 +328,7 @@ directory_map:
     - description: 'GitHub directory'
     - use_rule: ignore
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
 
     # Find the .github directory report
@@ -378,7 +378,7 @@ directory_map:
     - description: 'A directory'
     - use_rule: a_rule
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
 
     # Directories should be sorted
@@ -407,7 +407,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: comprehensive_rule
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
 
     # Get the structure rule report
@@ -506,7 +506,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: basic_rule
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
 
     # Generate report with current repository (should be a git repo)
     report = generate_report(config, ".")
@@ -553,7 +553,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: basic_rule
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Generate report in a non-git directory
@@ -593,7 +593,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: cpp_with_companions
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
     report = generate_report(config)
 
     # Get the structure rule report
