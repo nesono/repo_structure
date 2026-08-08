@@ -41,6 +41,29 @@ _MATCH_FAILURE_LABEL: dict[MatchFailureCode, str] = {
 }
 
 
+def _incremental_path_split(path_to_split: str) -> Iterator[tuple[str, str, bool]]:
+    """Split the path into incremental tokens.
+
+    Each token starts with the top-level directory and grows the path by
+    one directory with each iteration.
+
+    For example:
+    path/to/file will return the following listing
+    [
+      ("", "path", true),
+      ("path", "to", true),
+      ("path/to", "file" false),
+    ]
+    """
+    # Normalize path separators for cross-platform compatibility
+    normalized_path = normalize_path(path_to_split)
+    parts = normalized_path.strip("/").split("/")
+    for i, part in enumerate(parts):
+        rel_dir = "/".join(parts[:i])
+        is_directory = i < len(parts) - 1
+        yield rel_dir, part, is_directory
+
+
 class DiffScanProcessor:
     """Handles differential scanning of specific paths with stateful configuration."""
 
@@ -66,30 +89,6 @@ class DiffScanProcessor:
         # Replaced at the start of every check, so no listing outlives it.
         self._companions = CompanionIndex()
 
-    def _incremental_path_split(
-        self, path_to_split: str
-    ) -> Iterator[tuple[str, str, bool]]:
-        """Split the path into incremental tokens.
-
-        Each token starts with the top-level directory and grows the path by
-        one directory with each iteration.
-
-        For example:
-        path/to/file will return the following listing
-        [
-          ("", "path", true),
-          ("path", "to", true),
-          ("path/to", "file" false),
-        ]
-        """
-        # Normalize path separators for cross-platform compatibility
-        normalized_path = normalize_path(path_to_split)
-        parts = normalized_path.strip("/").split("/")
-        for i, part in enumerate(parts):
-            rel_dir = "/".join(parts[:i])
-            is_directory = i < len(parts) - 1
-            yield rel_dir, part, is_directory
-
     def _check_path_in_backlog(
         self,
         backlog: Backlog,
@@ -106,7 +105,7 @@ class DiffScanProcessor:
             map_dir: Map dir `rel_path` is relative to, used for reporting
         """
         base_dir = map_dir_to_rel_dir(map_dir)
-        for rel_dir, entry_name, is_dir in self._incremental_path_split(rel_path):
+        for rel_dir, entry_name, is_dir in _incremental_path_split(rel_path):
             if skip_entry(
                 Entry(
                     path=entry_name, rel_dir=rel_dir, is_dir=is_dir, is_symlink=False
@@ -164,7 +163,7 @@ class DiffScanProcessor:
     def _get_corresponding_map_dir(self, path: str) -> str:
         """Get the corresponding map directory for the given path."""
         map_dir = "/"
-        for rel_dir, entry_name, is_dir in self._incremental_path_split(path):
+        for rel_dir, entry_name, is_dir in _incremental_path_split(path):
             map_sub_dir = rel_dir_to_map_dir(join_path_normalized(rel_dir, entry_name))
             if is_dir and map_sub_dir in self.config.directory_map:
                 map_dir = map_sub_dir
