@@ -62,6 +62,15 @@ exclude = [
     "repo_structure.yaml",
 ]
 
+[tool.pytest.ini_options]
+markers = [
+    "heavy: benchmarks over a repository far too large for the pull-request CI matrix",
+]
+# Heavy benchmarks take minutes to build their tree and minutes more to scan it,
+# so they stay out of every ordinary run. The post-merge benchmark workflow
+# selects them explicitly with `pytest -m heavy`, which overrides this.
+addopts = "-m 'not heavy'"
+
 [tool.coverage.run]
 omit = [
     "repo_structure/_version.py",

@@ -609,3 +609,8 @@ We only support `uv` as a build tool as of now.
 - `uv pip install -e '.[dev]'`
 - `uv build`
 - `uv run pytest`
+
+Benchmarks over a two million file repository are marked `heavy` and stay out
+of an ordinary `pytest` run. Run them with `uv run pytest -m heavy`, or set
+`REPO_STRUCTURE_BENCHMARK_FILES` to build a smaller repository of the same
+shape. They also run automatically on every push to `main`.

@@ -1,0 +1,36 @@
+name: Heavy Benchmark
+
+# Post-merge only. The benchmark builds a two million file repository, which
+# takes far longer than a pull request should wait for, so it runs once the
+# change is already on main.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  heavy-benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install dependencies
+        run: |
+          pip install -e .[dev]
+
+      - name: Run the heavy benchmarks
+        # -m heavy overrides the `-m 'not heavy'` in pyproject.toml addopts.
+        # The tests write their statistics straight to $GITHUB_STEP_SUMMARY, so
+        # the tree size and throughput land on this run's summary page.
+        run: |
+          pytest -m heavy --benchmark-json=benchmark.json
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v7
+        with:
+          name: heavy-benchmark
+          path: benchmark.json
