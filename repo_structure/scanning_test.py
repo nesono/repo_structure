@@ -5,7 +5,7 @@
 import re
 from unittest.mock import Mock
 
-from .models import Entry, Flags, MatchSuccess, RepoEntry
+from .models import BacklogEntry, Entry, Flags, MatchSuccess, RepoEntry
 from .scanning import (
     _build_active_entry_backlog,
     child_backlog,
@@ -139,50 +139,37 @@ class TestToEntry:
         assert entry.is_symlink is False
 
 
+def _backlog(pattern: str, *, is_dir: bool = False, **kwargs) -> list[BacklogEntry]:
+    """Build a one-element backlog around a freshly compiled pattern."""
+    entry = RepoEntry(
+        path=re.compile(pattern),
+        is_dir=is_dir,
+        is_required=False,
+        is_forbidden=False,
+        **kwargs,
+    )
+    return [BacklogEntry(entry=entry, is_required=entry.is_required)]
+
+
 class TestGetMatchingItemIndex:
     """Test the get_matching_item_index function."""
 
     def test_get_matching_item_index_found_file(self):
         """Test finding a matching file entry."""
-        backlog = [
-            RepoEntry(
-                path=re.compile(r"file\.txt"),
-                is_dir=False,
-                is_required=False,
-                is_forbidden=False,
-            )
-        ]
-
-        result = get_matching_item_index(backlog, "file.txt", False)
+        result = get_matching_item_index(_backlog(r"file\.txt"), "file.txt", False)
         assert result == MatchSuccess(index=0)
 
     def test_get_matching_item_index_found_directory(self):
         """Test finding a matching directory entry."""
-        backlog = [
-            RepoEntry(
-                path=re.compile(r"subdir"),
-                is_dir=True,
-                is_required=False,
-                is_forbidden=False,
-            )
-        ]
-
-        result = get_matching_item_index(backlog, "subdir", True)
+        result = get_matching_item_index(
+            _backlog(r"subdir", is_dir=True), "subdir", True
+        )
         assert result == MatchSuccess(index=0)
 
     def test_get_matching_item_index_verbose_output(self, caplog):
         """Test verbose output when finding a match."""
-        backlog = [
-            RepoEntry(
-                path=re.compile(r"file\.txt"),
-                is_dir=False,
-                is_required=False,
-                is_forbidden=False,
-            )
-        ]
-
         with caplog.at_level("DEBUG", logger=_SCANNING_LOGGER):
-            get_matching_item_index(backlog, "file.txt", False)
+            get_matching_item_index(_backlog(r"file\.txt"), "file.txt", False)
         assert "Found match at index 0: 'file\\.txt'" in caplog.text
 
 
@@ -190,14 +177,8 @@ class TestChildBacklog:
     """Test the child_backlog function."""
 
     @staticmethod
-    def _dir_entry(pattern: str, **kwargs) -> RepoEntry:
-        return RepoEntry(
-            path=re.compile(pattern),
-            is_dir=True,
-            is_required=False,
-            is_forbidden=False,
-            **kwargs,
-        )
+    def _dir_entry(pattern: str, **kwargs) -> BacklogEntry:
+        return _backlog(pattern, is_dir=True, **kwargs)[0]
 
     def test_child_backlog_from_use_rule(self):
         """Test that use_rule expands into the referenced rule's entries."""
@@ -217,7 +198,7 @@ class TestChildBacklog:
         )
         assert result is not None
         assert len(result) == 1
-        assert result[0].path.pattern == ".*\\.py"
+        assert result[0].entry.path.pattern == ".*\\.py"
 
     def test_child_backlog_from_if_exists(self):
         """Test that if_exists is used when no use_rule is given."""
@@ -231,7 +212,8 @@ class TestChildBacklog:
         ]
 
         result = child_backlog(self._dir_entry(r".*", if_exists=if_exists_entries), {})
-        assert result == if_exists_entries
+        assert result is not None
+        assert [candidate.entry for candidate in result] == if_exists_entries
 
     def test_child_backlog_without_rules(self):
         """Test that an entry with neither use_rule nor if_exists expands to None."""
@@ -281,7 +263,7 @@ class TestBuildActiveEntryBacklog:
 
         result = _build_active_entry_backlog(["python_files"], structure_rules)
         assert len(result) == 1
-        assert result[0].path.pattern == ".*\\.py"
+        assert result[0].entry.path.pattern == ".*\\.py"
 
     def test_build_active_entry_backlog_multiple_rules(self):
         """Test building backlog with multiple rules."""
@@ -326,7 +308,7 @@ class TestBuildActiveEntryBacklog:
             ["ignore", "python_files"], structure_rules
         )
         assert len(result) == 1
-        assert result[0].path.pattern == ".*\\.py"
+        assert result[0].entry.path.pattern == ".*\\.py"
 
     def test_build_active_entry_backlog_empty_rules(self):
         """Test building backlog with empty rules list."""
@@ -363,4 +345,4 @@ class TestMapDirToEntryBacklog:
 
         result = map_dir_to_entry_backlog(directory_map, structure_rules, "/app/")
         assert len(result) == 1
-        assert result[0].path.pattern == ".*\\.py"
+        assert result[0].entry.path.pattern == ".*\\.py"

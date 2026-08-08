@@ -10,9 +10,9 @@ from .config import Configuration
 from .config_merge import unqualify
 from .models import (
     BUILTIN_DIRECTORY_RULES,
-    DirectoryMap,
     IGNORE_RULE,
-    StructureRuleMap,
+    RepoEntry,
+    StructureRuleList,
 )
 
 ReportFormat = Literal["text", "json", "markdown"]
@@ -134,44 +134,26 @@ def generate_report(config: Configuration, repo_root: str = ".") -> Configuratio
     Returns:
         A complete configuration report with directory and structure rule information.
     """
-    sources = _rule_sources(config)
-
-    directory_reports = _generate_directory_reports(
-        config.directory_map,
-        config.directory_descriptions,
-        config.structure_rule_descriptions,
-    )
-
-    structure_rule_reports = _generate_structure_rule_reports(
-        config.structure_rules,
-        config.directory_map,
-        config.structure_rule_descriptions,
-        config.directory_descriptions,
-        sources,
-    )
-
-    repository_info = get_repository_info(repo_root)
+    directory_reports = _generate_directory_reports(config)
+    structure_rule_reports = _generate_structure_rule_reports(config)
 
     return ConfigurationReport(
         directory_reports=directory_reports,
         structure_rule_reports=structure_rule_reports,
         total_directories=len(directory_reports),
         total_structure_rules=len(structure_rule_reports),
-        repository_info=repository_info,
+        repository_info=get_repository_info(repo_root),
     )
 
 
-def _rule_sources(config: Configuration) -> dict[str, str]:
-    """Map each rule to the mounted configuration that defines it.
+def _rule_source(config: Configuration, rule_name: str) -> str:
+    """Name the mounted configuration a rule comes from, if it is one.
 
-    Rules of the top-level configuration map to the empty string: naming the
+    Rules of the top-level configuration report an empty source: naming the
     file they came from would be noise in a single-file repository.
     """
-    top_level = config.configuration_file_name
-    return {
-        rule_name: "" if origin == top_level else origin
-        for rule_name, origin in config.rule_origins.items()
-    }
+    origin = config.rule_origins.get(rule_name, "")
+    return "" if origin == config.configuration_file_name else origin
 
 
 def _rule_anchor(rule_name: str) -> str:
@@ -184,50 +166,45 @@ def _rule_anchor(rule_name: str) -> str:
     return "rule-" + re.sub(r"[^A-Za-z0-9_-]+", "-", rule_name)
 
 
-def _generate_directory_reports(
-    directory_map: DirectoryMap,
-    directory_descriptions: dict[str, str],
-    structure_rule_descriptions: dict[str, str],
-) -> list[DirectoryReport]:
+_NO_DESCRIPTION = "No description provided"
+_BUILTIN_IGNORE_DESCRIPTION = (
+    "Builtin rule: Excludes this directory from structure validation"
+)
+
+
+def _rule_description(config: Configuration, rule_name: str) -> str:
+    """Describe a rule, covering the builtin rules the configuration cannot."""
+    if rule_name in BUILTIN_DIRECTORY_RULES:
+        return _BUILTIN_IGNORE_DESCRIPTION
+    return config.structure_rule_descriptions.get(rule_name, _NO_DESCRIPTION)
+
+
+def _directory_description(config: Configuration, directory: str) -> str:
+    """Describe a mapped directory."""
+    return config.directory_descriptions.get(directory, _NO_DESCRIPTION)
+
+
+def _generate_directory_reports(config: Configuration) -> list[DirectoryReport]:
     """Generate reports for each directory mapping."""
-    reports = []
-
-    for directory, rules in directory_map.items():
-        rule_descriptions = []
-        for rule in rules:
-            if rule in BUILTIN_DIRECTORY_RULES:
-                rule_descriptions.append(
-                    "Builtin rule: Excludes this directory from structure validation"
-                )
-            else:
-                rule_descriptions.append(
-                    structure_rule_descriptions.get(rule, "No description provided")
-                )
-
-        reports.append(
-            DirectoryReport(
-                directory=directory,
-                description=directory_descriptions.get(
-                    directory, "No description provided"
-                ),
-                applied_rules=rules,
-                rule_descriptions=rule_descriptions,
-            )
+    reports = [
+        DirectoryReport(
+            directory=directory,
+            description=_directory_description(config, directory),
+            applied_rules=rules,
+            rule_descriptions=[_rule_description(config, rule) for rule in rules],
         )
+        for directory, rules in config.directory_map.items()
+    ]
 
     return sorted(reports, key=lambda x: x.directory)
 
 
 def _generate_structure_rule_reports(
-    structure_rules: StructureRuleMap,
-    directory_map: DirectoryMap,
-    structure_rule_descriptions: dict[str, str],
-    directory_descriptions: dict[str, str],
-    rule_sources: dict[str, str],
+    config: Configuration,
 ) -> list[StructureRuleReport]:
     """Generate reports for each structure rule."""
 
-    def _format_pattern(entry) -> str:
+    def _format_pattern(entry: RepoEntry) -> str:
         """Format a RepoEntry as a human-readable pattern string."""
         # Determine the pattern type
         if entry.is_forbidden:
@@ -261,59 +238,37 @@ def _generate_structure_rule_reports(
 
         return result
 
-    reports = []
-
-    # Check if the ignore rule is used anywhere
-    ignore_directories = [
-        directory for directory, rules in directory_map.items() if IGNORE_RULE in rules
-    ]
-
-    # Add built-in ignore rule if it's used
-    if ignore_directories:
-        directory_descs = [
-            directory_descriptions.get(directory, "No description provided")
-            for directory in ignore_directories
-        ]
-        reports.append(
-            StructureRuleReport(
-                rule_name=IGNORE_RULE,
-                description="Builtin rule: Excludes this directory from structure validation",
-                applied_directories=ignore_directories,
-                directory_descriptions=directory_descs,
-                rule_count=0,
-                patterns=[],
-            )
-        )
-
-    for rule_name, rule_entries in structure_rules.items():
-        # Find directories that use this rule
-        applied_directories = [
+    def _directories_using(rule_name: str) -> list[str]:
+        return [
             directory
-            for directory, rules in directory_map.items()
+            for directory, rules in config.directory_map.items()
             if rule_name in rules
         ]
 
-        directory_descs = [
-            directory_descriptions.get(directory, "No description provided")
-            for directory in applied_directories
-        ]
-
-        # Format patterns from rule entries
-        patterns = [_format_pattern(entry) for entry in rule_entries]
-
-        reports.append(
-            StructureRuleReport(
-                rule_name=rule_name,
-                description=structure_rule_descriptions.get(
-                    rule_name, "No description provided"
-                ),
-                applied_directories=applied_directories,
-                directory_descriptions=directory_descs,
-                rule_count=len(rule_entries),
-                patterns=patterns,
-                source_config=rule_sources.get(rule_name, ""),
-            )
+    def _report_for(rule_name: str, entries: StructureRuleList) -> StructureRuleReport:
+        applied_directories = _directories_using(rule_name)
+        return StructureRuleReport(
+            rule_name=rule_name,
+            description=_rule_description(config, rule_name),
+            applied_directories=applied_directories,
+            directory_descriptions=[
+                _directory_description(config, directory)
+                for directory in applied_directories
+            ],
+            rule_count=len(entries),
+            patterns=[_format_pattern(entry) for entry in entries],
+            source_config=_rule_source(config, rule_name),
         )
+
+    reports = [
+        _report_for(rule_name, entries)
+        for rule_name, entries in config.structure_rules.items()
+    ]
+
+    # The builtin ignore rule has no entry in structure_rules, so it only shows
+    # up in the report when some directory actually maps it.
+    if _directories_using(IGNORE_RULE):
+        reports.append(_report_for(IGNORE_RULE, []))
 
     return sorted(reports, key=lambda x: x.rule_name)
 
@@ -486,53 +441,47 @@ def _format_repository_info_markdown(repo_info: RepositoryInfo) -> list[str]:
     return lines
 
 
-def format_report_markdown(report: ConfigurationReport) -> str:
-    """Format the report as Markdown.
+_MARKDOWN_INTRODUCTION = [
+    "## Introduction",
+    "",
+    "This report provides a comprehensive view of your repository's "
+    "structure validation configuration. "
+    "It shows how directories are mapped to rules and what those rules enforce.",
+    "",
+    "**Directory Maps** define which structure rules apply to specific "
+    "directories in your repository. "
+    "They map directory paths to the validation rules that govern their contents.",
+    "",
+    "**Structure Rules** specify what files and directories are allowed, "
+    "required, or forbidden within a directory. "
+    "Each rule consists of patterns that match against file paths using "
+    "[Python regular expressions]"
+    "(https://docs.python.org/3/library/re.html#regular-expression-syntax).",
+    "",
+]
+
+
+def _directory_anchor(directory: str) -> str:
+    """Build the markdown anchor id of a directory section."""
+    return "dir-" + (directory.strip("/").replace("/", "-") or "root")
+
+
+def _format_directory_mappings_markdown(
+    directory_reports: list[DirectoryReport],
+) -> list[str]:
+    """Format directory mappings section for markdown output.
 
     Args:
-        report: The configuration report to format.
+        directory_reports: List of directory reports to format
 
     Returns:
-        A Markdown representation of the report.
+        List of formatted markdown lines
     """
-    lines = []
-    lines.append("# Repository Structure Configuration Report")
-    lines.append("")
-
-    lines.append("## Introduction")
-    lines.append("")
-    lines.append(
-        "This report provides a comprehensive view of your repository's "
-        "structure validation configuration. "
-        "It shows how directories are mapped to rules and what those rules enforce."
-    )
-    lines.append("")
-    lines.append(
-        "**Directory Maps** define which structure rules apply to specific "
-        "directories in your repository. "
-        "They map directory paths to the validation rules that govern their contents."
-    )
-    lines.append("")
-    lines.append(
-        "**Structure Rules** specify what files and directories are allowed, "
-        "required, or forbidden within a directory. "
-        "Each rule consists of patterns that match against file paths using "
-        "[Python regular expressions]"
-        "(https://docs.python.org/3/library/re.html#regular-expression-syntax)."
-    )
-    lines.append("")
-
-    if report.repository_info:
-        lines.extend(_format_repository_info_markdown(report.repository_info))
-
-    # Directory dimension
-    lines.append("## Directory Mappings")
-    lines.append("")
-    for dir_report in report.directory_reports:
+    lines = ["## Directory Mappings", ""]
+    for dir_report in directory_reports:
         display_dir = _normalize_directory_display(dir_report.directory)
-        # Create anchor for this directory
-        dir_anchor = dir_report.directory.strip("/").replace("/", "-") or "root"
-        lines.append(f"### Directory: `{display_dir}` {{#dir-{dir_anchor}}}")
+        anchor = _directory_anchor(dir_report.directory)
+        lines.append(f"### Directory: `{display_dir}` {{#{anchor}}}")
         lines.append("")
         lines.append(f"**Description:** {dir_report.description}")
         lines.append("")
@@ -541,12 +490,22 @@ def format_report_markdown(report: ConfigurationReport) -> str:
             # Link to the rule section
             lines.append(f"- [`{unqualify(rule)}`](#{_rule_anchor(rule)}): {desc}")
         lines.append("")
+    return lines
 
-    # Structure rule dimension
-    lines.append("## Structure Rules")
-    lines.append("")
-    for rule_report in report.structure_rule_reports:
-        # Create anchor for this rule
+
+def _format_structure_rules_markdown(
+    structure_rule_reports: list[StructureRuleReport],
+) -> list[str]:
+    """Format structure rules section for markdown output.
+
+    Args:
+        structure_rule_reports: List of structure rule reports to format
+
+    Returns:
+        List of formatted markdown lines
+    """
+    lines = ["## Structure Rules", ""]
+    for rule_report in structure_rule_reports:
         display_name = unqualify(rule_report.rule_name)
         lines.append(
             f"### Rule: `{display_name}` {{#{_rule_anchor(rule_report.rule_name)}}}"
@@ -562,11 +521,8 @@ def format_report_markdown(report: ConfigurationReport) -> str:
             lines.append(f"**Entry Count:** {rule_report.rule_count}")
             lines.append("")
             lines.append("**Patterns:**")
-            for pattern in rule_report.patterns:
-                lines.append(f"- `{pattern}`")
-            lines.append("")
-        else:
-            lines.append("")
+            lines.extend(f"- `{pattern}`" for pattern in rule_report.patterns)
+        lines.append("")
 
         lines.append("**Applied to Directories:**")
         for directory, desc in zip(
@@ -574,9 +530,30 @@ def format_report_markdown(report: ConfigurationReport) -> str:
         ):
             display_dir = _normalize_directory_display(directory)
             # Link back to the directory section
-            dir_anchor = directory.strip("/").replace("/", "-") or "root"
-            lines.append(f"- [`{display_dir}`](#dir-{dir_anchor}): {desc}")
+            lines.append(
+                f"- [`{display_dir}`](#{_directory_anchor(directory)}): {desc}"
+            )
         lines.append("")
+    return lines
+
+
+def format_report_markdown(report: ConfigurationReport) -> str:
+    """Format the report as Markdown.
+
+    Args:
+        report: The configuration report to format.
+
+    Returns:
+        A Markdown representation of the report.
+    """
+    lines = ["# Repository Structure Configuration Report", ""]
+    lines.extend(_MARKDOWN_INTRODUCTION)
+
+    if report.repository_info:
+        lines.extend(_format_repository_info_markdown(report.repository_info))
+
+    lines.extend(_format_directory_mappings_markdown(report.directory_reports))
+    lines.extend(_format_structure_rules_markdown(report.structure_rule_reports))
 
     return "\n".join(lines)
 

@@ -98,7 +98,6 @@ def expand_companion_requirements(
             use_rule=template.use_rule,
             if_exists=template.if_exists,
             companion=[],
-            count=0,
         )
         expanded.append(expanded_entry)
 

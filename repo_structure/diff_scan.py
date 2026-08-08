@@ -10,13 +10,13 @@ from .config import (
 )
 
 from .models import (
+    Backlog,
     Entry,
     Flags,
     MatchFailure,
     MatchFailureCode,
     ScanIssue,
     ScanResult,
-    StructureRuleList,
 )
 from .paths import (
     join_path_normalized,
@@ -25,6 +25,7 @@ from .paths import (
     rel_dir_to_map_dir,
 )
 from .scanning import (
+    CompanionIndex,
     check_companion_files,
     child_backlog,
     get_matching_item_index,
@@ -62,6 +63,8 @@ class DiffScanProcessor:
         self.flags = flags if flags is not None else Flags()
         self.repo_root = repo_root
         self.config_file_names = config.configuration_file_names_for(repo_root)
+        # Replaced at the start of every check, so no listing outlives it.
+        self._companions = CompanionIndex()
 
     def _incremental_path_split(
         self, path_to_split: str
@@ -89,7 +92,7 @@ class DiffScanProcessor:
 
     def _check_path_in_backlog(
         self,
-        backlog: StructureRuleList,
+        backlog: Backlog,
         rel_path: str,
         original_path: str,
         map_dir: str,
@@ -138,8 +141,9 @@ class DiffScanProcessor:
             )
             companion_issue = check_companion_files(
                 entry_name,
-                backlog_match,
+                backlog_match.entry,
                 str(Path(self.repo_root) / full_rel_dir),
+                self._companions,
             )
             if companion_issue:
                 # The companion check only knows the entry name; report the
@@ -180,6 +184,11 @@ class DiffScanProcessor:
             Note that this function will not be able to ensure if all required
             entries are present.
         """
+        self._companions = CompanionIndex()
+        return self._check_path(path)
+
+    def _check_path(self, path: str) -> ScanIssue | None:
+        """Check one path against the configuration, reusing the current index."""
         map_dir = self._get_corresponding_map_dir(path)
         base_dir = map_dir_to_rel_dir(map_dir)
         backlog = map_dir_to_entry_backlog(
@@ -204,9 +213,13 @@ class DiffScanProcessor:
             ScanResult holding one error per invalid path. A diff scan cannot
             detect missing required entries, so warnings are always empty.
         """
+        # One index for the whole batch: change sets usually touch the same few
+        # directories, and their companion listings are then read once.
+        self._companions = CompanionIndex()
+
         errors = []
         for path in paths:
-            issue = self.check_path(path)
+            issue = self._check_path(path)
             if issue:
                 errors.append(issue)
         return ScanResult(errors=errors)

@@ -7,6 +7,7 @@ import re
 from .models import (
     BUILTIN_DIRECTORY_RULES,
     IGNORE_RULE,
+    BacklogEntry,
     Entry,
     Flags,
     MatchFailure,
@@ -31,7 +32,6 @@ class TestRepoEntry:
         assert entry.use_rule == ""
         assert not entry.if_exists
         assert not entry.companion
-        assert entry.count == 0
 
     def test_default_lists_are_not_shared(self):
         """Test that each instance gets its own list instances."""
@@ -43,6 +43,38 @@ class TestRepoEntry:
         )
         first.if_exists.append(second)
         assert not second.if_exists
+
+
+class TestBacklogEntry:
+    """Test the BacklogEntry dataclass."""
+
+    @staticmethod
+    def _entry() -> RepoEntry:
+        return RepoEntry(
+            path=re.compile(r".*\.py"),
+            is_dir=False,
+            is_required=True,
+            is_forbidden=False,
+        )
+
+    def test_counting_is_per_backlog_entry(self):
+        """Test that two backlog entries over one rule entry count separately."""
+        shared = self._entry()
+        first = BacklogEntry(entry=shared, is_required=shared.is_required)
+        second = BacklogEntry(entry=shared, is_required=shared.is_required)
+
+        first.count += 1
+
+        assert first.count == 1
+        assert second.count == 0
+
+    def test_required_can_differ_from_the_rule_entry(self):
+        """Test that a companion may join the backlog as optional."""
+        required_entry = self._entry()
+        candidate = BacklogEntry(entry=required_entry, is_required=False)
+
+        assert required_entry.is_required is True
+        assert candidate.is_required is False
 
 
 class TestEntry:
