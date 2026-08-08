@@ -4,43 +4,27 @@ import copy
 import logging
 import re
 import warnings
-from dataclasses import dataclass, field
 from typing import NamedTuple, TextIO, Any
 
 from ruamel import yaml as YAML
 from jsonschema import validate, ValidationError, SchemaError
 
+from .config_merge import build_config_tree
 from .errors import ConfigurationParseError, StructureRuleError, TemplateError
 from .models import (
+    ConfigurationData,
+    InheritSpec,
+    ParsedDocument,
     RepoEntry,
     DirectoryMap,
     StructureRuleList,
     StructureRuleMap,
     BUILTIN_DIRECTORY_RULES,
 )
-from .paths import map_dir_to_rel_dir
+from .paths import map_dir_to_rel_dir, relative_to_root
 from .schema import get_json_schema
 
 _LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class ConfigurationData:
-    """Stores configuration data."""
-
-    structure_rules: StructureRuleMap = field(default_factory=dict)
-    directory_map: DirectoryMap = field(default_factory=dict)
-    configuration_file_name: str = ""
-    structure_rule_descriptions: dict[str, str] = field(default_factory=dict)
-    directory_descriptions: dict[str, str] = field(default_factory=dict)
-
-    def get_structure_rule_description(self, rule_name: str) -> str:
-        """Get the description for a structure rule."""
-        return self.structure_rule_descriptions.get(rule_name, "")
-
-    def get_directory_description(self, directory: str) -> str:
-        """Get the description for a directory."""
-        return self.directory_descriptions.get(directory, "")
 
 
 class Configuration:
@@ -132,22 +116,14 @@ class Configuration:
         if verbose:
             logging.getLogger(__package__).setLevel(logging.DEBUG)
 
-        yaml_dict = self._load(config_file, param1_is_yaml_string)
-        self._validate_schema(yaml_dict, schema)
+        if param1_is_yaml_string:
+            self.config = _build_from_yaml_string(config_file, schema)
+        else:
+            self.config = build_config_tree(
+                config_file, lambda path: load_document(path, schema)
+            )
 
-        _LOGGER.debug("Parsing configuration data")
-        structure_rules, structure_rule_descriptions = self._parse_rules(yaml_dict)
-        directory_map, directory_descriptions = self._parse_directory_map(yaml_dict)
-        self.config = ConfigurationData(
-            structure_rules=structure_rules,
-            directory_map=directory_map,
-            structure_rule_descriptions=structure_rule_descriptions,
-            directory_descriptions=directory_descriptions,
-        )
-
-        self._expand_templates(yaml_dict)
         self._validate_cross_references()
-        self._register_configuration_file(config_file, param1_is_yaml_string)
 
         _LOGGER.debug(
             "Structure rules count: %d, Directory map count: %d",
@@ -155,69 +131,6 @@ class Configuration:
             len(self.config.directory_map),
         )
         _LOGGER.debug("Configuration parsed successfully")
-
-    @staticmethod
-    def _load(config_file: str, param1_is_yaml_string: bool) -> dict:
-        """Read the YAML source into a dictionary."""
-        _LOGGER.debug("Loading configuration")
-        if param1_is_yaml_string:
-            yaml_dict = _load_repo_structure_yamls(config_file)
-        else:
-            yaml_dict = _load_repo_structure_yaml(config_file)
-
-        if not yaml_dict:
-            source = "yaml string" if param1_is_yaml_string else config_file
-            raise ConfigurationParseError(
-                f"Configuration is empty or could not be parsed: {source}"
-            )
-        return yaml_dict
-
-    @staticmethod
-    def _validate_schema(yaml_dict: dict, schema: dict[Any, Any] | None) -> None:
-        """Validate the raw YAML against the JSON schema."""
-        if not schema:
-            schema = get_json_schema()
-
-        try:
-            validate(instance=yaml_dict, schema=schema)
-        except ValidationError as e:
-            raise ConfigurationParseError(f"Bad config: {e.message}") from e
-        except SchemaError as e:
-            raise ConfigurationParseError(f"Bad schema: {e.message}") from e
-        _LOGGER.debug("Configuration validated successfully")
-
-    @staticmethod
-    def _parse_rules(yaml_dict: dict) -> tuple[StructureRuleMap, dict[str, str]]:
-        """Parse the ``structure_rules`` section into rules and descriptions."""
-        return _parse_structure_rules(yaml_dict.get("structure_rules", {}))
-
-    @staticmethod
-    def _parse_directory_map(yaml_dict: dict) -> tuple[DirectoryMap, dict[str, str]]:
-        """Parse the ``directory_map`` section into mappings and descriptions."""
-        return _build_directory_map(yaml_dict.get("directory_map", {}))
-
-    def _expand_templates(self, yaml_dict: dict) -> None:
-        """Expand templates in-place, adding structure rules to the directory map."""
-        _parse_templates_to_configuration(
-            yaml_dict.get("templates", {}),
-            yaml_dict.get("directory_map", {}),
-            self,
-        )
-
-    def _register_configuration_file(
-        self, config_file: str, param1_is_yaml_string: bool
-    ) -> None:
-        """Record the config file name so scans can account for the file itself."""
-        if param1_is_yaml_string:
-            return
-
-        if config_file in self.config.structure_rules:
-            raise ConfigurationParseError(
-                f"Conflicting Structure rule for {config_file}"
-                "- do not add the config manually."
-            )
-
-        self.config.configuration_file_name = config_file
 
     def _validate_cross_references(self):
         """Ensure every rule referenced by the directory map exists."""
@@ -254,8 +167,35 @@ class Configuration:
 
     @property
     def configuration_file_name(self) -> str:
-        """Property for configuration file name."""
+        """Property for the top-level configuration file name."""
         return self.config.configuration_file_name
+
+    @property
+    def configuration_file_names(self) -> set[str]:
+        """Property for every configuration file that took part in the load.
+
+        Holds the top-level configuration file as it was passed in, plus every
+        mounted configuration as a repository-root relative path.
+        """
+        return self.config.configuration_file_names
+
+    @property
+    def rule_origins(self) -> dict[str, str]:
+        """Property mapping each structure rule to the file that defined it."""
+        return self.config.rule_origins
+
+    def configuration_file_names_for(self, repo_root: str) -> set[str]:
+        """Names a scan of ``repo_root`` should recognise as configuration files.
+
+        Mounted configurations are already recorded relative to the repository
+        root. The top-level configuration is not: it is whatever path the caller
+        passed in, so it is additionally offered relative to ``repo_root``.
+        """
+        names = set(self.config.configuration_file_names)
+        root_relative = relative_to_root(self.config.configuration_file_name, repo_root)
+        if root_relative:
+            names.add(root_relative)
+        return names
 
     @property
     def structure_rule_descriptions(self) -> dict[str, str]:
@@ -266,6 +206,123 @@ class Configuration:
     def directory_descriptions(self) -> dict[str, str]:
         """Property for directory descriptions."""
         return self.config.directory_descriptions
+
+
+def load_document(path: str, schema: dict[Any, Any] | None = None) -> ParsedDocument:
+    """Read and parse a single configuration file.
+
+    This is the per-file half of configuration loading: it knows nothing about
+    mounted configurations beyond recording them in
+    :attr:`ParsedDocument.mounts`. Combining documents is
+    ``config_merge``'s job.
+
+    Args:
+        path: Filesystem path to the YAML configuration file.
+        schema: Optional JSON schema to validate the YAML against.
+    """
+    yaml_dict = _load_repo_structure_yaml(path)
+    if not yaml_dict:
+        raise ConfigurationParseError(
+            f"Configuration is empty or could not be parsed: {path}"
+        )
+    return parse_document(yaml_dict, schema)
+
+
+def parse_document(
+    yaml_dict: dict, schema: dict[Any, Any] | None = None
+) -> ParsedDocument:
+    """Validate and parse one already-loaded configuration document.
+
+    Args:
+        yaml_dict: The raw YAML document.
+        schema: Optional JSON schema to validate the document against.
+    """
+    _validate_schema(yaml_dict, schema)
+
+    _LOGGER.debug("Parsing configuration data")
+    directory_map_yaml = yaml_dict.get("directory_map", {})
+    structure_rules, rule_descriptions = _parse_structure_rules(
+        yaml_dict.get("structure_rules", {})
+    )
+    directory_map, directory_descriptions, mounts = _build_directory_map(
+        directory_map_yaml
+    )
+
+    document = ParsedDocument(
+        structure_rules=structure_rules,
+        structure_rule_descriptions=rule_descriptions,
+        directory_map=directory_map,
+        directory_descriptions=directory_descriptions,
+        mounts=mounts,
+        inherit=_parse_inherit(yaml_dict.get("inherit", {})),
+    )
+    _parse_templates_to_document(
+        yaml_dict.get("templates", {}), directory_map_yaml, document
+    )
+    return document
+
+
+def _validate_schema(yaml_dict: dict, schema: dict[Any, Any] | None) -> None:
+    """Validate the raw YAML against the JSON schema."""
+    if not schema:
+        schema = get_json_schema()
+
+    try:
+        validate(instance=yaml_dict, schema=schema)
+    except ValidationError as e:
+        raise ConfigurationParseError(f"Bad config: {e.message}") from e
+    except SchemaError as e:
+        raise ConfigurationParseError(f"Bad schema: {e.message}") from e
+    _LOGGER.debug("Configuration validated successfully")
+
+
+def _parse_inherit(inherit_yaml: dict) -> InheritSpec:
+    """Parse the ``inherit`` section of a mounted configuration."""
+    structure_rules = inherit_yaml.get("structure_rules")
+    override = list(inherit_yaml.get("override", []))
+
+    if structure_rules is None and override:
+        raise ConfigurationParseError(
+            "'inherit.override' requires 'inherit.structure_rules' -- "
+            f"nothing is inherited that {', '.join(sorted(override))} could override"
+        )
+
+    return InheritSpec(structure_rules=structure_rules, override=override)
+
+
+def _build_from_yaml_string(
+    yaml_string: str, schema: dict[Any, Any] | None
+) -> ConfigurationData:
+    """Build configuration data from raw YAML text.
+
+    A YAML string has no directory to resolve mounted configuration paths
+    against and no parent to inherit from, so both are rejected here.
+    """
+    _LOGGER.debug("Loading configuration")
+    yaml_dict = _load_repo_structure_yamls(yaml_string)
+    if not yaml_dict:
+        raise ConfigurationParseError(
+            "Configuration is empty or could not be parsed: yaml string"
+        )
+
+    document = parse_document(yaml_dict, schema)
+    if document.mounts:
+        raise ConfigurationParseError(
+            "'use_config' is only supported when loading from a file, "
+            "since the mounted path is resolved relative to the configuration"
+        )
+    if document.inherit.structure_rules is not None:
+        raise ConfigurationParseError(
+            "'inherit' is only valid in a configuration mounted through "
+            "'use_config' -- there is no parent configuration to inherit from"
+        )
+
+    return ConfigurationData(
+        structure_rules=document.structure_rules,
+        directory_map=document.directory_map,
+        structure_rule_descriptions=document.structure_rule_descriptions,
+        directory_descriptions=document.directory_descriptions,
+    )
 
 
 def _load_repo_structure_yaml(filename: str) -> dict:
@@ -437,7 +494,7 @@ def _expand_template_entry(
 
 
 def _parse_use_template(
-    dir_map_yaml: dict, directory: str, templates_yaml: dict, config: Configuration
+    dir_map_yaml: dict, directory: str, templates_yaml: dict, document: ParsedDocument
 ):
     if "use_template" not in dir_map_yaml:
         return
@@ -476,16 +533,28 @@ def _parse_use_template(
         f"__template_rule_{map_dir_to_rel_dir(directory)}_"
         f"{dir_map_yaml['use_template']}"
     )
-    config.add_template_rule(directory, template_rule_name, structure_rule_list)
+    document.structure_rules[template_rule_name] = structure_rule_list
+    document.directory_map.setdefault(directory, []).append(template_rule_name)
 
 
 def _build_directory_map(
     directory_map_yaml: dict,
-) -> tuple[DirectoryMap, dict[str, str]]:
+) -> tuple[DirectoryMap, dict[str, str], dict[str, str]]:
+    """Parse the ``directory_map`` section.
 
-    def _parse_use_rule(rule: dict, dir_map: list[str]) -> None:
-        if rule.keys() == {"use_rule"}:
-            dir_map.append(rule["use_rule"])
+    Returns the rules mapped to each directory, the directory descriptions and
+    the configurations mounted through ``use_config``, keyed by mount directory.
+    """
+
+    def _parse_use_config(rule: dict, directory: str, mounts: dict[str, str]) -> None:
+        if rule.keys() != {"use_config"}:
+            return
+        if directory in mounts:
+            raise ConfigurationParseError(
+                f"Directory mapping '{directory}' mounts more than one "
+                "configuration through 'use_config'"
+            )
+        mounts[directory] = rule["use_config"]
 
     def _extract_description(value_list: list) -> str:
         """Extract and validate description from directory map entry."""
@@ -503,22 +572,24 @@ def _build_directory_map(
 
     mapping: DirectoryMap = {}
     descriptions: dict[str, str] = {}
+    mounts: dict[str, str] = {}
 
     for directory, value in directory_map_yaml.items():
         description = _extract_description(value)
         descriptions[directory] = description
 
         for r in value[1:]:  # Skip the description at index 0
-            if mapping.get(directory) is None:
-                mapping[directory] = []
-            _parse_use_rule(r, mapping[directory])
+            if r.keys() == {"use_rule"}:
+                mapping.setdefault(directory, []).append(r["use_rule"])
+            else:
+                _parse_use_config(r, directory, mounts)
 
-    return mapping, descriptions
+    return mapping, descriptions, mounts
 
 
-def _parse_templates_to_configuration(
-    templates_yaml: dict, directory_map_yaml: dict, config: Configuration
+def _parse_templates_to_document(
+    templates_yaml: dict, directory_map_yaml: dict, document: ParsedDocument
 ) -> None:
     for directory, value in directory_map_yaml.items():
         for use_map in value:
-            _parse_use_template(use_map, directory, templates_yaml, config)
+            _parse_use_template(use_map, directory, templates_yaml, document)

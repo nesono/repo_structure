@@ -407,7 +407,9 @@ The root key '/' must be in the Dictionary Map. A key must start and end with a
 slash '/' and must point to a real directory in the repository.
 
 A mapped directory only requires the Structure Rules that are mapped to it, it
-**does not inherit** the rules from its parent directories.
+**does not inherit** the rules from its parent directories. (Inheriting rules
+from a parent _configuration file_ is a different thing, and is described under
+[Multiple Configuration Files](#multiple-configuration-files).)
 
 For example:
 
@@ -449,6 +451,144 @@ directory_map:
 ```
 
 The rule can
+
+## Multiple Configuration Files
+
+A repository does not have to keep all of its rules in one file. A
+`directory_map` entry can hand a directory over to another configuration file
+with `use_config`, so the team that owns a directory owns the rules for it:
+
+```yaml
+# repo_structure.yaml, at the repository root
+structure_rules:
+  base:
+    - description: "Files every repository needs"
+    - require: 'README\.md'
+  docs:
+    - description: "Documentation"
+    - allow: '.*\.md'
+directory_map:
+  /:
+    - description: "Root directory"
+    - use_rule: base
+  /frontend/:
+    - description: "Owned by the frontend team"
+    - use_config: repo_structure.yaml
+```
+
+The mounted file lives in the directory it governs, and `use_config` is resolved
+relative to that directory -- the configuration above reads
+`frontend/repo_structure.yaml`. A mounted configuration may mount further
+configurations of its own, which is how deeper subtrees are delegated.
+
+### Directories Are Relative to the Configuration File
+
+Inside a mounted configuration, `/` is the directory it was mounted at. The
+frontend team writes their file as though their directory were the repository:
+
+```yaml
+# frontend/repo_structure.yaml
+structure_rules:
+  ts_package:
+    - description: "TypeScript package"
+    - require: 'index\.ts'
+directory_map:
+  /:
+    - description: "Frontend root" # this is /frontend/
+    - use_rule: ts_package
+  /components/:
+    - description: "Components" # this is /frontend/components/
+    - use_rule: ts_package
+```
+
+A mounted configuration cannot govern anything outside the directory it was
+given: `use_config` paths and `directory_map` keys that traverse upwards with
+`..` are rejected.
+
+### Inheriting Structure Rules
+
+Rules are private to the file that defines them, so two teams may both define a
+rule called `python_package` without interfering. A configuration that wants its
+parent's rules has to say so, with an `inherit` block:
+
+```yaml
+# frontend/repo_structure.yaml
+inherit:
+  structure_rules: all # every rule of the mounting configuration
+directory_map:
+  /:
+    - description: "Frontend root"
+    - use_rule: docs # defined in the root configuration
+```
+
+`structure_rules: all` is the one-line form. To take only specific rules, list
+them instead:
+
+```yaml
+inherit:
+  structure_rules: [docs, base]
+```
+
+Inheriting does not copy a rule -- it makes the parent's rule usable under its
+own name. Change the rule in the parent and every configuration that inherits it
+follows along.
+
+Inheritance chains: a configuration offers its own rules _and_ the ones it
+inherited to any configuration it mounts.
+
+### Overriding an Inherited Rule
+
+Redefining a rule you inherited has to be deliberate. Name it in
+`inherit.override`:
+
+```yaml
+# frontend/repo_structure.yaml
+inherit:
+  structure_rules: all
+  override: [docs]
+structure_rules:
+  docs:
+    - description: "Frontend flavour of docs"
+    - require: 'GUIDE\.md'
+directory_map:
+  /:
+    - description: "Frontend root"
+    - use_rule: docs # the frontend's docs, not the root's
+```
+
+The override applies only to the configuration that declares it. The root
+configuration -- and any other team -- keeps using the original rule.
+
+### Collisions Are Errors
+
+Anything ambiguous about which definition wins fails the configuration load
+rather than being resolved silently:
+
+| Situation                                                                         | Why it is rejected                                      |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| A rule redefines an inherited name without `inherit.override`                     | It is unclear whether shadowing was intended            |
+| `inherit.override` names a rule that is not inherited                             | There is nothing to override                            |
+| `inherit.structure_rules` names a rule the parent does not define                 | The rule cannot be resolved                             |
+| Two configurations map the same directory                                         | Two owners for one directory                            |
+| A `directory_map` key or `use_config` path traverses upwards with `..`            | A configuration would govern a subtree it was not given |
+| The same configuration file is reached from two mounts                            | One file would describe two directories                 |
+| One `directory_map` entry combines `use_config` with `use_rule` or `use_template` | The directory would be governed twice                   |
+| A directory both maps rules and mounts a configuration                            | Same as above, spelled across two entries               |
+| A top-level configuration declares `inherit`                                      | There is no parent configuration to inherit from        |
+
+### Reading a Multi-File Configuration
+
+`repo_structure report` names the file each rule comes from, which is what tells
+two same-named rules apart:
+
+```markdown
+### Rule: `docs` {#rule-frontend-repo_structure-yaml-docs}
+
+**Defined in:** `frontend/repo_structure.yaml`
+```
+
+Every mounted configuration file is excluded from validation, the same way the
+top-level configuration file always has been.
 
 ## System Requirements
 

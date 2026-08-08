@@ -43,6 +43,9 @@ the tests so downstreams can run the suite.
 
 - `__main__.py` — click CLI: `full-scan`, `diff-scan`, `report`
 - `config.py` — YAML parsing, schema validation, template expansion
+- `config_merge.py` — flattens a `use_config` mount tree into one configuration:
+  rule-name qualification, `inherit`/`override`, collision errors. Takes the
+  document parser as a callable so `config.py` can depend on it, not vice versa
 - `models.py` — dataclasses, type aliases, rule constants
 - `errors.py` — exception hierarchy
 - `paths.py` — path normalization

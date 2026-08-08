@@ -60,6 +60,7 @@
         "properties": {
           "use_rule": { "type": "string" },
           "use_template": { "type": "string" },
+          "use_config": { "type": "string" },
           "parameters": {
             "type": "object",
             "additionalProperties": {
@@ -71,7 +72,8 @@
         "additionalProperties": false,
         "anyOf": [
           { "required": ["use_rule"] },
-          { "required": ["use_template", "parameters"] }
+          { "required": ["use_template", "parameters"] },
+          { "required": ["use_config"] }
         ],
         "dependentSchemas": {
           "use_rule": {
@@ -82,6 +84,13 @@
           "use_template": {
             "properties": {
               "parameters": { "type": "object" }
+            }
+          },
+          "use_config": {
+            "properties": {
+              "use_rule": { "type": "null" },
+              "use_template": { "type": "null" },
+              "parameters": { "type": "null" }
             }
           }
         }
@@ -95,7 +104,7 @@
       "description": "Contains named structure rules specifying allowed and required directory entries and are mapped to directories through the directory_map",
       "type": "object",
       "patternProperties": {
-        "^(?!__).*": { "$ref": "#/$defs/directory_entries" }
+        "^(?!__)(?!.*::).*$": { "$ref": "#/$defs/directory_entries" }
       },
       "additionalProperties": false
     },
@@ -103,7 +112,26 @@
       "description": "Contains named templates that are expanded by usage in the directory_map into structure rules",
       "type": "object",
       "patternProperties": {
-        "^(?!__).*": { "$ref": "#/$defs/directory_entries" }
+        "^(?!__)(?!.*::).*$": { "$ref": "#/$defs/directory_entries" }
+      },
+      "additionalProperties": false
+    },
+    "inherit": {
+      "description": "Declares which structure rules this configuration takes over from the configuration that mounted it through use_config",
+      "type": "object",
+      "properties": {
+        "structure_rules": {
+          "description": "Either the string 'all' to inherit every structure rule of the parent, or an explicit list of rule names",
+          "anyOf": [
+            { "const": "all" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "override": {
+          "description": "Names of inherited structure rules this configuration deliberately redefines",
+          "type": "array",
+          "items": { "type": "string" }
+        }
       },
       "additionalProperties": false
     },
@@ -116,5 +144,9 @@
     }
   },
   "required": ["directory_map"],
-  "anyOf": [{ "required": ["structure_rules"] }, { "required": ["templates"] }]
+  "anyOf": [
+    { "required": ["structure_rules"] },
+    { "required": ["templates"] },
+    { "required": ["inherit"] }
+  ]
 }

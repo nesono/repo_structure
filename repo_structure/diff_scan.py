@@ -62,6 +62,7 @@ class DiffScanProcessor:
         self.config = config
         self.flags = flags if flags is not None else Flags()
         self.repo_root = repo_root
+        self.config_file_names = config.configuration_file_names_for(repo_root)
 
     def _incremental_path_split(
         self, path_to_split: str
@@ -109,7 +110,7 @@ class DiffScanProcessor:
                     path=entry_name, rel_dir=rel_dir, is_dir=is_dir, is_symlink=False
                 ),
                 self.config.directory_map,
-                self.config.configuration_file_name,
+                self.config_file_names,
                 flags=self.flags,
             ):
                 return None

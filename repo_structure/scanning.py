@@ -37,7 +37,7 @@ _LOGGER = logging.getLogger(__name__)
 def skip_entry(
     entry: Entry,
     directory_map: DirectoryMap,
-    config_file_name: str,
+    config_file_names: set[str],
     git_ignore: Callable[[str], bool] | None = None,
     flags: Flags | None = None,
 ) -> bool:
@@ -45,21 +45,24 @@ def skip_entry(
 
     `git_ignore` is called with the entry's path relative to the repository
     root, so it must resolve that against the root rather than the process CWD.
+
+    `config_file_names` holds every configuration file taking part in the scan.
+    A configuration mounted through `use_config` lives in the subdirectory it
+    governs, so entries are matched on their repository-root relative path as
+    well as on their bare name.
     """
     if flags is None:
         flags = Flags()
+    rel_path = join_path_normalized(entry.rel_dir, entry.path)
     skip_conditions = [
         (not flags.follow_symlinks and entry.is_symlink),
         (not flags.include_hidden and entry.path.startswith(".")),
         (entry.path == ".gitignore" and not entry.is_dir),
         (entry.path == ".git" and entry.is_dir),
-        (git_ignore and git_ignore(join_path_normalized(entry.rel_dir, entry.path))),
-        (
-            entry.is_dir
-            and rel_dir_to_map_dir(join_path_normalized(entry.rel_dir, entry.path))
-            in directory_map
-        ),
-        (entry.path == config_file_name),
+        (git_ignore and git_ignore(rel_path)),
+        (entry.is_dir and rel_dir_to_map_dir(rel_path) in directory_map),
+        (entry.path in config_file_names),
+        (rel_path in config_file_names),
     ]
 
     for condition in skip_conditions:

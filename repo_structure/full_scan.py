@@ -10,6 +10,7 @@ from gitignore_parser import parse_gitignore
 from .config import (
     Configuration,
 )
+from .config_merge import unqualify
 
 from .models import (
     BUILTIN_DIRECTORY_RULES,
@@ -54,6 +55,7 @@ class FullScanProcessor:
         self.config = config
         self.flags = flags if flags is not None else Flags()
         self.git_ignore = self._get_git_ignore()
+        self.config_file_names = config.configuration_file_names_for(repo_root)
 
     def _get_git_ignore(self) -> Callable[[str], bool] | None:
         """Get gitignore parser, cached for the lifetime of the scan.
@@ -160,7 +162,7 @@ class FullScanProcessor:
         return skip_entry(
             entry,
             self.config.directory_map,
-            self.config.configuration_file_name,
+            self.config_file_names,
             self.git_ignore,
             self.flags,
         )
@@ -279,11 +281,23 @@ class FullScanProcessor:
                     ScanIssue(
                         severity="warning",
                         code="unused_structure_rule",
-                        message=f"Unused structure rule '{rule_name}'",
+                        message=self._unused_rule_message(rule_name),
                         path=None,
                     )
                 )
         return warnings
+
+    def _unused_rule_message(self, rule_name: str) -> str:
+        """Name an unused rule the way its own configuration file spells it.
+
+        A rule from a mounted configuration is reported with that file's path,
+        so the warning says whose configuration it is about.
+        """
+        message = f"Unused structure rule '{unqualify(rule_name)}'"
+        origin = self.config.rule_origins.get(rule_name, "")
+        if origin and origin != self.config.configuration_file_name:
+            message += f" in '{origin}'"
+        return message
 
     def scan(self) -> ScanResult:
         """Scan the repository and return the errors and warnings found."""
