@@ -20,7 +20,7 @@ from .models import (
     StructureRuleMap,
     BUILTIN_DIRECTORY_RULES,
 )
-from .paths import map_dir_to_rel_dir, relative_to_root
+from .paths import map_dir_to_rel_dir
 from .schema import get_json_schema
 
 _LOGGER = logging.getLogger(__name__)
@@ -113,19 +113,6 @@ class Configuration:
                         f"Directory mapping '{directory}' uses non-existing rule '{r}'"
                     )
 
-    def add_template_rule(
-        self, directory: str, rule_name: str, entries: StructureRuleList
-    ) -> None:
-        """Register an expanded template rule and map it to a directory.
-
-        Args:
-            directory: Directory map key the expanded rule applies to.
-            rule_name: Name to register the generated structure rule under.
-            entries: Parsed entries making up the generated structure rule.
-        """
-        self.config.structure_rules[rule_name] = entries
-        self.config.directory_map.setdefault(directory, []).append(rule_name)
-
     @property
     def structure_rules(self) -> StructureRuleMap:
         """Property for structure rules."""
@@ -156,17 +143,8 @@ class Configuration:
         return self.config.rule_origins
 
     def configuration_file_names_for(self, repo_root: str) -> set[str]:
-        """Names a scan of ``repo_root`` should recognise as configuration files.
-
-        Mounted configurations are already recorded relative to the repository
-        root. The top-level configuration is not: it is whatever path the caller
-        passed in, so it is additionally offered relative to ``repo_root``.
-        """
-        names = set(self.config.configuration_file_names)
-        root_relative = relative_to_root(self.config.configuration_file_name, repo_root)
-        if root_relative:
-            names.add(root_relative)
-        return names
+        """Names a scan of ``repo_root`` should recognise as configuration files."""
+        return self.config.configuration_file_names_for(repo_root)
 
     @property
     def structure_rule_descriptions(self) -> dict[str, str]:

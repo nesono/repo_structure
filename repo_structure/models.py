@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Final, Literal
 
+from .paths import relative_to_root
+
 IGNORE_RULE: Final = "ignore"
 BUILTIN_DIRECTORY_RULES: Final = (IGNORE_RULE,)
 
@@ -127,13 +129,18 @@ class ConfigurationData:
     configuration_file_names: set[str] = field(default_factory=set)
     rule_origins: dict[str, str] = field(default_factory=dict)
 
-    def get_structure_rule_description(self, rule_name: str) -> str:
-        """Get the description for a structure rule."""
-        return self.structure_rule_descriptions.get(rule_name, "")
+    def configuration_file_names_for(self, repo_root: str) -> set[str]:
+        """Names a scan of ``repo_root`` should recognise as configuration files.
 
-    def get_directory_description(self, directory: str) -> str:
-        """Get the description for a directory."""
-        return self.directory_descriptions.get(directory, "")
+        Mounted configurations are already recorded relative to the repository
+        root. The top-level configuration is not: it is whatever path the caller
+        passed in, so it is additionally offered relative to ``repo_root``.
+        """
+        names = set(self.configuration_file_names)
+        root_relative = relative_to_root(self.configuration_file_name, repo_root)
+        if root_relative:
+            names.add(root_relative)
+        return names
 
 
 @dataclass
