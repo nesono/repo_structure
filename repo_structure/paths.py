@@ -38,7 +38,7 @@ def relative_to_root(path: str, repo_root: str) -> str | None:
     return normalize_path(str(relative))
 
 
-def rel_dir_to_map_dir(rel_dir: str):
+def rel_dir_to_map_dir(rel_dir: str) -> str:
     """Convert a relative directory path to a mapped directory path.
 
     This function ensures that a given relative directory path conforms to

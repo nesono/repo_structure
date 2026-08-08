@@ -690,9 +690,13 @@ directory_map:
     ]
 
 
-def test_add_template_rule_creates_missing_directory_entry():
-    """Test that add_template_rule works for a directory without prior rules."""
+def test_template_rule_creates_missing_directory_entry():
+    """Test that a template expands for a directory with no rules of its own."""
     test_yaml = r"""
+templates:
+  component:
+    - description: 'Component template'
+    - require: '{{name}}\.cpp'
 structure_rules:
   basic_rule:
     - description: 'Basic rule'
@@ -701,14 +705,19 @@ directory_map:
   /:
     - description: 'Root directory'
     - use_rule: basic_rule
+  /new_dir/:
+    - description: 'Directory governed only by the template'
+    - use_template: component
+      parameters:
+        name: ['lidar']
 """
     config = Configuration.from_yaml_string(test_yaml)
-    entries = config.structure_rules["basic_rule"]
 
-    config.add_template_rule("/new_dir/", "__template_rule_new", entries)
-
-    assert config.structure_rules["__template_rule_new"] is entries
-    assert config.directory_map["/new_dir/"] == ["__template_rule_new"]
+    rule_name = "__template_rule_new_dir_component"
+    assert config.directory_map["/new_dir/"] == [rule_name]
+    assert [e.path.pattern for e in config.structure_rules[rule_name]] == [
+        "lidar\\.cpp"
+    ]
 
 
 @pytest.mark.parametrize(
