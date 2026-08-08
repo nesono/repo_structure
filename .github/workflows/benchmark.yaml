@@ -13,6 +13,10 @@ jobs:
   heavy-benchmark:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    # Checkout is all this job needs from the token. Uploading the artifact and
+    # writing the step summary both go through the runtime token, not this one.
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
