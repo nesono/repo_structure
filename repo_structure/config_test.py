@@ -1,5 +1,7 @@
 """Tests for repo_structure library functions."""
 
+from pathlib import Path
+
 import pytest
 from .config import (
     Configuration,
@@ -7,6 +9,9 @@ from .config import (
 )
 from . import ConfigurationParseError
 from .errors import StructureRuleError, TemplateError
+
+_PACKAGE_DIR = Path(__file__).resolve().parent
+"""Configuration fixtures live beside this module, not below the process CWD."""
 
 
 def test_successful_parse():
@@ -62,7 +67,7 @@ directory_map:
     - use_rule: ignore
     """
     # parsing should not throw using the above yaml
-    config = Configuration(test_yaml, True)
+    config = Configuration.from_yaml_string(test_yaml)
 
     # assert on basics
     assert config is not None
@@ -72,7 +77,7 @@ directory_map:
 
 def test_success_minimal_parse_with_config_file():
     """Test successful parsing with minimal configuration file."""
-    config = Configuration("repo_structure/test_config_allow_all.yaml")
+    config = Configuration.from_file(str(_PACKAGE_DIR / "test_config_allow_all.yaml"))
     assert config is not None
 
 
@@ -91,7 +96,7 @@ directory_map:
     """
 
     with pytest.raises(StructureRuleError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_parse_bad_schema():
@@ -114,7 +119,7 @@ directory_map:
         "required": ["locality"],
     }
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True, bad_schema)
+        Configuration.from_yaml_string(test_yaml, schema=bad_schema)
 
 
 def test_fail_parse_empty_structure_rule():
@@ -129,7 +134,7 @@ directory_map:
     - use_rule: base_structure
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_parse_missing_description_in_structure_rule():
@@ -145,7 +150,7 @@ directory_map:
     - use_rule: base_structure
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_parse_missing_description_in_directory_map():
@@ -161,7 +166,7 @@ directory_map:
     - use_rule: base_structure
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_parse_missing_description_in_template():
@@ -179,7 +184,7 @@ directory_map:
         param: ['test']
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_parse_double_description_in_structure_rule():
@@ -197,7 +202,7 @@ directory_map:
     - use_rule: base_structure
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_parse_double_description_in_directory_map():
@@ -215,7 +220,7 @@ directory_map:
     - use_rule: base_structure
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_parse_description_not_first_in_structure_rule():
@@ -232,7 +237,7 @@ directory_map:
     - use_rule: base_structure
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_parse_description_not_first_in_directory_map():
@@ -249,7 +254,7 @@ directory_map:
     - description: 'Root directory'
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_parse_dangling_use_rule_in_directory_map():
@@ -267,7 +272,7 @@ directory_map:
     - use_rule: python_package
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_parse_dangling_use_rule_in_structure_rule():
@@ -286,7 +291,7 @@ directory_map:
     - use_rule: base_structure
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_yaml, True)
+        Configuration.from_yaml_string(test_yaml)
 
 
 def test_fail_directory_structure_mixing_use_rule_and_files():
@@ -307,7 +312,7 @@ directory_map:
     - use_rule: package
 """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_config, True)
+        Configuration.from_yaml_string(test_config)
 
 
 def test_fail_parse_bad_key_in_structure_rule():
@@ -324,7 +329,7 @@ directory_map:
     - use_rule: bad_key_rule
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_config, True)
+        Configuration.from_yaml_string(test_config)
 
 
 def test_fail_directory_map_key_in_directory_map():
@@ -340,7 +345,7 @@ directory_map:
         - foo: documentation
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_config, True)
+        Configuration.from_yaml_string(test_config)
 
 
 def test_fail_directory_map_additional_key_in_directory_map():
@@ -357,7 +362,7 @@ directory_map:
         - foo: documentation
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_config, True)
+        Configuration.from_yaml_string(test_config)
 
 
 def test_fail_use_rule_not_recursive():
@@ -378,7 +383,7 @@ directory_map:
     - use_rule: bad_use_rule
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(config_yaml, True)
+        Configuration.from_yaml_string(config_yaml)
 
 
 def test_fail_directory_map_missing_trailing_slash():
@@ -397,7 +402,7 @@ directory_map:
     - use_rule: license_rule
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(config_yaml, True)
+        Configuration.from_yaml_string(config_yaml)
 
 
 def test_fail_directory_map_missing_starting_slash():
@@ -416,7 +421,7 @@ directory_map:
     - use_rule: license_rule
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(config_yaml, True)
+        Configuration.from_yaml_string(config_yaml)
 
 
 def test_fail_use_template_missing_parameters():
@@ -432,7 +437,7 @@ directory_map:
         - use_template: some_template
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_config, True)
+        Configuration.from_yaml_string(test_config)
 
 
 def test_fail_use_template_parameters_not_arrays():
@@ -450,7 +455,7 @@ directory_map:
             param_1: 'not_an_array'
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_config, True)
+        Configuration.from_yaml_string(test_config)
 
 
 def test_fail_use_template_bad_template_reference():
@@ -468,7 +473,7 @@ directory_map:
             param_1: ['some_param']
     """
     with pytest.raises(TemplateError):
-        Configuration(test_config, True)
+        Configuration.from_yaml_string(test_config)
 
 
 def test_fail_use_template_parameters_with_use_rule():
@@ -486,7 +491,7 @@ directory_map:
             param_1: ['item1', 'item2']
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_config, True)
+        Configuration.from_yaml_string(test_config)
 
 
 def test_fail_double_underscore_prefix_structure_rule():
@@ -502,7 +507,7 @@ directory_map:
         - use_rule: __incorrect_rule
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_config, True)
+        Configuration.from_yaml_string(test_config)
 
 
 def test_fail_qualifier_in_structure_rule_name():
@@ -576,7 +581,7 @@ directory_map:
             parameter: ['item1']
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(test_config, True)
+        Configuration.from_yaml_string(test_config)
 
 
 def test_fail_old_config_format():
@@ -595,17 +600,38 @@ directory_map:
     - use_rule: license_rule
     """
     with pytest.raises(ConfigurationParseError):
-        Configuration(config_yaml, True)
+        Configuration.from_yaml_string(config_yaml)
 
 
-def test_fail_config_file_structure_rule_conflict():
+def test_fail_config_file_structure_rule_conflict(tmp_path):
     """Test conflicting rules for automatic config file addition.
 
     This test requires file parsing, since the parsed file name will
-    be added as an automatic rule.
+    be added as an automatic rule -- so the rule name has to be the path the
+    configuration is loaded from, which is only known once it is written.
     """
+    # The rule name has to be the exact string the configuration is loaded
+    # from. Both are the POSIX form of the path: a Windows path holds
+    # backslashes, which a double-quoted YAML scalar would read as escape
+    # sequences ('C:\\Users' starts an 8-hexdigit \\U escape).
+    config_path = (tmp_path / "conflicting_test_config.yaml").as_posix()
+    Path(config_path).write_text(
+        f"""
+structure_rules:
+  "{config_path}":
+    - description: "Test configuration for conflicting config file"
+    - require: "conflicting_test_config.yaml"
+
+directory_map:
+  /:
+    - description: "Root directory"
+    - use_rule: "{config_path}"
+""",
+        encoding="utf-8",
+    )
+
     with pytest.raises(ConfigurationParseError):
-        Configuration("conflicting_test_config.yaml")
+        Configuration.from_file(config_path)
 
 
 def test_companion_parsing():
@@ -622,7 +648,7 @@ directory_map:
     - description: 'Root directory'
     - use_rule: cpp_with_headers
 """
-    config = Configuration(test_yaml, param1_is_yaml_string=True)
+    config = Configuration.from_yaml_string(test_yaml)
 
     # Verify the rule was parsed
     assert "cpp_with_headers" in config.structure_rules

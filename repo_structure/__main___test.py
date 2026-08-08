@@ -1,9 +1,21 @@
 """Main tests module."""
 
+from pathlib import Path
+
 import click
 from click.testing import CliRunner
 from .__main__ import repo_structure
 from .report import FORMATTERS
+
+_PACKAGE_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = str(_PACKAGE_DIR.parent)
+"""These tests drive the CLI against this repository itself, so they anchor on
+the package directory rather than on the process CWD."""
+
+
+def _config(name: str) -> str:
+    """Absolute path of a configuration fixture living beside this module."""
+    return str(_PACKAGE_DIR / name)
 
 
 def test_main_full_scan_success():
@@ -15,9 +27,9 @@ def test_main_full_scan_success():
             "--verbose",
             "full-scan",
             "-r",
-            ".",
+            _REPO_ROOT,
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            _config("test_config_allow_all.yaml"),
         ],
     )
 
@@ -32,13 +44,42 @@ def test_main_full_scan_fail_bad_config():
         [
             "full-scan",
             "-r",
-            ".",
+            _REPO_ROOT,
             "-c",
-            "repo_structure/test_config_bad_config.yaml",
+            _config("test_config_bad_config.yaml"),
         ],
     )
 
     assert result.exit_code != 0
+
+
+def test_main_full_scan_fail_bad_pattern(tmp_path):
+    """Test that an uncompilable pattern is reported, not raised as a traceback."""
+    config_path = tmp_path / "bad_pattern.yaml"
+    config_path.write_text(
+        """
+structure_rules:
+  bad_pattern_rule:
+    - description: "Rule with an uncompilable pattern"
+    - require: "[unclosed"
+
+directory_map:
+  /:
+    - description: "Root directory"
+    - use_rule: bad_pattern_rule
+""",
+        encoding="utf-8",
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        repo_structure,
+        ["full-scan", "-r", _REPO_ROOT, "-c", str(config_path)],
+    )
+
+    assert result.exit_code == 1
+    assert result.exception is None or isinstance(result.exception, SystemExit)
+    assert "failed to compile" in result.output
 
 
 def test_main_full_scan_fail():
@@ -46,7 +87,7 @@ def test_main_full_scan_fail():
     runner = CliRunner()
     result = runner.invoke(
         repo_structure,
-        ["full-scan", "-r", ".", "-c", "repo_structure/test_config_fail.yaml"],
+        ["full-scan", "-r", _REPO_ROOT, "-c", _config("test_config_fail.yaml")],
     )
 
     assert result.exit_code != 0
@@ -61,7 +102,7 @@ def test_main_diff_scan_success():
             "--verbose",
             "diff-scan",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            _config("test_config_allow_all.yaml"),
             "LICENSE",
             "repo_structure.yaml",
             "repo_structure/config.py",
@@ -79,7 +120,7 @@ def test_main_diff_scan_fail_bad_config():
         [
             "diff-scan",
             "-c",
-            "repo_structure/test_config_bad_config.yaml",
+            _config("test_config_bad_config.yaml"),
             "LICENSE",
         ],
     )
@@ -96,7 +137,7 @@ def test_main_diff_scan_fail():
         [
             "diff-scan",
             "-c",
-            "repo_structure/test_config_fail.yaml",
+            _config("test_config_fail.yaml"),
             "LICENSE",
         ],
     )
@@ -113,7 +154,7 @@ def test_main_diff_scan_fail_abs_path():
         [
             "diff-scan",
             "-c",
-            "repo_structure/test_config_fail.yaml",
+            _config("test_config_fail.yaml"),
             "/etc/passwd",
         ],
     )
@@ -133,9 +174,9 @@ def test_main_global_flags():
             "--verbose",
             "full-scan",
             "-r",
-            ".",
+            _REPO_ROOT,
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            _config("test_config_allow_all.yaml"),
         ],
     )
 
@@ -150,9 +191,9 @@ def test_main_include_hidden_default():
         [
             "full-scan",
             "-r",
-            ".",
+            _REPO_ROOT,
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            _config("test_config_allow_all.yaml"),
         ],
     )
 
@@ -176,7 +217,7 @@ def test_main_diff_scan_empty_paths():
         [
             "diff-scan",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            _config("test_config_allow_all.yaml"),
         ],
     )
 
@@ -192,7 +233,7 @@ def test_main_diff_scan_multiple_paths_with_failure():
         [
             "diff-scan",
             "-c",
-            "repo_structure/test_config_fail.yaml",
+            _config("test_config_fail.yaml"),
             "LICENSE",
             "repo_structure.yaml",
             "/absolute/path",
@@ -239,9 +280,9 @@ def test_main_full_scan_with_warnings():
         [
             "full-scan",
             "-r",
-            ".",
+            _REPO_ROOT,
             "-c",
-            "repo_structure/test_config_with_warnings.yaml",
+            _config("test_config_with_warnings.yaml"),
         ],
     )
 
@@ -258,9 +299,9 @@ def test_main_full_scan_directory_success():
         [
             "full-scan",
             "-r",
-            ".",
+            _REPO_ROOT,
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            _config("test_config_allow_all.yaml"),
             "-d",
             "repo_structure",
         ],
@@ -277,9 +318,9 @@ def test_main_full_scan_directory_fail():
         [
             "full-scan",
             "-r",
-            ".",
+            _REPO_ROOT,
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            _config("test_config_allow_all.yaml"),
             "-d",
             "bad_directory",
         ],
@@ -295,7 +336,7 @@ def test_report_command_text():
         [
             "report",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            _config("test_config_allow_all.yaml"),
             "-f",
             "text",
         ],
@@ -313,7 +354,7 @@ def test_report_command_json():
         [
             "report",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            _config("test_config_allow_all.yaml"),
             "-f",
             "json",
         ],
@@ -330,7 +371,7 @@ def test_report_command_markdown():
         [
             "report",
             "-c",
-            "repo_structure/test_config_allow_all.yaml",
+            _config("test_config_allow_all.yaml"),
             "-f",
             "markdown",
         ],

@@ -24,8 +24,7 @@ from .models import (
 from .paths import join_path_normalized, map_dir_to_rel_dir
 from .scanning import (
     check_companion_files,
-    expand_if_exists,
-    expand_use_rule,
+    child_backlog,
     get_matching_item_index,
     map_dir_to_entry_backlog,
     skip_entry,
@@ -129,7 +128,7 @@ class FullScanProcessor:
                 continue
 
             match_result = get_matching_item_index(
-                backlog, entry.path, os_entry.is_dir(), self.flags.verbose
+                backlog, entry.path, os_entry.is_dir()
             )
 
             if isinstance(match_result, MatchFailure):
@@ -144,7 +143,6 @@ class FullScanProcessor:
                 entry.path,
                 backlog[idx],
                 str(Path(self.repo_root) / rel_dir),
-                self.flags.verbose,
             )
             if companion_issue:
                 errors.append(companion_issue)
@@ -158,7 +156,7 @@ class FullScanProcessor:
         dir_path = Path(self.repo_root) / rel_dir
         return sorted(os.scandir(dir_path), key=lambda e: e.name)
 
-    def _should_skip_entry(self, entry) -> bool:
+    def _should_skip_entry(self, entry: Entry) -> bool:
         return skip_entry(
             entry,
             self.config.directory_map,
@@ -192,17 +190,12 @@ class FullScanProcessor:
     def _process_subdirectory(
         self,
         rel_dir: str,
-        entry,
+        entry: Entry,
         backlog: StructureRuleList,
         idx: int,
     ) -> list[ScanIssue]:
         errors: list[ScanIssue] = []
-        new_backlog = expand_use_rule(
-            backlog[idx].use_rule,
-            self.config.structure_rules,
-            self.flags,
-            entry.path,
-        ) or expand_if_exists(backlog[idx], self.flags)
+        new_backlog = child_backlog(backlog[idx], self.config.structure_rules)
 
         # If directory has no rules, skip checking its contents
         # (Companions will validate required files inside)

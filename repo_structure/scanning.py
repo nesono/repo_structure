@@ -54,21 +54,22 @@ def skip_entry(
     if flags is None:
         flags = Flags()
     rel_path = join_path_normalized(entry.rel_dir, entry.path)
-    skip_conditions = [
-        (not flags.follow_symlinks and entry.is_symlink),
-        (not flags.include_hidden and entry.path.startswith(".")),
-        (entry.path == ".gitignore" and not entry.is_dir),
-        (entry.path == ".git" and entry.is_dir),
-        (git_ignore and git_ignore(rel_path)),
-        (entry.is_dir and rel_dir_to_map_dir(rel_path) in directory_map),
-        (entry.path in config_file_names),
-        (rel_path in config_file_names),
-    ]
+    # Ordered cheapest first and chained with `or`, so gitignore matching --
+    # by far the most expensive check -- only runs when nothing else decided.
+    skip = (
+        (not flags.follow_symlinks and entry.is_symlink)
+        or (not flags.include_hidden and entry.path.startswith("."))
+        or (entry.path == ".gitignore" and not entry.is_dir)
+        or (entry.path == ".git" and entry.is_dir)
+        or entry.path in config_file_names
+        or rel_path in config_file_names
+        or (entry.is_dir and rel_dir_to_map_dir(rel_path) in directory_map)
+        or (git_ignore is not None and git_ignore(rel_path))
+    )
 
-    for condition in skip_conditions:
-        if condition:
-            _LOGGER.debug("Skipping %s", entry.path)
-            return True
+    if skip:
+        _LOGGER.debug("Skipping %s", entry.path)
+        return True
 
     return False
 
@@ -83,32 +84,26 @@ def to_entry(os_entry: DirEntry[str], rel_dir: str) -> Entry:
     )
 
 
-def expand_use_rule(
-    use_rule: str,
-    structure_rules: StructureRuleMap,
-    flags: Flags,  # pylint: disable=unused-argument
-    rel_path: str,
-):
-    """Expand the use_rule into a list of RepoEntry items."""
-    if use_rule:
-        _LOGGER.debug("use_rule found for rel path '%s'", rel_path)
+def child_backlog(
+    backlog_entry: RepoEntry, structure_rules: StructureRuleMap
+) -> StructureRuleList | None:
+    """Build the backlog that applies inside a matched directory entry.
+
+    A directory entry either recurses into a structure rule via ``use_rule`` or
+    carries its contents inline via ``if_exists``, so exactly one of the two
+    decides what is allowed below it. Returns None when neither does, meaning
+    the directory's contents are not described at all.
+    """
+    if backlog_entry.use_rule:
+        _LOGGER.debug("use_rule found for '%s'", backlog_entry.path.pattern)
         return _build_active_entry_backlog(
-            [use_rule],
+            [backlog_entry.use_rule],
             structure_rules,
         )
-    return None
-
-
-def expand_if_exists(
-    backlog_entry: RepoEntry, flags: Flags
-):  # pylint: disable=unused-argument
-    """Expand to the entry in `if_exists` or None."""
     if backlog_entry.if_exists:
-        _LOGGER.debug("if_exists found for rel path '%s'", backlog_entry.path.pattern)
+        _LOGGER.debug("if_exists found for '%s'", backlog_entry.path.pattern)
         return backlog_entry.if_exists
-    # the following line can not be reached given a directory entry must be
-    # either `use_rule`, or `if_exists`
-    return None  # pragma: no cover
+    return None
 
 
 def map_dir_to_entry_backlog(
@@ -175,7 +170,6 @@ def get_matching_item_index(
     backlog: StructureRuleList,
     entry_path: str,
     is_dir: bool,
-    verbose: bool = False,  # pylint: disable=unused-argument
 ) -> MatchResult:
     """Get matching item index without raising exceptions, return result with potential issues."""
     for i, v in enumerate(backlog):
@@ -190,17 +184,12 @@ def get_matching_item_index(
     return MatchFailure(code="unspecified_entry", entry_path=entry_path, is_dir=is_dir)
 
 
-def _find_matching_file_in_directory(
-    base_dir: str,
-    pattern: re.Pattern,
-    verbose: bool,  # pylint: disable=unused-argument
-) -> bool:
+def _find_matching_file_in_directory(base_dir: str, pattern: re.Pattern) -> bool:
     """Find a file matching the pattern in the directory tree.
 
     Args:
         base_dir: Base directory to search in
         pattern: Compiled regex pattern to match against
-        verbose: Enable verbose output
 
     Returns:
         True if a matching file is found, False otherwise
@@ -226,7 +215,6 @@ def check_companion_files(
     entry_name: str,
     matched_entry: RepoEntry,
     search_dir: str,
-    verbose: bool = False,
 ) -> ScanIssue | None:
     """Check if required companion files exist for a matched entry.
 
@@ -235,7 +223,6 @@ def check_companion_files(
         matched_entry: The RepoEntry that was matched
         search_dir: Directory to search companions in, resolved by the caller
             against the repository root (not the process CWD)
-        verbose: Enable verbose output
 
     Returns:
         ScanIssue if a required companion is missing, None otherwise
@@ -261,7 +248,7 @@ def check_companion_files(
             continue
 
         # Search for file matching the companion pattern
-        if not _find_matching_file_in_directory(base_dir, companion.path, verbose):
+        if not _find_matching_file_in_directory(base_dir, companion.path):
             _LOGGER.debug(
                 "  Missing companion matching pattern: %s", companion.path.pattern
             )
