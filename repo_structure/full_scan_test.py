@@ -1504,13 +1504,21 @@ README.md
     assert len(errors) == 0
 
 
-def test_configuration_structure_rules_unmutated_by_scan(tmp_path):
-    """Regression: scanning leaves ``Configuration.structure_rules`` counts at 0."""
+def test_sibling_directories_do_not_share_if_exists_counters(tmp_path):
+    """Regression: each directory gets its own counters for an `if_exists` rule.
+
+    The entries below `if_exists` used to be handed to the scan straight off
+    the configuration, so the first directory to satisfy a required entry
+    bumped the counter every sibling directory was judged by -- and the
+    siblings missing that file were reported as complete.
+    """
     config_yaml = r"""
 structure_rules:
   base_structure:
-    - description: 'Base structure requiring a README'
-    - require: 'README\.md'
+    - description: 'Every directory needs a README'
+    - allow: '.*/'
+      if_exists:
+        - require: 'README\.md'
 directory_map:
   /:
     - description: 'Root directory'
@@ -1520,14 +1528,13 @@ directory_map:
     repo = create_repo_structure(
         tmp_path,
         """
-README.md
+with_readme/
+with_readme/README.md
+without_readme/
 """,
     )
 
-    _check_repo_directory_structure(repo, config)
+    errors, _ = _check_repo_directory_structure(repo, config)
 
-    assert all(
-        entry.count == 0
-        for entries in config.structure_rules.values()
-        for entry in entries
-    )
+    assert [e.code for e in errors] == ["missing_required_entries"]
+    assert errors[0].path == "without_readme"

@@ -9,6 +9,8 @@ from typing import Callable
 
 from .models import (
     BUILTIN_DIRECTORY_RULES,
+    Backlog,
+    BacklogEntry,
     DirectoryMap,
     Entry,
     Flags,
@@ -17,7 +19,6 @@ from .models import (
     MatchSuccess,
     RepoEntry,
     ScanIssue,
-    StructureRuleList,
     StructureRuleMap,
 )
 from .paths import (
@@ -85,8 +86,8 @@ def to_entry(os_entry: DirEntry[str], rel_dir: str) -> Entry:
 
 
 def child_backlog(
-    backlog_entry: RepoEntry, structure_rules: StructureRuleMap
-) -> StructureRuleList | None:
+    matched: BacklogEntry, structure_rules: StructureRuleMap
+) -> Backlog | None:
     """Build the backlog that applies inside a matched directory entry.
 
     A directory entry either recurses into a structure rule via ``use_rule`` or
@@ -94,15 +95,18 @@ def child_backlog(
     decides what is allowed below it. Returns None when neither does, meaning
     the directory's contents are not described at all.
     """
-    if backlog_entry.use_rule:
-        _LOGGER.debug("use_rule found for '%s'", backlog_entry.path.pattern)
+    entry = matched.entry
+    if entry.use_rule:
+        _LOGGER.debug("use_rule found for '%s'", entry.path.pattern)
         return _build_active_entry_backlog(
-            [backlog_entry.use_rule],
+            [entry.use_rule],
             structure_rules,
         )
-    if backlog_entry.if_exists:
-        _LOGGER.debug("if_exists found for '%s'", backlog_entry.path.pattern)
-        return backlog_entry.if_exists
+    if entry.if_exists:
+        _LOGGER.debug("if_exists found for '%s'", entry.path.pattern)
+        # A fresh backlog per matched directory: sibling directories governed
+        # by the same `if_exists` must not share match counts.
+        return [_to_backlog_entry(child) for child in entry.if_exists]
     return None
 
 
@@ -110,111 +114,108 @@ def map_dir_to_entry_backlog(
     directory_map: DirectoryMap,
     structure_rules: StructureRuleMap,
     map_dir: str,
-) -> StructureRuleList:
+) -> Backlog:
     """Get the active entry backlog for a given mapped directory."""
-
-    def _get_use_rules_for_directory(
-        directory_map: DirectoryMap, directory: str
-    ) -> list[str]:
-        d = rel_dir_to_map_dir(directory)
-        return directory_map[d]
-
-    use_rules = _get_use_rules_for_directory(directory_map, map_dir)
+    use_rules = directory_map[rel_dir_to_map_dir(map_dir)]
     return _build_active_entry_backlog(use_rules, structure_rules)
 
 
-def _clone_repo_entry(
+def _to_backlog_entry(
     entry: RepoEntry, *, is_required: bool | None = None
-) -> RepoEntry:
-    """Shallow-clone a RepoEntry with count reset to 0.
-
-    Counters live on the per-scan backlog. Cloning prevents scan state from
-    leaking back into the shared Configuration.
-    """
-    return RepoEntry(
-        path=entry.path,
-        is_dir=entry.is_dir,
-        is_required=is_required if is_required is not None else entry.is_required,
-        is_forbidden=entry.is_forbidden,
-        use_rule=entry.use_rule,
-        if_exists=entry.if_exists,
-        companion=entry.companion,
-        count=0,
+) -> BacklogEntry:
+    """Put a configured entry on a backlog, with a match counter of its own."""
+    return BacklogEntry(
+        entry=entry,
+        is_required=entry.is_required if is_required is None else is_required,
     )
 
 
 def _build_active_entry_backlog(
     active_use_rules: list[str], structure_rules: StructureRuleMap
-) -> StructureRuleList:
-    result: StructureRuleList = []
+) -> Backlog:
+    result: Backlog = []
     for rule in active_use_rules:
         if rule in BUILTIN_DIRECTORY_RULES:
             continue
-        rules = structure_rules[rule]
-        # Clone every entry so scan-time mutations (count += 1) do not leak
-        # back into Configuration.structure_rules.
-        result.extend(_clone_repo_entry(entry) for entry in rules)
-
-        # Add companions without template substitution to initial backlog
-        for entry in rules:
-            if entry.companion:
-                for companion in entry.companion:
-                    # Only add if no template substitution needed
-                    if not has_template_substitution(companion.path.pattern):
-                        companion_copy = _clone_repo_entry(companion, is_required=False)
-                        result.append(companion_copy)
+        for entry in structure_rules[rule]:
+            result.append(_to_backlog_entry(entry))
+            # Companions that need no template substitution are allowed
+            # outright; the ones that do are checked against the file whose
+            # captures expand them, so they never join the backlog.
+            result.extend(
+                _to_backlog_entry(companion, is_required=False)
+                for companion in entry.companion
+                if not has_template_substitution(companion.path.pattern)
+            )
     return result
 
 
 def get_matching_item_index(
-    backlog: StructureRuleList,
+    backlog: Backlog,
     entry_path: str,
     is_dir: bool,
 ) -> MatchResult:
     """Get matching item index without raising exceptions, return result with potential issues."""
-    for i, v in enumerate(backlog):
-        if v.path.fullmatch(entry_path) and v.is_dir == is_dir:
-            if v.is_forbidden:
+    for i, candidate in enumerate(backlog):
+        entry = candidate.entry
+        if entry.path.fullmatch(entry_path) and entry.is_dir == is_dir:
+            if entry.is_forbidden:
                 return MatchFailure(
                     code="forbidden_entry", entry_path=entry_path, is_dir=is_dir
                 )
-            _LOGGER.debug("  Found match at index %d: '%s'", i, v.path.pattern)
+            _LOGGER.debug("  Found match at index %d: '%s'", i, entry.path.pattern)
             return MatchSuccess(index=i)
 
     return MatchFailure(code="unspecified_entry", entry_path=entry_path, is_dir=is_dir)
 
 
-def _find_matching_file_in_directory(base_dir: str, pattern: re.Pattern) -> bool:
-    """Find a file matching the pattern in the directory tree.
-
-    Args:
-        base_dir: Base directory to search in
-        pattern: Compiled regex pattern to match against
-
-    Returns:
-        True if a matching file is found, False otherwise
-    """
+def _list_files_below(base_dir: str) -> list[str]:
+    """List every file below ``base_dir``, as normalized relative paths."""
     base_path = Path(base_dir)
     if not base_path.is_dir():
-        return False
+        return []
 
-    for root, _dirs, files in os.walk(base_dir):
-        for filename in files:
-            file_abs = Path(root) / filename
-            file_rel = file_abs.relative_to(base_path)
-            file_rel_normalized = normalize_path(str(file_rel))
+    return [
+        normalize_path(str((Path(root) / filename).relative_to(base_path)))
+        for root, _dirs, files in os.walk(base_dir)
+        for filename in files
+    ]
 
-            if pattern.fullmatch(file_rel_normalized):
-                _LOGGER.debug("  Found companion: %s", file_rel_normalized)
+
+class CompanionIndex:  # pylint: disable=too-few-public-methods
+    """Directory listings shared by the companion checks of one scan.
+
+    A companion is searched for anywhere below the directory of the file that
+    names it, so every check walks a whole subtree. Since a directory of N
+    modules each requiring a companion asks about the same subtree N times,
+    the listing is walked once and answered from memory afterwards.
+
+    Deliberately scoped to a single scan: a longer-lived index would answer
+    from a listing the filesystem has since moved on from.
+    """
+
+    def __init__(self) -> None:
+        self._listings: dict[str, list[str]] = {}
+
+    def contains_match(self, base_dir: str, pattern: re.Pattern) -> bool:
+        """Return True if any file below ``base_dir`` fully matches ``pattern``."""
+        listing = self._listings.get(base_dir)
+        if listing is None:
+            listing = _list_files_below(base_dir)
+            self._listings[base_dir] = listing
+
+        for rel_path in listing:
+            if pattern.fullmatch(rel_path):
+                _LOGGER.debug("  Found companion: %s", rel_path)
                 return True
-
-    return False
+        return False
 
 
 def check_companion_files(
     entry_name: str,
     matched_entry: RepoEntry,
     search_dir: str,
+    companions: CompanionIndex,
 ) -> ScanIssue | None:
     """Check if required companion files exist for a matched entry.
 
@@ -223,6 +224,7 @@ def check_companion_files(
         matched_entry: The RepoEntry that was matched
         search_dir: Directory to search companions in, resolved by the caller
             against the repository root (not the process CWD)
+        companions: Directory listings for the scan in progress
 
     Returns:
         ScanIssue if a required companion is missing, None otherwise
@@ -248,7 +250,7 @@ def check_companion_files(
             continue
 
         # Search for file matching the companion pattern
-        if not _find_matching_file_in_directory(base_dir, companion.path):
+        if not companions.contains_match(base_dir, companion.path):
             _LOGGER.debug(
                 "  Missing companion matching pattern: %s", companion.path.pattern
             )
