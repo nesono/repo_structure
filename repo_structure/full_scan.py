@@ -5,12 +5,12 @@ import os
 
 from pathlib import Path
 from typing import Callable
-from gitignore_parser import parse_gitignore
 
 from .config import (
     Configuration,
 )
 from .config_merge import unqualify
+from .gitignore import parse_gitignore
 
 from .models import (
     BUILTIN_DIRECTORY_RULES,
@@ -61,17 +61,16 @@ class FullScanProcessor:
         self._companions = CompanionIndex()
 
     def _get_git_ignore(self) -> Callable[[str], bool] | None:
-        """Get gitignore parser, cached for the lifetime of the scan.
+        """Get gitignore parser, built once for the lifetime of the scan.
 
-        The returned matcher takes a path relative to the repository root and
-        resolves it against that root, not against the process CWD.
+        The returned matcher takes a path relative to the repository root, which
+        is what the scan holds, so nothing is resolved against the process CWD.
         """
-        git_ignore_path = Path(self.repo_root) / ".gitignore"
-        if not git_ignore_path.is_file():
+        git_ignore_path = os.path.join(self.repo_root, ".gitignore")
+        if not os.path.isfile(git_ignore_path):
             return None
 
-        matches = parse_gitignore(str(git_ignore_path))
-        return lambda rel_path: matches(str(Path(self.repo_root) / rel_path))
+        return parse_gitignore(git_ignore_path)
 
     def _check_required_entries_missing(
         self,

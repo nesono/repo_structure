@@ -45,7 +45,7 @@ def skip_entry(
     """Return True if the entry should be skipped/ignored.
 
     `git_ignore` is called with the entry's path relative to the repository
-    root, so it must resolve that against the root rather than the process CWD.
+    root, and matches against that root rather than the process CWD.
 
     `config_file_names` holds every configuration file taking part in the scan.
     A configuration mounted through `use_config` lives in the subdirectory it
