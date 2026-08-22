@@ -1538,3 +1538,42 @@ without_readme/
 
     assert [e.code for e in errors] == ["missing_required_entries"]
     assert errors[0].path == "without_readme"
+
+
+def test_succeed_with_current_directory_as_repo_root(tmp_path, monkeypatch):
+    """Test that a repository root of '.' scans the current directory.
+
+    '.' is what the CLI passes for --repo-root by default, and it joins with
+    the empty relative directory of the root itself to an empty path, which
+    names no directory at all. This is the one test that changes the process
+    CWD, because a relative repository root has no meaning without one;
+    monkeypatch puts it back afterwards.
+    """
+    config_yaml = r"""
+structure_rules:
+  base_structure:
+    - description: 'Base structure with README'
+    - require: 'README\.md'
+    - allow: 'src/'
+      if_exists:
+        - require: 'main\.py'
+directory_map:
+  /:
+    - description: 'Root directory'
+    - use_rule: base_structure
+"""
+    config = Configuration.from_yaml_string(config_yaml)
+    create_repo_structure(
+        tmp_path,
+        """
+README.md
+src/
+src/main.py
+""",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    errors, warnings = _check_repo_directory_structure(".", config)
+
+    assert not errors
+    assert not warnings
