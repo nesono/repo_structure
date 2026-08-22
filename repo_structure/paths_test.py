@@ -86,6 +86,32 @@ class TestJoinPathNormalized:
         assert "/" in result or result == "path/to/file"
         assert "\\" not in result
 
+    def test_join_path_normalized_trailing_empty_string(self):
+        """Test that a trailing empty part adds no trailing separator."""
+        assert join_path_normalized("dir", "") == "dir"
+
+    def test_join_path_normalized_drops_dot_parts(self):
+        """Test that a '.' part is dropped, as Path(...) used to drop it.
+
+        config_merge joins ``str(Path(fs_path).parent)``, which is '.' for a
+        configuration named without a directory, so keeping it would prefix
+        every mounted configuration's path with './'.
+        """
+        assert join_path_normalized(".", "sub", "config.yaml") == "sub/config.yaml"
+
+    def test_join_path_normalized_only_empty_parts(self):
+        """Test that joining nothing meaningful yields an empty path."""
+        assert join_path_normalized("", "") == ""
+        assert join_path_normalized(".") == ""
+
+    def test_join_path_normalized_part_with_trailing_separator(self):
+        """Test that a part already ending in a separator is not doubled."""
+        assert join_path_normalized("dir/", "file.txt") == "dir/file.txt"
+
+    def test_join_path_normalized_filesystem_root(self):
+        """Test that the filesystem root joins without doubling its separator."""
+        assert join_path_normalized("/", "", "config.yaml") == "/config.yaml"
+
 
 class TestRelDirToMapDir:
     """Test the rel_dir_to_map_dir function."""

@@ -16,12 +16,20 @@ def normalize_path(path: str) -> str:
 def join_path_normalized(*parts: str) -> str:
     """Join path parts and normalize separators for cross-platform compatibility.
 
-    Uses pathlib.Path but ensures forward slashes in the result.
+    Empty parts and ``.`` parts are dropped, which is what constructing a
+    ``PurePath`` from them used to do -- callers pass an empty string for the
+    repository root, and ``Path(...).parent`` yields ``.`` for a bare filename.
+    Joining nothing yields an empty string rather than ``.``: every caller reads
+    the result as a path relative to the repository root, and ``.`` is not one.
+
+    This is a string join rather than a ``PurePath``, because it runs once per
+    scanned entry and building a path object to stringify it immediately cost
+    the better part of a second on a two-million-entry scan.
     """
-    if not parts:
+    meaningful = [part for part in parts if part and part != "."]
+    if not meaningful:
         return ""
-    joined = Path(*parts)
-    return normalize_path(str(joined))
+    return normalize_path(os.path.join(*meaningful))
 
 
 def relative_to_root(path: str, repo_root: str) -> str | None:
