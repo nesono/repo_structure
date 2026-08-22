@@ -3,7 +3,6 @@
 import logging
 import os
 
-from pathlib import Path
 from typing import Callable
 
 from .config import (
@@ -115,9 +114,17 @@ class FullScanProcessor:
     ) -> list[ScanIssue]:
         """Check repository structure recursively and return list of issues."""
         errors: list[ScanIssue] = []
+        # The directory's own path, used to list it and -- for a matched entry
+        # that has companions -- to search those companions. It depends on the
+        # directory rather than on the entries in it, so it is built once here
+        # instead of once per entry.
+        #
+        # Falls back to '.', since a repository root of '.' -- what the CLI
+        # passes by default -- joins with the empty rel_dir of the root itself
+        # to nothing, and only '.' names the current directory to os.scandir.
+        dir_path = join_path_normalized(self.repo_root, rel_dir) or "."
 
-        entries = self._get_sorted_entries(rel_dir)
-        for os_entry in entries:
+        for os_entry in self._get_sorted_entries(dir_path):
             entry = to_entry(os_entry, rel_dir)
 
             _LOGGER.debug("Checking entry %s", entry.path)
@@ -125,34 +132,35 @@ class FullScanProcessor:
             if self._should_skip_entry(entry):
                 continue
 
-            match_result = get_matching_item_index(
-                backlog, entry.path, os_entry.is_dir()
-            )
+            match_result = get_matching_item_index(backlog, entry.path, entry.is_dir)
 
             if isinstance(match_result, MatchFailure):
                 self._handle_match_failure(match_result, entry, errors)
                 continue
 
             idx = match_result.index
-            backlog[idx].count += 1
+            matched = backlog[idx]
+            matched.count += 1
 
-            # Check for required companion files
-            companion_issue = check_companion_files(
-                entry.path,
-                backlog[idx].entry,
-                str(Path(self.repo_root) / rel_dir),
-                self._companions,
-            )
-            if companion_issue:
-                errors.append(companion_issue)
+            # Check for required companion files. Asking first keeps the
+            # overwhelming majority of entries, which name no companion, out
+            # of the call altogether.
+            if matched.entry.companion:
+                companion_issue = check_companion_files(
+                    entry.path,
+                    matched.entry,
+                    dir_path,
+                    self._companions,
+                )
+                if companion_issue:
+                    errors.append(companion_issue)
 
-            if os_entry.is_dir():
+            if entry.is_dir:
                 errors.extend(self._process_subdirectory(rel_dir, entry, backlog, idx))
 
         return errors
 
-    def _get_sorted_entries(self, rel_dir: str) -> list[os.DirEntry]:
-        dir_path = Path(self.repo_root) / rel_dir
+    def _get_sorted_entries(self, dir_path: str) -> list[os.DirEntry]:
         return sorted(os.scandir(dir_path), key=lambda e: e.name)
 
     def _should_skip_entry(self, entry: Entry) -> bool:
