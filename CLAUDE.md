@@ -51,6 +51,9 @@ PyPI. The sdist deliberately keeps them so downstreams can run the suite.
 - `models.py` — dataclasses, type aliases, rule constants
 - `errors.py` — exception hierarchy
 - `paths.py` — path normalization
+- `gitignore.py` — `.gitignore` matching on root-relative paths. Reuses
+  `gitignore_parser`'s pattern-to-regex translation but not its absolute-path
+  handling, which dominated full scans of large repositories
 - `patterns.py` — capture extraction, `{{name}}` template substitution
 - `scanning.py` — entry skipping, matching, companion checks, backlog building
 - `full_scan.py` / `diff_scan.py` — the two scan processors
