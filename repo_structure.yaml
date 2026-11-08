@@ -28,3 +28,12 @@ directory_map:
   /.github/:
     - description: "GitHub-specific configuration and workflow files - ignored from structure validation"
     - use_rule: ignore
+  /.entire/:
+    - description: "Entire configuration files"
+    - use_rule: ignore
+  /.codex/:
+    - description: "Codex configuration files"
+    - use_rule: ignore
+  /.opencode/:
+    - description: "OpenCode configuration files"
+    - use_rule: ignore
