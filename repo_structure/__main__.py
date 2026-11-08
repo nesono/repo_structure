@@ -332,7 +332,7 @@ def report(
             with open(output, "w", encoding="utf-8") as f:
                 f.write(formatted_report)
             click.echo(f"Report written to {output}")
-        except IOError as e:
+        except OSError as e:
             click.echo(f"Error writing to file: {e}", err=True)
             sys.exit(1)
     else:

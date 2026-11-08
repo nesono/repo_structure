@@ -5,7 +5,8 @@ import re
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Callable, Literal
+from collections.abc import Callable
+from typing import Literal
 from .config import Configuration
 from .config_merge import unqualify
 from .models import (

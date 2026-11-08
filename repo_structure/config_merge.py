@@ -22,7 +22,7 @@ in ``inherit.override``; anything else is reported as a collision.
 
 import logging
 from pathlib import Path, PurePosixPath
-from typing import Callable
+from collections.abc import Callable
 
 from .errors import ConfigurationParseError
 from .models import (

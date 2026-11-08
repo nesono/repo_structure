@@ -33,7 +33,8 @@ import shutil
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Iterator
+from collections.abc import Iterator
+from typing import Final
 
 import pytest
 
