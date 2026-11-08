@@ -75,3 +75,7 @@ addopts = "-m 'not heavy'"
 omit = [
     "repo_structure/_version.py",
 ]
+
+[tool.ruff.lint]
+# Keep syntax and imports current for the minimum supported Python version.
+extend-select = ["UP"]

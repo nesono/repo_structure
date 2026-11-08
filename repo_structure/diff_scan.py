@@ -3,7 +3,7 @@
 import logging
 from dataclasses import replace
 from pathlib import Path
-from typing import Iterator
+from collections.abc import Iterator
 
 from .config import (
     Configuration,

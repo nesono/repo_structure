@@ -5,7 +5,7 @@ import os
 import re
 from os import DirEntry
 from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 
 from .models import (
     BUILTIN_DIRECTORY_RULES,

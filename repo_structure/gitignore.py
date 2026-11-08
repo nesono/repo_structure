@@ -13,7 +13,7 @@ path handling around it is replaced here.
 """
 
 import re
-from typing import Callable
+from collections.abc import Callable
 
 from gitignore_parser import rule_from_pattern
 

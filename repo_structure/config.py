@@ -273,7 +273,7 @@ def _build_from_yaml_string(
 
 
 def _load_repo_structure_yaml(filename: str) -> dict:
-    with open(filename, "r", encoding="utf-8") as file:
+    with open(filename, encoding="utf-8") as file:
         return _load_repo_structure_yamls(file)
 
 

@@ -12,7 +12,7 @@ from itertools import islice
 from pathlib import Path
 import random
 import string
-from typing import Callable, Sequence
+from collections.abc import Callable, Sequence
 
 
 def create_repo_structure(base_path: Path, specification: str) -> str:
