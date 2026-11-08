@@ -595,7 +595,9 @@ top-level configuration file always has been.
 
 ## System Requirements
 
-- Tested with Python versions ["3.10", "3.11", "3.12", "3.13", "3.14"]
+- Supports Python 3.11, 3.12, 3.13, 3.14, and 3.15, matching the
+  [officially supported stable releases](https://devguide.python.org/versions/).
+  All five versions are tested in CI.
 - Dependencies defined in [pyproject.toml](pyproject.toml)
 - Does not work on Windows
 
@@ -605,7 +607,7 @@ top-level configuration file always has been.
 
 We only support `uv` as a build tool as of now.
 
-- `uv python install 3.10`
+- `uv python install 3.13`
 - `uv pip install -e '.[dev]'`
 - `uv build`
 - `uv run pytest`
