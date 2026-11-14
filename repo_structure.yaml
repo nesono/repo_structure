@@ -6,6 +6,7 @@ structure_rules:
     - require: 'README\.md'
     - require: 'PUBLISHING\.md'
     - require: 'CLAUDE\.md'
+    - require: 'AGENTS\.md'
     - require: '\.pre-commit-config\.yaml'
     - require: '\.pre-commit-hooks\.yaml'
     - require: '\.markdownlint\.yaml'

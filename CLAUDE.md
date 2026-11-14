@@ -118,3 +118,8 @@ the full run.
 Issues are often phased (`Phase N.M: …`) and were drafted from a cleanup plan.
 Verify an issue's stated premise against the code before implementing it — at
 least one has been closed as not-planned because its rationale did not hold.
+
+<!-- entire-agent:begin -->
+Read .entire/agent-guide.md for this repository's workflow, source inspection, and verification guidance.
+@.entire/agent-guide.md
+<!-- entire-agent:end -->
